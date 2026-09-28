@@ -1,0 +1,1 @@
+Extract grounded atomic facts useful for future memory retrieval. Use prior_messages only to resolve references. Every fact must be supported by at least one new_chunks entry and cite its exact id. Do not infer unsupported facts. Return only JSON: {"facts":[{"content":"...","source_chunk_ids":["mem_..."]}]}. Return an empty facts array if no grounded fact exists.

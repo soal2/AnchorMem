@@ -5,10 +5,10 @@ import httpx
 import pytest
 from openai import APIConnectionError, OpenAI
 
-from aml_memory import providers
-from aml_memory.config import EvaluationConfig, ServiceConfig, load_config, resolved_path
-from aml_memory.contracts import AddRequest, Message, SearchRequest
-from aml_memory.engine import MemoryEngine
+from src import providers
+from src.config import EvaluationConfig, ServiceConfig, load_config, resolved_path
+from src.contracts import AddRequest, Message, SearchRequest
+from src.engine import MemoryEngine
 
 
 @pytest.fixture

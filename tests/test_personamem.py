@@ -3,9 +3,9 @@ import json
 
 import pytest
 
-from aml_memory import evaluation
-from aml_memory.config import EvaluationConfig, load_config
-from aml_memory.contracts import Evidence, SearchResponse
+from src import evaluation
+from src.config import EvaluationConfig, load_config
+from src.contracts import Evidence, SearchResponse
 
 
 @pytest.fixture

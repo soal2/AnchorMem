@@ -9,7 +9,7 @@ from .providers import OpenAIEmbedder, OpenAILLM
 
 
 def main():
-    parser = argparse.ArgumentParser(prog="aml-memory")
+    parser = argparse.ArgumentParser(prog="anchor-mem")
     commands = parser.add_subparsers(dest="command", required=True)
     for name in ("serve", "evaluate"):
         command = commands.add_parser(name)

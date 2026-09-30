@@ -419,7 +419,7 @@ def evaluate(config: EvaluationConfig, config_path: Path):
     run_dir = resolved_path(config_path, config.output_dir) / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + "-" + config.run_label)
     run_dir.mkdir(parents=True, exist_ok=False)
     print(f"Evaluation run: {run_dir} ({len(examples)} questions)", flush=True)
-    source_root = Path(__file__).resolve().parents[1]
+    source_root = Path(__file__).resolve().parent
     for source in sorted(source_root.rglob("*.py")):
         target = run_dir / "source" / source.relative_to(source_root)
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -455,7 +455,7 @@ def evaluate(config: EvaluationConfig, config_path: Path):
     if config.dataset == "personamem":
         data_source["provenance"] = json.loads((dataset_path / "source.json").read_text(encoding="utf-8"))
     manifest = {"label": "local-development", "run_label": config.run_label, "created_at": datetime.now(timezone.utc).isoformat(),
-                "code_commit": _commit(Path(__file__).resolve().parents[2]), "contract_commit": config.contract_commit,
+                "code_commit": _commit(Path(__file__).resolve().parents[1]), "contract_commit": config.contract_commit,
                 "code_snapshot_sha256": sha256(run_dir / "source"), "code_snapshot_path": "source",
                 "service_config_hash": config_hash(service), "eval_config_hash": config_hash(config), "data_sha256": actual_data_hash,
                 "answer_prompt_sha256": answer_prompt_sha256,

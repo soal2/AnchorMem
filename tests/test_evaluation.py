@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from aml_memory import evaluation
-from aml_memory.config import EvaluationConfig, load_config
-from aml_memory.contracts import Evidence, SearchResponse
-from aml_memory.providers import ProviderError
+from src import evaluation
+from src.config import EvaluationConfig, load_config
+from src.contracts import Evidence, SearchResponse
+from src.providers import ProviderError
 
 
 def test_locomo_preserves_source_date_and_explicit_timestamp(tmp_path):
@@ -55,7 +55,13 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
     config = config.model_copy(update={"dataset": "longmemeval", "data_path": str(data_path),
                                       "data_sha256": evaluation.sha256(data_path),
                                       "contract_repository_path": str(contract_path), "output_dir": str(tmp_path / "runs")})
-    monkeypatch.setattr(evaluation, "_commit", lambda path: config.contract_commit)
+    commit_paths = []
+
+    def fake_commit(path):
+        commit_paths.append(Path(path).resolve())
+        return config.contract_commit
+
+    monkeypatch.setattr(evaluation, "_commit", fake_commit)
 
     class FakeLLM:
         def __init__(self, config):
@@ -83,9 +89,12 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
     manifest = json.loads((run_dir / "manifest.json").read_text())
     snapshot = run_dir / manifest["code_snapshot_path"]
     assert manifest["code_snapshot_sha256"] == evaluation.sha256(snapshot)
-    source_root = Path(evaluation.__file__).resolve().parents[1]
-    for source in source_root.rglob("*.py"):
-        assert (snapshot / source.relative_to(source_root)).read_bytes() == source.read_bytes()
+    source_root = Path(evaluation.__file__).resolve().parent
+    source_files = {source.relative_to(source_root) for source in source_root.rglob("*.py")}
+    assert {source.relative_to(snapshot) for source in snapshot.rglob("*") if source.is_file()} == source_files
+    for source in source_files:
+        assert (snapshot / source).read_bytes() == (source_root / source).read_bytes()
+    assert commit_paths == [contract_path.resolve(), Path(__file__).resolve().parents[1]]
     metrics = json.loads((run_dir / "metrics.json").read_text())
     assert metrics["elapsed_seconds"] >= 0
     if fail_search:

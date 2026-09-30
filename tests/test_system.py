@@ -3,12 +3,12 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from aml_memory.service import create_app
-from aml_memory.config import ServiceConfig, load_config
-from aml_memory.contracts import AddRequest, Message, SearchRequest
-from aml_memory.engine import MemoryEngine
-from aml_memory.evaluation import _answer_prompt, _contract_prompts, load_examples, split_examples
-from aml_memory.storage import user_db_path
+from src.service import create_app
+from src.config import ServiceConfig, load_config
+from src.contracts import AddRequest, Message, SearchRequest
+from src.engine import MemoryEngine
+from src.evaluation import _answer_prompt, _contract_prompts, load_examples, split_examples
+from src.storage import user_db_path
 
 
 class FakeLLM:

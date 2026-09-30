@@ -2,7 +2,7 @@ version: 0.1.0
 service_config_path: ../service/v1-b3.yaml
 dataset: longmemeval
 data_path: ../../data/longmemeval/longmemeval_s_cleaned.json
-data_sha256: SET_AFTER_DOWNLOAD
+data_sha256: 7648154ac85b33b42dc794a85b5d396e37c4f68ac6c42c88ac56b94f3b6213cb
 contract_repository_path: ../../data/aml-contract
 contract_commit: 1b8142bfe0f20f1c5218d6b554aa0012de34e504
 split: validation
@@ -12,16 +12,16 @@ sample_limit: null
 run_label: longmemeval-validation-b3
 output_dir: ../../artifacts/runs
 answer:
-  name: gpt-4o-mini
-  base_url: https://api.openai.com/v1
+  name: openai/gpt-4o-mini
+  base_url: https://openrouter.ai/api/v1
   api_key_env: OPENAI_API_KEY
   temperature: 0.0
   max_output_tokens: 512
   timeout_seconds: 120.0
   retries: 2
 judge:
-  name: gpt-4o-mini
-  base_url: https://api.openai.com/v1
+  name: openai/gpt-4o-mini
+  base_url: https://openrouter.ai/api/v1
   api_key_env: OPENAI_API_KEY
   temperature: 0.0
   max_output_tokens: 512

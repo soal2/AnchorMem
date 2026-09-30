@@ -1,6 +1,6 @@
 version: 0.1.0
-competition_mode: true
-database_dir: ../../data/index
+competition_mode: false
+database_dir: ../../data/openrouter-index
 snapshot_dir: ../../artifacts/service
 host: 0.0.0.0
 port: 8000
@@ -8,21 +8,21 @@ workers: 1
 auth_key_env: AML_MEMORY_KEY
 log_level: info
 llm:
-  name: gpt-4o-mini
-  base_url: https://api.openai.com/v1
+  name: openai/gpt-4o-mini
+  base_url: https://openrouter.ai/api/v1
   api_key_env: OPENAI_API_KEY
   temperature: 0.0
   max_output_tokens: 4096
   timeout_seconds: 120.0
-  retries: 2
+  retries: 4
 embedding:
-  name: text-embedding-v4
-  base_url: https://dashscope.aliyuncs.com/compatible-mode/v1
-  api_key_env: DASHSCOPE_API_KEY
+  name: openai/text-embedding-3-small
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENAI_API_KEY
   dimensions: 1024
   batch_size: 10
   timeout_seconds: 120.0
-  retries: 2
+  retries: 4
 chunk:
   tokenizer: o200k_base
   max_tokens: 512

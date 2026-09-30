@@ -1,0 +1,29 @@
+version: 0.1.0
+service_config_path: ../service/v1-b3.yaml
+dataset: beam
+data_path: ../../data/beam/100K.parquet
+data_sha256: 5d52fc7171bc9df3c4d2fce052fd328ff3787b73e6245357bfd63b9da43ea4b9
+contract_repository_path: ../../data/aml-contract
+contract_commit: 1b8142bfe0f20f1c5218d6b554aa0012de34e504
+split: validation
+seed: 42
+dev_fraction: 0.5
+sample_limit: 40
+run_label: beam-validation-b3
+output_dir: ../../artifacts/runs
+answer:
+  name: openai/gpt-4o-mini
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.0
+  max_output_tokens: 512
+  timeout_seconds: 120.0
+  retries: 2
+judge:
+  name: openai/gpt-4o-mini
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.0
+  max_output_tokens: 4096
+  timeout_seconds: 120.0
+  retries: 2

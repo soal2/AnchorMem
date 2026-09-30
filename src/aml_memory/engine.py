@@ -16,11 +16,13 @@ from .storage import Store
 
 
 def stable_id(*parts: object) -> str:
+    # 所有消息、chunk、事实和证据窗口都使用确定性 ID，保证同一输入重启后仍能定位到同一条记录。
     data = json.dumps(parts, ensure_ascii=False, separators=(",", ":"))
     return "mem_" + hashlib.sha256(data.encode()).hexdigest()[:32]
 
 
 def normalized(vector: list[float], dimension: int) -> np.ndarray:
+    # 归一化后，两个向量的点积就是 cosine similarity；后面的向量检索只需要做矩阵乘法。
     result = np.asarray(vector, dtype=np.float32)
     if result.shape != (dimension,) or not np.all(np.isfinite(result)):
         raise ValueError("invalid embedding dimension or value")
@@ -31,21 +33,26 @@ def normalized(vector: list[float], dimension: int) -> np.ndarray:
 
 
 class MemoryEngine:
+    """记忆系统的核心：负责写入记忆、建立索引和返回可追溯的原文证据。"""
+
     def __init__(self, config: ServiceConfig, config_path: Path, llm: LLM, embedder: Embedder):
         self.config = config
         self.llm = llm
         self.embedder = embedder
         self.tokenizer = tiktoken.get_encoding(config.chunk.tokenizer)
+        # 事实提炼的规则来自外部 prompt；prompt、分块配置和 embedding 配置会参与索引指纹。
         self.prompt = resolved_path(config_path, config.facts.prompt_path).read_text(encoding="utf-8")
         self.store = Store(resolved_path(config_path, config.database_dir), index_fingerprint(config, self.prompt))
         self._locks_guard = threading.Lock()
         self._locks: dict[str, threading.Lock] = {}
 
     def _lock(self, user_id: str) -> threading.Lock:
+        # 每个 user 串行写入，避免同一用户的 seq 分配和 SQLite 事务互相覆盖。
         with self._locks_guard:
             return self._locks.setdefault(user_id, threading.Lock())
 
     def _chunks(self, request: AddRequest, first_seq: int) -> tuple[list[dict], list[dict]]:
+        """把消息切成带来源位置的重叠 token chunk，并保留 session 顺序。"""
         messages, chunks = [], []
         step = self.config.chunk.max_tokens - self.config.chunk.overlap_tokens
         for offset, message in enumerate(request.messages):
@@ -54,6 +61,7 @@ class MemoryEngine:
             messages.append({"id": message_id, "session_id": request.session_id, "seq": seq, "role": message.role, "content": message.content, "timestamp": message.timestamp})
             tokens = self.tokenizer.encode(message.content)
             for chunk_seq, start in enumerate(range(0, len(tokens), step)):
+                # 例如 max_tokens=512、overlap_tokens=64 时，窗口每次前进 448 token。
                 end = min(start + self.config.chunk.max_tokens, len(tokens))
                 content = self.tokenizer.decode(tokens[start:end])
                 chunks.append({"id": stable_id(request.user_id, request.session_id, seq, chunk_seq, content), "message_id": message_id,
@@ -64,12 +72,21 @@ class MemoryEngine:
         return messages, chunks
 
     def add(self, request: AddRequest) -> AddResponse:
+        """写入一批新消息，并同时建立原文索引、事实索引和向量索引。
+
+        写入顺序是：历史上下文 -> 新消息分块 -> LLM 提炼事实 -> embedding -> SQLite 原子事务。
+        LLM 或 embedding 任一步失败时，事务尚未提交，因此不会留下半成品记忆。
+        """
         payload_hash = hashlib.sha256(request.model_dump_json(exclude_none=False).encode()).hexdigest()
         with self._lock(request.user_id), self.store.connect(request.user_id) as db:
+            # request_id + payload_hash 实现幂等：同请求直接返回旧响应；同 ID 不同内容则报错。
             previous = self.store.existing_request(db, request.request_id, payload_hash)
             if previous is not None:
                 return AddResponse.model_validate(previous)
             first_seq = self.store.next_seq(db, request.session_id)
+
+            # 只把当前 session 最近的历史消息交给事实模型，用于解析“他/那里/之前”等指代。
+            # 历史消息不会被当成本次新增事实的来源，事实仍必须引用本次新 chunk。
             prior = self.store.prior_messages(db, request.session_id)
             used = 0
             context = []
@@ -81,11 +98,14 @@ class MemoryEngine:
                 context.append(item)
             context.reverse()
             messages, chunks = self._chunks(request, first_seq)
+
+            # Provider 将模型引用的整数索引映射为 source_chunk_ids，交给这里校验。
             raw_facts = self.llm.extract(self.prompt, context, [{"id": c["id"], "content": c["content"]} for c in chunks])
             chunk_ids = {c["id"] for c in chunks}
             facts = []
             fact_ids = set()
             for fact in raw_facts:
+                # 拒绝无内容、无来源或引用旧 chunk 的事实，避免事实索引脱离原文证据。
                 if not isinstance(fact, dict) or not isinstance(fact.get("content"), str) or not fact["content"].strip():
                     raise ValueError("invalid extracted fact")
                 sources = fact.get("source_chunk_ids")
@@ -95,12 +115,15 @@ class MemoryEngine:
                 if fact_id not in fact_ids:
                     facts.append({"id": fact_id, "content": fact["content"], "sources": sorted(set(sources))})
                     fact_ids.add(fact_id)
+
+            # 原文 chunk 和提炼 fact 共用一次 embedding 调用，但在数据库中用 owner_type 区分。
             texts = [c["content"] for c in chunks] + [f["content"] for f in facts]
             vectors = [normalized(v, self.config.embedding.dimensions) for v in self.embedder.embed(texts)]
             if len(vectors) != len(texts):
                 raise ValueError("embedding count does not match text count")
             response = AddResponse(request_id=request.request_id, user_id=request.user_id, session_id=request.session_id)
             try:
+                # 只有所有外部模型调用成功后才开始事务；下面的表必须整体提交。
                 db.execute("BEGIN IMMEDIATE")
                 db.executemany("INSERT INTO messages VALUES (:id,:session_id,:seq,:role,:content,:timestamp)", messages)
                 db.executemany("INSERT INTO chunks VALUES (:id,:message_id,:session_id,:message_seq,:chunk_seq,:token_start,:token_end,:content,:timestamp)", chunks)
@@ -108,6 +131,7 @@ class MemoryEngine:
                 db.executemany("INSERT INTO facts VALUES (?,?,?)", [(f["id"], f["content"], self.config.llm.name) for f in facts])
                 db.executemany("INSERT INTO fact_sources VALUES (?,?)", [(f["id"], s) for f in facts for s in f["sources"]])
                 db.executemany("INSERT INTO embeddings VALUES (?,?,?,?,?)", [
+                    # vectors 的前 len(chunks) 个属于原文，剩余部分属于事实。
                     ("chunk" if i < len(chunks) else "fact", (chunks + facts)[i]["id"], self.config.embedding.name,
                      self.config.embedding.dimensions, vectors[i].tobytes()) for i in range(len(vectors))
                 ])
@@ -119,6 +143,7 @@ class MemoryEngine:
             return response
 
     def _vector_rank(self, db, query_vector: np.ndarray, owner_type: str, limit: int) -> list[str]:
+        """按 cosine similarity 对 chunk 或 fact 做向量召回，只返回排名后的 ID。"""
         rows = db.execute("SELECT owner_id,vector FROM embeddings WHERE owner_type=?", (owner_type,)).fetchall()
         if not rows:
             return []
@@ -129,6 +154,7 @@ class MemoryEngine:
 
     @staticmethod
     def _bm25_rank(db, query: str, limit: int) -> list[str]:
+        """使用 SQLite FTS5 对原始 chunk 做 lexical/BM25 召回。"""
         words = re.findall(r"\w+", query, flags=re.UNICODE)
         if not words:
             return []
@@ -137,16 +163,24 @@ class MemoryEngine:
         return [row[0] for row in rows]
 
     def search(self, request: SearchRequest) -> SearchResponse:
+        """混合检索并返回原文证据，而不是直接返回 LLM 提炼的事实。
+
+        具体流程：多路召回 -> 加权 RRF 融合 -> 选 seed -> 恢复 session 邻居 ->
+        合并连续窗口 -> 按 token 预算截断。
+        """
         if request.top_k < 1:
             return SearchResponse(data=[])
         with self.store.connect(request.user_id, create=False) as db:
             if db is None:
                 return SearchResponse(data=[])
+            # 搜索使用 SQLite 读事务，保证一次 search 看到一致的索引快照。
             db.execute("BEGIN")
             try:
                 if db.execute("SELECT 1 FROM chunks LIMIT 1").fetchone() is None:
                     return SearchResponse(data=[])
                 retrieval = self.config.retrieval
+
+                # 基础 query 必须参与；如果请求带 options，则把“问题+选项”作为第二个检索视角。
                 query_specs = [(request.query, retrieval.question_weight)]
                 if request.options and retrieval.options_weight > 0:
                     query_specs.append((request.query + "\n" + "\n".join(request.options), retrieval.options_weight))
@@ -156,11 +190,13 @@ class MemoryEngine:
                 scores: dict[str, float] = defaultdict(float)
                 for (query, query_weight), vector in zip(query_specs, query_vectors):
                     routes = []
+                    # 每条 route 各自返回一个排名列表；route 的原始分数不会跨算法直接相加。
                     if retrieval.bm25_weight:
                         routes.append((list(enumerate(self._bm25_rank(db, query, retrieval.bm25_candidates), 1)), retrieval.bm25_weight))
                     if retrieval.chunk_vector_weight:
                         routes.append((list(enumerate(self._vector_rank(db, vector, "chunk", retrieval.chunk_vector_candidates), 1)), retrieval.chunk_vector_weight))
                     if retrieval.fact_vector_weight:
+                        # fact 只用于找到相关内容，随后通过 fact_sources 映射回可追溯的原文 chunk。
                         fact_ids = self._vector_rank(db, vector, "fact", retrieval.fact_vector_candidates)
                         mapped = []
                         for rank, fact_id in enumerate(fact_ids, 1):
@@ -170,10 +206,13 @@ class MemoryEngine:
                         seen = set()
                         for rank, chunk_id in ranked_ids:
                             if chunk_id not in seen:
+                                # 加权 Reciprocal Rank Fusion：排名越靠前，贡献越大；seen 防止同一路重复计分。
                                 scores[chunk_id] += query_weight * route_weight / (retrieval.rrf_k + rank)
                                 seen.add(chunk_id)
                 if not scores:
                     return SearchResponse(data=[])
+
+                # 先选少量高分 seed，再以 seed 为中心恢复上下文，避免每个召回 chunk 都单独返回。
                 seeds = sorted(scores, key=lambda key: (-scores[key], key))[:retrieval.seed_count]
                 all_rows = db.execute("SELECT * FROM chunks ORDER BY session_id,message_seq,chunk_seq").fetchall()
                 by_id = {row["id"]: row for row in all_rows}
@@ -185,12 +224,14 @@ class MemoryEngine:
                     row = by_id[seed]
                     session = sessions[row["session_id"]]
                     position = next(i for i, item in enumerate(session) if item["id"] == seed)
+                    # neighbor_count=1 时，同时取 seed 前后各一个 chunk；B0/B1 为 0，B2/B3 为 1。
                     selected[row["session_id"]].update(range(max(0, position - retrieval.neighbor_count), min(len(session), position + retrieval.neighbor_count + 1)))
                 windows = []
                 for session_id, positions in selected.items():
                     ordered = sorted(positions)
                     groups = []
                     for position in ordered:
+                        # 相邻位置合并为一个窗口；不连续的位置拆成多个证据窗口。
                         if not groups or position > groups[-1][-1] + 1:
                             groups.append([])
                         groups[-1].append(position)
@@ -202,6 +243,8 @@ class MemoryEngine:
                         created_at = datetime.fromtimestamp(timestamp / 1000, timezone.utc).isoformat().replace("+00:00", "Z") if timestamp is not None else None
                         windows.append(Evidence(id=stable_id(*[row["id"] for row in rows]), content=content, score=score, created_at=created_at))
                 windows.sort(key=lambda item: (-item.score, item.id))
+
+                # 最终返回原始 chunk 拼成的 evidence，并同时受 token 预算和 top_k/max_results 限制。
                 result, used = [], 0
                 for item in windows:
                     size = len(self.tokenizer.encode(item.content))

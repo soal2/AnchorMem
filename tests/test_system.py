@@ -3,7 +3,7 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from aml_memory.api import create_app
+from aml_memory.service import create_app
 from aml_memory.config import ServiceConfig, load_config
 from aml_memory.contracts import AddRequest, Message, SearchRequest
 from aml_memory.engine import MemoryEngine
@@ -64,8 +64,19 @@ def test_failed_model_does_not_write_and_neighbors_cross_batches(setup):
     first = AddRequest(request_id="r1", user_id="u1", session_id="s1", messages=[Message(role="user", content="Paris is in France")])
     with pytest.raises(RuntimeError):
         engine.add(first)
+    with engine.store.connect("u1") as db:
+        for table in ("requests", "messages", "chunks", "chunks_fts", "facts", "fact_sources", "embeddings"):
+            assert db.execute(f"SELECT count(*) FROM {table}").fetchone()[0] == 0
     llm.fail = False
-    engine.add(first)
+    response = engine.add(first)
+    assert response.success
+    assert engine.add(first) == response
+    with engine.store.connect("u1") as db:
+        assert db.execute("SELECT request_id FROM requests").fetchone()[0] == "r1"
+        assert db.execute("SELECT seq FROM messages").fetchone()[0] == 1
+        for table in ("requests", "messages", "chunks", "chunks_fts", "facts", "fact_sources"):
+            assert db.execute(f"SELECT count(*) FROM {table}").fetchone()[0] == 1
+        assert db.execute("SELECT count(*) FROM embeddings").fetchone()[0] == 2
     engine.add(AddRequest(request_id="r2", user_id="u1", session_id="s1", messages=[Message(role="assistant", content="It has many museums")]))
     result = engine.search(SearchRequest(query="Paris", user_id="u1", top_k=1))
     assert len(result.data) == 1
@@ -113,7 +124,7 @@ def test_evaluation_adapter_and_group_split(tmp_path):
              "haystack_sessions": [[{"role": "user", "content": "Paris is in France"}]], "haystack_session_ids": [f"s{i}"]} for i in range(4)]
     path = tmp_path / "sample.json"
     path.write_text(json.dumps(data), encoding="utf-8")
-    examples = load_examples("longmemeval", path)
+    examples = load_examples("longmemeval", path, 42)
     dev = split_examples(examples, "dev", 42, 0.5, None)
     validation = split_examples(examples, "validation", 42, 0.5, None)
     assert {item["id"] for item in dev}.isdisjoint({item["id"] for item in validation})
@@ -123,6 +134,6 @@ def test_evaluation_adapter_and_group_split(tmp_path):
 def test_public_contract_prompts_are_loaded_without_execution(tmp_path):
     source = tmp_path / "pipeline.py"
     source.write_text('OPEN_ENDED_ANSWER_TEMPLATE = "Question: {{question}}\\n{{speaker_1_memories}}"\nACCURACY_PROMPT = "Gold: {gold_answer}"\nraise RuntimeError("must not run")\n', encoding="utf-8")
-    answer, judge = _contract_prompts(source)
+    answer, judge = _contract_prompts(source, ("OPEN_ENDED_ANSWER_TEMPLATE", "ACCURACY_PROMPT"))
     assert _answer_prompt(answer, {"question": "Where?"}, "Paris") == "Question: Where?\nParis"
     assert judge == "Gold: {gold_answer}"

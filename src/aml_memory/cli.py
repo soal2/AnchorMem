@@ -3,7 +3,7 @@ import logging
 
 import uvicorn
 
-from .api import create_app
+from .service import create_app
 from .config import EvaluationConfig, ServiceConfig, load_config, required_key, resolved_path, write_snapshot
 from .providers import OpenAIEmbedder, OpenAILLM
 

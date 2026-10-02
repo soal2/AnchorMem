@@ -3,9 +3,9 @@ import json
 
 import pytest
 
-from aml_memory import evaluation
-from aml_memory.config import EvaluationConfig, load_config
-from aml_memory.contracts import Evidence, SearchResponse
+from src import evaluation
+from src.config import EvaluationConfig, load_config
+from src.contracts import Evidence, SearchResponse
 
 
 @pytest.fixture
@@ -146,7 +146,7 @@ def test_personamem_evaluation_choices_history_reuse_and_isolated_runs(persona_d
     requests, searches, model_prompts, databases = [], [], [], []
 
     class FakeLLM:
-        def __init__(self, model_config):
+        def __init__(self, model_config, telemetry=None):
             assert model_config.name != "must-not-create-judge"
 
         def complete(self, system, prompt, json_response=True):
@@ -170,7 +170,7 @@ def test_personamem_evaluation_choices_history_reuse_and_isolated_runs(persona_d
             return SearchResponse(data=[Evidence(id="e1", content="I live in Paris.", score=1.0)])
 
     monkeypatch.setattr(evaluation, "OpenAILLM", FakeLLM)
-    monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config: object())
+    monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config, telemetry=None: object())
     monkeypatch.setattr(evaluation, "MemoryEngine", FakeEngine)
     first_run = evaluation.evaluate(config, config_path)
     second_run = evaluation.evaluate(config, config_path)

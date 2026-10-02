@@ -5,7 +5,7 @@ import uvicorn
 
 from .service import create_app
 from .config import EvaluationConfig, ServiceConfig, load_config, required_key, resolved_path, write_snapshot
-from .providers import OpenAIEmbedder, OpenAILLM
+from .providers import OpenAIDecision, OpenAIEmbedder, OpenAILLM
 
 
 def main():
@@ -21,7 +21,9 @@ def main():
         logging.basicConfig(level=config.log_level.upper())
         snapshot_dir = resolved_path(config_path, config.snapshot_dir)
         write_snapshot(config, snapshot_dir / "resolved-service-config.yaml")
-        app = create_app(config, config_path, OpenAILLM(config.llm), OpenAIEmbedder(config.embedding))
+        decision_model = (OpenAIDecision(config.consolidation.decision_model, mode=config.consolidation.mode)
+                          if config.consolidation.mode != "off" else None)
+        app = create_app(config, config_path, OpenAILLM(config.llm), OpenAIEmbedder(config.embedding), decision_model=decision_model)
         uvicorn.run(app, host=config.host, port=config.port, workers=config.workers)
     else:
         from .evaluation import evaluate

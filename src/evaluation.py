@@ -9,10 +9,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from time import perf_counter
 
+import numpy as np
+
 from .config import EvaluationConfig, ServiceConfig, config_hash, load_config, resolved_path, write_snapshot
 from .contracts import AddRequest, Message, SearchRequest
 from .engine import MemoryEngine
-from .providers import LLM, OpenAIEmbedder, OpenAILLM, ProviderError
+from .providers import LLM, OpenAIEmbedder, OpenAILLM, OpenAIDecision, ProviderError
 
 
 _PERSONAMEM_ANSWER_SYSTEM = """Choose the one option best supported by the retrieved memories.
@@ -238,6 +240,38 @@ def split_examples(examples: list[dict], split: str, seed: int, fraction: float,
     return selected[:limit] if limit is not None else selected
 
 
+def select_examples(examples: list[dict], config: EvaluationConfig, config_path: Path) -> list[dict]:
+    selected = split_examples(examples, config.split, config.seed, config.dev_fraction, None)
+    if config.question_ids_path is None:
+        return selected[:config.sample_limit] if config.sample_limit is not None else selected
+    selection = json.loads(resolved_path(config_path, config.question_ids_path).read_text(encoding="utf-8"))
+    for field, expected in (("dataset", config.dataset), ("split", config.split), ("seed", config.seed),
+                            ("data_sha256", config.data_sha256)):
+        if selection.get(field) != expected:
+            raise ValueError(f"frozen selection {field} mismatch")
+    questions = selection.get("questions")
+    if not isinstance(questions, list) or not questions:
+        raise ValueError("frozen selection needs a non-empty questions array")
+    by_id = {item["id"]: item for item in selected}
+    result = []
+    seen = set()
+    for question in questions:
+        if (not isinstance(question, dict) or set(question) != {"id", "group", "category"}
+                or any(not isinstance(value, str) or not value for value in question.values())):
+            raise ValueError("frozen questions must contain string id, group and category")
+        question_id = question["id"]
+        if question_id in seen or question_id not in by_id:
+            raise ValueError(f"frozen question is duplicated or outside the split: {question_id}")
+        example = by_id[question_id]
+        if question["group"] != str(example["group"]) or question["category"] != str(example["category"]):
+            raise ValueError(f"frozen question identity mismatch: {question_id}")
+        seen.add(question_id)
+        result.append(example)
+    if config.sample_limit is not None and config.sample_limit != len(result):
+        raise ValueError("sample_limit must match the frozen question count")
+    return result
+
+
 def _personamem_choice(answer: str) -> str | None:
     def unique_object(pairs):
         result = dict(pairs)
@@ -378,6 +412,40 @@ def _append(path: Path, item: dict):
         handle.write(json.dumps(item, ensure_ascii=False) + "\n")
 
 
+def _call_summary(records: list[dict]) -> dict:
+    stages = defaultdict(list)
+    for record in records:
+        stages[record["evaluation_stage"]].append(record)
+    result = {}
+    for stage, calls in stages.items():
+        usage = [call.get("usage") for call in calls]
+        totals = {}
+        for output, keys in (("input_tokens", ("prompt_tokens", "input_tokens")),
+                             ("output_tokens", ("completion_tokens", "output_tokens")),
+                             ("total_tokens", ("total_tokens",)), ("cost_usd", ("cost_usd",)),
+                             ("provider_cost_credits", ("cost",))):
+            values = [next((item[key] for key in keys if type(item.get(key)) in {int, float}), None)
+                      if isinstance(item, dict) else None for item in usage]
+            if output == "cost_usd":
+                values = [call.get("cost_usd", value) for call, value in zip(calls, values)]
+            known = [value for value in values if type(value) in {int, float}]
+            totals[output] = sum(known) if known else None
+            totals[output + "_missing_calls"] = len(calls) - len(known)
+        result[stage] = {"calls": len(calls), "failed_calls": sum(call.get("success") is False for call in calls),
+                         "latency_seconds": sum(call.get("latency_seconds", 0.0) for call in calls),
+                         "configured_models": sorted({call["model"] for call in calls if call.get("model")}),
+                         "resolved_models": sorted({call["resolved_model"] for call in calls if call.get("resolved_model")}),
+                         "resolved_model_missing_calls": sum(not call.get("resolved_model") for call in calls), **totals}
+    return result
+
+
+def _snapshot_prompt(source: Path, destination: Path) -> dict:
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    destination.write_bytes(source.read_bytes())
+    return {"path": str(destination.relative_to(destination.parents[1])),
+            "sha256": hashlib.sha256(destination.read_bytes()).hexdigest()}
+
+
 def _failure_diagnostics(error: Exception, run_dir: Path, question_index: int) -> dict:
     details = {"error_type": type(error).__name__, "exception_type": type(error).__name__}
     cause_types = []
@@ -413,21 +481,28 @@ def evaluate(config: EvaluationConfig, config_path: Path):
     if config.dataset == "beam":
         for example in all_examples:
             _beam_rubrics(example.get("rubrics"))
-    examples = split_examples(all_examples, config.split, config.seed, config.dev_fraction, config.sample_limit)
+    examples = select_examples(all_examples, config, config_path)
     if not examples:
         raise ValueError("selected evaluation split is empty")
     run_dir = resolved_path(config_path, config.output_dir) / (datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ") + "-" + config.run_label)
     run_dir.mkdir(parents=True, exist_ok=False)
     print(f"Evaluation run: {run_dir} ({len(examples)} questions)", flush=True)
-    source_root = Path(__file__).resolve().parents[1]
+    source_root = Path(__file__).resolve().parent
     for source in sorted(source_root.rglob("*.py")):
         target = run_dir / "source" / source.relative_to(source_root)
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(source.read_bytes())
     # 每次运行独立建索引；同次运行内仍通过 request_id 复用相同历史。
-    service = service.model_copy(update={"database_dir": str(run_dir / "memory-index"),
-                                         "facts": service.facts.model_copy(update={
-                                             "prompt_path": str(resolved_path(service_path, service.facts.prompt_path))})})
+    prompt_files = {"extract": _snapshot_prompt(resolved_path(service_path, service.facts.prompt_path),
+                                               run_dir / "prompts" / "extract-facts.txt")}
+    service_updates = {"database_dir": str(run_dir / "memory-index"),
+                       "facts": service.facts.model_copy(update={"prompt_path": str(run_dir / "prompts" / "extract-facts.txt")})}
+    if service.consolidation.prompt_path is not None:
+        prompt_files["consolidation"] = _snapshot_prompt(resolved_path(service_path, service.consolidation.prompt_path),
+                                                       run_dir / "prompts" / "consolidation.txt")
+        service_updates["consolidation"] = service.consolidation.model_copy(
+            update={"prompt_path": str(run_dir / "prompts" / "consolidation.txt")})
+    service = service.model_copy(update=service_updates)
     config = config.model_copy(update={"service_config_path": str(service_path), "data_path": str(dataset_path),
                                        "contract_repository_path": str(contract_path),
                                        "output_dir": str(run_dir.parent)})
@@ -449,29 +524,67 @@ def evaluate(config: EvaluationConfig, config_path: Path):
         judge_prompt = None
         answer_prompt_sha256 = hashlib.sha256(_PERSONAMEM_ANSWER_SYSTEM.encode()).hexdigest() if config.dataset == "personamem" else ""
         judge_prompt_sha256 = hashlib.sha256(_CLBENCH_JUDGE_SYSTEM.encode()).hexdigest() if config.dataset == "clbench" else ""
+    frozen_questions = [{key: str(example[key]) for key in ("id", "group", "category")} for example in examples]
+    (run_dir / "chosen-questions.json").write_text(json.dumps(frozen_questions, ensure_ascii=False, indent=2), encoding="utf-8")
+    for name, text in (("answer", answer_prompt or (_PERSONAMEM_ANSWER_SYSTEM if config.dataset == "personamem" else None)),
+                       ("judge", judge_prompt or (_CLBENCH_JUDGE_SYSTEM if config.dataset == "clbench" else None)),
+                       ("judge-batch-format", batch_format if config.dataset == "beam" else None)):
+        if text is not None:
+            path = run_dir / "prompts" / f"{name}.txt"
+            path.write_text(text, encoding="utf-8")
+            prompt_files[name] = {"path": str(path.relative_to(run_dir)), "sha256": hashlib.sha256(text.encode()).hexdigest()}
     scoring_protocol = {"personamem": "personamem-choice-v1", "beam": "beam-rubric-v1",
                         "clbench": "clbench-semantic-v1", "locomo": "aml-binary-v1", "longmemeval": "aml-binary-v1"}[config.dataset]
     data_source = {"path": str(dataset_path), "sha256": actual_data_hash}
     if config.dataset == "personamem":
         data_source["provenance"] = json.loads((dataset_path / "source.json").read_text(encoding="utf-8"))
     manifest = {"label": "local-development", "run_label": config.run_label, "created_at": datetime.now(timezone.utc).isoformat(),
-                "code_commit": _commit(Path(__file__).resolve().parents[2]), "contract_commit": config.contract_commit,
+                "code_commit": _commit(Path(__file__).resolve().parents[1]), "contract_commit": config.contract_commit,
                 "code_snapshot_sha256": sha256(run_dir / "source"), "code_snapshot_path": "source",
                 "service_config_hash": config_hash(service), "eval_config_hash": config_hash(config), "data_sha256": actual_data_hash,
+                "service_config_file_sha256": hashlib.sha256(service_path.read_bytes()).hexdigest(),
+                "eval_config_file_sha256": hashlib.sha256(config_path.read_bytes()).hexdigest(),
                 "answer_prompt_sha256": answer_prompt_sha256,
                 "judge_prompt_sha256": judge_prompt_sha256,
                 "models": {"extract": service.llm.name, "embedding": service.embedding.name, "answer": config.answer.name, "judge": config.judge.name},
                 "dataset": config.dataset, "split": config.split, "question_count": len(examples),
-                "scoring_protocol": scoring_protocol, "data_source": data_source}
+                "scoring_protocol": scoring_protocol, "data_source": data_source,
+                "chosen_questions_path": "chosen-questions.json", "chosen_questions_sha256": sha256(run_dir / "chosen-questions.json"),
+                "prompt_files": prompt_files, "temporal": service.facts.temporal,
+                "consolidation_mode": service.consolidation.mode,
+                "decision_model": service.consolidation.decision_model.model_dump() if service.consolidation.decision_model else None,
+                "evaluation_scope": "configured local split; not a complete benchmark or official AML score"}
+    if config.question_ids_path is not None:
+        selection_path = resolved_path(config_path, config.question_ids_path)
+        (run_dir / "selection.json").write_bytes(selection_path.read_bytes())
+        manifest["selection_sha256"] = sha256(run_dir / "selection.json")
+        manifest["isolation"] = json.loads(selection_path.read_text()).get("isolation")
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
-    for filename in ("predictions.jsonl", "retrieval.jsonl", "failures.jsonl"):
+    for filename in ("predictions.jsonl", "retrieval.jsonl", "failures.jsonl", "model-calls.jsonl", "ingestion.jsonl"):
         (run_dir / filename).touch()
-    engine = MemoryEngine(service, service_path, OpenAILLM(service.llm), OpenAIEmbedder(service.embedding))
-    answer_llm = OpenAILLM(config.answer)
-    judge_llm = OpenAILLM(config.judge) if config.dataset != "personamem" else None
+    identity = {}
+    stage = "initialization"
+    call_records = []
+
+    def record_call(event):
+        record = {**identity, **event, "evaluation_stage": stage}
+        call_records.append(record)
+        _append(run_dir / "model-calls.jsonl", record)
+
+    decision = (OpenAIDecision(service.consolidation.decision_model, mode=service.consolidation.mode, telemetry=record_call)
+                if service.consolidation.mode != "off" else None)
+    engine_args = {"decision_model": decision} if decision is not None else {}
+    engine = MemoryEngine(service, service_path, OpenAILLM(service.llm, telemetry=record_call),
+                          OpenAIEmbedder(service.embedding, telemetry=record_call), **engine_args)
+    answer_llm = OpenAILLM(config.answer, telemetry=record_call)
+    judge_llm = OpenAILLM(config.judge, telemetry=record_call) if config.dataset != "personamem" else None
     counts = defaultdict(lambda: [0, 0])
     failures = defaultdict(int)
     beam_scores = defaultdict(list)
+    clbench_scores = []
+    ingested_requests = set()
+    ingestion_groups = defaultdict(lambda: {"seconds": 0.0, "successful_requests": 0, "failed_requests": 0})
+    question_timings = []
     for index, example in enumerate(examples, start=1):
         question_started = perf_counter()
         timings = {}
@@ -488,8 +601,23 @@ def evaluate(config: EvaluationConfig, config_path: Path):
                                          "ingestion_request_id": f"{user_id}:{session['id']}:{offset}"}
                     messages = [Message.model_validate(turn) for turn in session["messages"][offset:offset + 20]]
                     if messages:
-                        engine.add(AddRequest(request_id=f"{user_id}:{session['id']}:{offset}", user_id=user_id,
-                                              session_id=f"{user_id}:{session['id']}", messages=messages))
+                        request = AddRequest(request_id=f"{user_id}:{session['id']}:{offset}", user_id=user_id,
+                                             session_id=f"{user_id}:{session['id']}", messages=messages)
+                        new_request = request.request_id not in ingested_requests
+                        add_started = perf_counter()
+                        add_success = False
+                        try:
+                            engine.add(request)
+                            add_success = True
+                            ingested_requests.add(request.request_id)
+                        finally:
+                            if new_request:
+                                seconds = perf_counter() - add_started
+                                group_ingestion = ingestion_groups[example["group"]]
+                                group_ingestion["seconds"] += seconds
+                                group_ingestion["successful_requests" if add_success else "failed_requests"] += 1
+                                _append(run_dir / "ingestion.jsonl", {**identity, **ingestion_context,
+                                                                       "seconds": seconds, "success": add_success})
             timings["ingestion_seconds"] = perf_counter() - question_started
             stage = "search"
             stage_started = perf_counter()
@@ -554,6 +682,7 @@ def evaluate(config: EvaluationConfig, config_path: Path):
             if config.dataset == "clbench":
                 prediction["rubric_score"] = rubric_score
                 prediction["rubric_satisfied"] = rubric_satisfied
+                clbench_scores.append(rubric_score)
             if config.dataset == "beam":
                 prediction["beam_score"] = beam_score
                 prediction["rubric_scores"] = beam_details
@@ -565,6 +694,8 @@ def evaluate(config: EvaluationConfig, config_path: Path):
         except Exception as error:
             category = f"{stage}_failure"
             failures[category] += 1
+            if stage in {"search", "answer", "judge"}:
+                timings[f"{stage}_seconds"] = perf_counter() - stage_started
             timings["elapsed_seconds"] = perf_counter() - question_started
             failure = {**identity, "category": category, "question_category": example["category"],
                        "error": str(error), **timings, **_failure_diagnostics(error, run_dir, index)}
@@ -572,18 +703,32 @@ def evaluate(config: EvaluationConfig, config_path: Path):
                 failure.update(ingestion_context)
             _append(run_dir / "failures.jsonl", failure)
             print(f"[{index}/{len(examples)}] {example['id']} {category} elapsed={timings['elapsed_seconds']:.2f}s: {error}", flush=True)
+        question_timings.append(timings)
     total = sum(value[0] for value in counts.values())
     correct = sum(value[1] for value in counts.values())
     metrics = {"label": "local-development", "dataset": config.dataset, "scoring_protocol": scoring_protocol,
                "requested": len(examples), "evaluated": total, "failed": sum(failures.values()), "correct": correct,
                "completion_rate": total / len(examples), "accuracy_denominator": "evaluated",
+               "correct_per_requested": correct / len(examples),
                "accuracy": correct / total if total else None, "categories": {key: {"count": n, "correct": c, "accuracy": c / n} for key, (n, c) in counts.items()}, "failures": dict(failures),
-               "elapsed_seconds": perf_counter() - run_started}
+               "elapsed_seconds": perf_counter() - run_started, "ingestion_groups": dict(ingestion_groups),
+               "actual_ingestion_seconds": sum(item["seconds"] for item in ingestion_groups.values()),
+               "model_usage": _call_summary(call_records),
+               "provider_stage_usage": _call_summary([{**record, "evaluation_stage": record["stage"]} for record in call_records])}
+    metrics["latency"] = {}
+    for phase in ("search", "answer", "judge"):
+        values = [item[f"{phase}_seconds"] for item in question_timings if f"{phase}_seconds" in item]
+        metrics["latency"][phase] = {"count": len(values), "p50_seconds": float(np.percentile(values, 50)) if values else None,
+                                     "p95_seconds": float(np.percentile(values, 95)) if values else None}
     if config.dataset == "beam":
         values = [score for scores in beam_scores.values() for score in scores]
         metrics["mean_rubric_score"] = sum(values) / len(values) if values else None
         for category, scores in beam_scores.items():
             metrics["categories"][category]["mean_rubric_score"] = sum(scores) / len(scores)
+    if config.dataset == "clbench":
+        metrics["mean_rubric_satisfied_fraction"] = sum(clbench_scores) / len(clbench_scores) if clbench_scores else None
+    metrics["primary_metric"] = "mean_rubric_score" if config.dataset == "beam" else "accuracy"
+    metrics["primary_value"] = metrics[metrics["primary_metric"]]
     (run_dir / "metrics.json").write_text(json.dumps(metrics, indent=2), encoding="utf-8")
     print(f"Evaluation complete: {run_dir} evaluated={total} correct={correct} failures={sum(failures.values())} elapsed={metrics['elapsed_seconds']:.2f}s", flush=True)
     return run_dir

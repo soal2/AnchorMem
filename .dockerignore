@@ -1,0 +1,16 @@
+**
+!Dockerfile
+!pyproject.toml
+!uv.lock
+!README.md
+!src/
+!src/**
+!configs/
+!configs/service/
+!configs/service/**
+!prompts/
+!prompts/**
+**/__pycache__/
+**/*.py[cod]
+**/.env*
+**/*.sqlite*

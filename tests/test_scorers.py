@@ -2,7 +2,7 @@ import json
 
 import pytest
 
-from aml_memory import evaluation
+from src import evaluation
 
 
 class FakeJudge:

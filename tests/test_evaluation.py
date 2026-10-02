@@ -3,10 +3,10 @@ from pathlib import Path
 
 import pytest
 
-from aml_memory import evaluation
-from aml_memory.config import EvaluationConfig, load_config
-from aml_memory.contracts import Evidence, SearchResponse
-from aml_memory.providers import ProviderError
+from src import evaluation
+from src.config import EvaluationConfig, load_config
+from src.contracts import Evidence, SearchResponse
+from src.providers import ProviderError
 
 
 def test_locomo_preserves_source_date_and_explicit_timestamp(tmp_path):
@@ -55,10 +55,17 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
     config = config.model_copy(update={"dataset": "longmemeval", "data_path": str(data_path),
                                       "data_sha256": evaluation.sha256(data_path),
                                       "contract_repository_path": str(contract_path), "output_dir": str(tmp_path / "runs")})
-    monkeypatch.setattr(evaluation, "_commit", lambda path: config.contract_commit)
+    commit_paths = []
+    actual_commit = evaluation._commit
+
+    def commit(path):
+        commit_paths.append(path)
+        return config.contract_commit if path == contract_path else actual_commit(path)
+
+    monkeypatch.setattr(evaluation, "_commit", commit)
 
     class FakeLLM:
-        def __init__(self, config):
+        def __init__(self, config, telemetry=None):
             pass
 
         def complete(self, system, prompt, json_response=True):
@@ -77,13 +84,18 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
             return SearchResponse(data=[Evidence(id="e1", content="Paris", score=1.0)])
 
     monkeypatch.setattr(evaluation, "OpenAILLM", FakeLLM)
-    monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config: object())
+    monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config, telemetry=None: object())
     monkeypatch.setattr(evaluation, "MemoryEngine", FakeEngine)
     run_dir = evaluation.evaluate(config, config_path)
     manifest = json.loads((run_dir / "manifest.json").read_text())
     snapshot = run_dir / manifest["code_snapshot_path"]
     assert manifest["code_snapshot_sha256"] == evaluation.sha256(snapshot)
-    source_root = Path(evaluation.__file__).resolve().parents[1]
+    project_root = Path(__file__).resolve().parents[1]
+    assert project_root in commit_paths
+    assert manifest["code_commit"] == actual_commit(project_root)
+    source_root = project_root / "src"
+    assert (snapshot / "evaluation.py").is_file()
+    assert not (snapshot / "tests").exists()
     for source in source_root.rglob("*.py"):
         assert (snapshot / source.relative_to(source_root)).read_bytes() == source.read_bytes()
     metrics = json.loads((run_dir / "metrics.json").read_text())
@@ -153,8 +165,8 @@ def test_evaluation_preserves_provider_diagnostics_and_ingestion_offset(tmp_path
                 raise ProviderError("invalid extraction JSON", {"phase": "extraction", "model": "fake-extract",
                     "exception_type": "JSONDecodeError", "finish_reason": "length"}, raw_response) from cause
 
-    monkeypatch.setattr(evaluation, "OpenAILLM", lambda config: object())
-    monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config: object())
+    monkeypatch.setattr(evaluation, "OpenAILLM", lambda config, telemetry=None: object())
+    monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config, telemetry=None: object())
     monkeypatch.setattr(evaluation, "MemoryEngine", FakeEngine)
     run_dir = evaluation.evaluate(config, config_path)
     failure = json.loads((run_dir / "failures.jsonl").read_text())

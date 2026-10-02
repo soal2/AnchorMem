@@ -3,9 +3,9 @@ import json
 
 import pytest
 
-from aml_memory import evaluation
-from aml_memory.config import EvaluationConfig, load_config
-from aml_memory.contracts import Evidence, SearchResponse
+from src import evaluation
+from src.config import EvaluationConfig, load_config
+from src.contracts import Evidence, SearchResponse
 
 
 def _run_rubric_evaluation(tmp_path, monkeypatch, dataset, answer, rubrics, verdict=None):
@@ -50,7 +50,7 @@ def _run_rubric_evaluation(tmp_path, monkeypatch, dataset, answer, rubrics, verd
     judge_calls = []
 
     class FakeLLM:
-        def __init__(self, model_config):
+        def __init__(self, model_config, telemetry=None):
             self.name = model_config.name
 
         def complete(self, system, prompt, json_response=True):
@@ -76,7 +76,7 @@ def _run_rubric_evaluation(tmp_path, monkeypatch, dataset, answer, rubrics, verd
             return SearchResponse(data=[Evidence(id="e1", content="Retrieved context only.", score=1.0)])
 
     monkeypatch.setattr(evaluation, "OpenAILLM", FakeLLM)
-    monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config: object())
+    monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config, telemetry=None: object())
     monkeypatch.setattr(evaluation, "MemoryEngine", FakeEngine)
     run_dir = evaluation.evaluate(config, config_path)
     return run_dir, example, answer_calls, judge_calls

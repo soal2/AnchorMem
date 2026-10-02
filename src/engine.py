@@ -11,7 +11,7 @@ import tiktoken
 
 from .config import ServiceConfig, index_fingerprint, resolved_path
 from .contracts import AddRequest, AddResponse, Evidence, SearchRequest, SearchResponse
-from .providers import Embedder, LLM
+from .providers import Embedder, LLM, OpenAIDecision
 from .storage import Store
 
 
@@ -35,14 +35,26 @@ def normalized(vector: list[float], dimension: int) -> np.ndarray:
 class MemoryEngine:
     """记忆系统的核心：负责写入记忆、建立索引和返回可追溯的原文证据。"""
 
-    def __init__(self, config: ServiceConfig, config_path: Path, llm: LLM, embedder: Embedder):
+    def __init__(self, config: ServiceConfig, config_path: Path, llm: LLM, embedder: Embedder, decision_model=None):
         self.config = config
         self.llm = llm
         self.embedder = embedder
+        self.decision_model = decision_model
         self.tokenizer = tiktoken.get_encoding(config.chunk.tokenizer)
         # 事实提炼的规则来自外部 prompt；prompt、分块配置和 embedding 配置会参与索引指纹。
         self.prompt = resolved_path(config_path, config.facts.prompt_path).read_text(encoding="utf-8")
-        self.store = Store(resolved_path(config_path, config.database_dir), index_fingerprint(config, self.prompt))
+        self.consolidation_prompt = ""
+        decision_rules = ""
+        temporal_rules = hashlib.sha256(Path(__file__).with_name("temporal.py").read_bytes()).hexdigest() if config.facts.temporal else ""
+        if config.consolidation.mode != "off":
+            if decision_model is None:
+                raise ValueError("enabled consolidation requires a decision model")
+            self.consolidation_prompt = resolved_path(config_path, config.consolidation.prompt_path).read_text(encoding="utf-8")
+            decision_rules = hashlib.sha256(Path(__file__).with_name("consolidation.py").read_bytes()
+                                            + Path(__file__).with_name("providers.py").read_bytes()
+                                            + OpenAIDecision.INSTRUCTIONS.encode()).hexdigest()
+        self.store = Store(resolved_path(config_path, config.database_dir),
+                           index_fingerprint(config, self.prompt, self.consolidation_prompt, decision_rules, temporal_rules))
         self._locks_guard = threading.Lock()
         self._locks: dict[str, threading.Lock] = {}
 
@@ -95,13 +107,23 @@ class MemoryEngine:
                 if used + size > self.config.facts.prior_context_tokens:
                     break
                 used += size
-                context.append(item)
+                context.append(item if self.config.facts.temporal else {key: item[key] for key in ("role", "content")})
             context.reverse()
             messages, chunks = self._chunks(request, first_seq)
 
             # Provider 将模型引用的整数索引映射为 source_chunk_ids，交给这里校验。
-            raw_facts = self.llm.extract(self.prompt, context, [{"id": c["id"], "content": c["content"]} for c in chunks])
+            if self.config.facts.temporal:
+                from .temporal import validate_temporal
+
+                roles = {message["id"]: message["role"] for message in messages}
+                inputs = [{"id": c["id"], "content": c["content"], "role": roles[c["message_id"]],
+                           "timestamp": c["timestamp"], "source_order": i} for i, c in enumerate(chunks)]
+                raw_facts = self.llm.extract(self.prompt, context, inputs, temporal=True)
+            else:
+                raw_facts = self.llm.extract(self.prompt, context, [{"id": c["id"], "content": c["content"]} for c in chunks])
             chunk_ids = {c["id"] for c in chunks}
+            chunk_order = {c["id"]: i for i, c in enumerate(chunks)}
+            chunk_timestamps = {c["id"]: c["timestamp"] for c in chunks}
             facts = []
             fact_ids = set()
             for fact in raw_facts:
@@ -111,16 +133,40 @@ class MemoryEngine:
                 sources = fact.get("source_chunk_ids")
                 if not isinstance(sources, list) or not sources or any(not isinstance(s, str) or s not in chunk_ids for s in sources):
                     raise ValueError("fact must cite at least one new chunk")
-                fact_id = stable_id(request.request_id, fact["content"], sorted(set(sources)))
+                temporal = validate_temporal(fact) if self.config.facts.temporal else {
+                    "occurred_start": None, "occurred_end": None, "occurred_precision": None, "mentioned_at": None}
+                if self.config.facts.temporal and all(chunk_timestamps[s] is not None for s in sources):
+                    temporal["mentioned_at"] = datetime.fromtimestamp(max(chunk_timestamps[s] for s in sources) / 1000,
+                                                                     timezone.utc).isoformat().replace("+00:00", "Z")
+                identity_parts = [request.request_id, fact["content"], sorted(set(sources))]
+                if self.config.facts.temporal:
+                    identity_parts.append(temporal)
+                fact_id = stable_id(*identity_parts)
                 if fact_id not in fact_ids:
-                    facts.append({"id": fact_id, "content": fact["content"], "sources": sorted(set(sources))})
+                    facts.append({"id": fact_id, "content": fact["content"], "sources": sorted(set(sources)), **temporal})
                     fact_ids.add(fact_id)
+            if self.config.facts.temporal:
+                facts.sort(key=lambda fact: min(chunk_order[source] for source in fact["sources"]))
 
             # 原文 chunk 和提炼 fact 共用一次 embedding 调用，但在数据库中用 owner_type 区分。
             texts = [c["content"] for c in chunks] + [f["content"] for f in facts]
             vectors = [normalized(v, self.config.embedding.dimensions) for v in self.embedder.embed(texts)]
             if len(vectors) != len(texts):
                 raise ValueError("embedding count does not match text count")
+            observations, decisions, observation_vectors = [], [], []
+            if self.config.consolidation.mode != "off" and facts:
+                from .consolidation import consolidate
+
+                existing = self.store.current_observations(db)
+                for observation in existing:
+                    observation["vector"] = np.frombuffer(observation["vector"], dtype=np.float32)
+                observations, decisions = consolidate(facts, vectors[len(chunks):], existing, self.decision_model,
+                                                     self.llm, self.consolidation_prompt, request.request_id)
+                observation_vectors = [normalized(v, self.config.embedding.dimensions)
+                                       for v in self.embedder.embed([item["content"] for item in observations])]
+                if len(observation_vectors) != len(observations):
+                    raise ValueError("observation embedding count mismatch")
+            recorded_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             response = AddResponse(request_id=request.request_id, user_id=request.user_id, session_id=request.session_id)
             try:
                 # 只有所有外部模型调用成功后才开始事务；下面的表必须整体提交。
@@ -128,13 +174,21 @@ class MemoryEngine:
                 db.executemany("INSERT INTO messages VALUES (:id,:session_id,:seq,:role,:content,:timestamp)", messages)
                 db.executemany("INSERT INTO chunks VALUES (:id,:message_id,:session_id,:message_seq,:chunk_seq,:token_start,:token_end,:content,:timestamp)", chunks)
                 db.executemany("INSERT INTO chunks_fts(content,chunk_id) VALUES (?,?)", [(c["content"], c["id"]) for c in chunks])
-                db.executemany("INSERT INTO facts VALUES (?,?,?)", [(f["id"], f["content"], self.config.llm.name) for f in facts])
+                db.executemany("INSERT INTO facts VALUES (?,?,?,?,?,?,?,?)",
+                    [(f["id"], f["content"], self.config.llm.name, f["occurred_start"], f["occurred_end"],
+                      f["occurred_precision"], f["mentioned_at"], recorded_at) for f in facts])
                 db.executemany("INSERT INTO fact_sources VALUES (?,?)", [(f["id"], s) for f in facts for s in f["sources"]])
                 db.executemany("INSERT INTO embeddings VALUES (?,?,?,?,?)", [
                     # vectors 的前 len(chunks) 个属于原文，剩余部分属于事实。
                     ("chunk" if i < len(chunks) else "fact", (chunks + facts)[i]["id"], self.config.embedding.name,
                      self.config.embedding.dimensions, vectors[i].tobytes()) for i in range(len(vectors))
                 ])
+                self.store.save_observations(db, observations, decisions, request.request_id, recorded_at)
+                db.executemany("""INSERT INTO embeddings VALUES ('observation',?,?,?,?)
+                    ON CONFLICT(owner_type,owner_id) DO UPDATE SET
+                    model=excluded.model,dimension=excluded.dimension,vector=excluded.vector""",
+                    [(observation["id"], self.config.embedding.name, self.config.embedding.dimensions, vector.tobytes())
+                     for observation, vector in zip(observations, observation_vectors)])
                 db.execute("INSERT INTO requests VALUES (?,?,?)", (request.request_id, payload_hash, response.model_dump_json()))
                 db.commit()
             except Exception:
@@ -202,6 +256,16 @@ class MemoryEngine:
                         for rank, fact_id in enumerate(fact_ids, 1):
                             mapped.extend((rank, row[0]) for row in db.execute("SELECT chunk_id FROM fact_sources WHERE fact_id=? ORDER BY chunk_id", (fact_id,)))
                         routes.append((mapped, retrieval.fact_vector_weight))
+                    if self.config.consolidation.mode != "off":
+                        observation_ids = self._vector_rank(db, vector, "observation", 50)
+                        mapped = []
+                        for rank, observation_id in enumerate(observation_ids, 1):
+                            rows = db.execute("""SELECT DISTINCT fs.chunk_id FROM observations o
+                                JOIN observation_sources os ON os.observation_id=o.id AND os.revision=o.current_revision
+                                JOIN fact_sources fs ON fs.fact_id=os.fact_id
+                                WHERE o.id=? ORDER BY fs.chunk_id""", (observation_id,))
+                            mapped.extend((rank, row[0]) for row in rows)
+                        routes.append((mapped, 1.0))
                     for ranked_ids, route_weight in routes:
                         seen = set()
                         for rank, chunk_id in ranked_ids:

@@ -1,0 +1,20 @@
+Rewrite each observation job as one concise, source-grounded memory of the same entity and facet.
+
+Each job supplies an id, previous_text, supporting source_facts, pending_facts, and relation decisions.
+Use all of that job's evidence. Do not mix jobs or introduce information from other facets.
+Facts retain their own occurred_start, occurred_end, occurred_precision, and mentioned_at.
+mentioned_at is source time; occurred intervals describe when an event happened. The order of
+facts in the request is ingestion order, not evidence that the last fact is the latest state.
+Do not treat late-arriving old information as a new state. Preserve stated coarse dates and
+time zones. Missing time stays unknown. An event's end does not establish a fact's expiry.
+
+For compatible supplements, preserve the previous statement and every supported new detail,
+including conditions, negations, quantities, and identities. For state changes, describe the
+historical transition and stated dates without erasing the earlier state. For explicit
+corrections, identify the corrected claim and replacement. For unresolved conflicts, keep
+both incompatible claims with their source dates or attribution; do not choose a winner.
+Never compute a new count, invent a reason, infer unstated chronology, or turn uncertainty
+into a confirmed fact. Relation decisions do not authorize unsupported details.
+
+Return exactly one nonempty text for every supplied job id using the response schema.
+Copy ids exactly. Include no additional ids and no final answer to a user's question.

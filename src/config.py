@@ -2,6 +2,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+from typing import Literal
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, model_validator
@@ -46,6 +47,19 @@ class ChunkConfig(Settings):
 class FactConfig(Settings):
     prompt_path: str
     prior_context_tokens: int = Field(ge=0)
+    temporal: bool = False
+
+
+class ConsolidationConfig(Settings):
+    mode: Literal["off", "llm", "jev"] = "off"
+    decision_model: ModelConfig | None = None
+    prompt_path: str | None = None
+
+    @model_validator(mode="after")
+    def check_enabled(self):
+        if self.mode != "off" and (self.decision_model is None or not self.prompt_path):
+            raise ValueError("consolidation requires a decision model and prompt")
+        return self
 
 
 class RetrievalConfig(Settings):
@@ -87,13 +101,22 @@ class ServiceConfig(Settings):
     chunk: ChunkConfig
     facts: FactConfig
     retrieval: RetrievalConfig
+    consolidation: ConsolidationConfig = Field(default_factory=ConsolidationConfig)
 
     @model_validator(mode="after")
     def check_competition(self):
         if self.workers != 1:
             raise ValueError("SQLite per-user write locks require workers=1")
-        if self.competition_mode and (self.llm.name != "gpt-4o-mini" or self.embedding.name != "text-embedding-v4"):
-            raise ValueError("competition_mode requires gpt-4o-mini and text-embedding-v4")
+        if self.competition_mode:
+            allowed_models = {"gpt-4o-mini", "openai/gpt-4o-mini"}
+            if self.llm.name not in allowed_models:
+                raise ValueError("competition_mode requires gpt-4o-mini for fact extraction")
+            if self.consolidation.mode != "off" and self.consolidation.decision_model.name not in allowed_models:
+                raise ValueError("competition_mode requires gpt-4o-mini for consolidation decisions")
+        if self.consolidation.mode != "off" and not self.facts.temporal:
+            raise ValueError("consolidation requires temporal facts")
+        if self.competition_mode and self.consolidation.mode == "jev":
+            raise ValueError("Jevsight is a local experiment; set competition_mode=false")
         return self
 
 
@@ -113,6 +136,7 @@ class EvaluationConfig(Settings):
     output_dir: str
     answer: ModelConfig
     judge: ModelConfig
+    question_ids_path: str | None = None
 
 
 def load_config(path: str | Path, kind: type[Settings]):
@@ -134,8 +158,13 @@ def config_hash(config: Settings) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
-def index_fingerprint(config: ServiceConfig, prompt: str) -> str:
-    data = {"embedding": [config.embedding.name, config.embedding.dimensions], "chunk": config.chunk.model_dump(), "facts": [config.llm.name, prompt]}
+def index_fingerprint(config: ServiceConfig, prompt: str, consolidation_prompt: str = "", decision_rules: str = "", temporal_rules: str = "") -> str:
+    data = {"schema": 2, "embedding": [config.embedding.name, config.embedding.dimensions],
+            "chunk": config.chunk.model_dump(),
+            "facts": [config.llm.model_dump(), prompt, config.facts.temporal, config.facts.prior_context_tokens, temporal_rules],
+            "consolidation": {"mode": config.consolidation.mode,
+                              "model": config.consolidation.decision_model.model_dump() if config.consolidation.decision_model else None,
+                              "prompt": consolidation_prompt, "rules": decision_rules}}
     return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 

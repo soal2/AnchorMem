@@ -1,0 +1,30 @@
+version: 0.1.0
+service_config_path: ../../../service/jevsight-a.yaml
+dataset: clbench
+data_path: ../../../../data/clbench/CL-bench.jsonl
+data_sha256: 39ec65bfb7774521f7626119152bf5cb964beaac24ef675e09e3c5b4a2786457
+contract_repository_path: ../../../../data/aml-contract
+contract_commit: 1b8142bfe0f20f1c5218d6b554aa0012de34e504
+split: validation
+seed: 42
+dev_fraction: 0.5
+sample_limit: 10
+run_label: jevsight-validation-a-clbench
+output_dir: ../../../../artifacts/jevsight/runs
+answer:
+  name: openai/gpt-4o-mini
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.0
+  max_output_tokens: 4096
+  timeout_seconds: 120.0
+  retries: 2
+judge:
+  name: openai/gpt-4o-mini
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.0
+  max_output_tokens: 4096
+  timeout_seconds: 120.0
+  retries: 2
+question_ids_path: ../../../../artifacts/jevsight/selections/validation-clbench.json

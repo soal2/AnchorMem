@@ -45,6 +45,25 @@ BEAM 每题通过配置中的 Judge 一次性对全部 rubric 做语义评分，
 
 所有数据集的指标都报告 `requested`、`evaluated`、`failed`、`completion_rate`；`accuracy` 的分母是 `evaluated`，失败题必须结合完成比例查看。manifest 记录 `scoring_protocol` 和 `data_source`。CLBench 继续使用配置中的 Judge 结合原始对话判定 rubric，全部满足才标记 `CORRECT`，并保存逐条布尔结果及满足比例。
 
+## Jevsight 实验
+
+`Jevsight` 分支在 B3 上增加事实时间字段、增量归纳和 Jev 关系判断。A/B/C/D 的服务配置分别为 `configs/service/jevsight-{a,b,c,d}.yaml`：A 保留 B3 输入和检索；B 增加时间；C 使用生成模型判断归纳关系；D 只把 C 的关系判断换成 `typesafe/jev-1.13`。C/D 的改写仍用 `openai/gpt-4o-mini`。Jev 通过 OpenRouter Decisions API 调用，沿用 `OPENAI_API_KEY`。
+
+归纳覆盖全部已提取事实，每条最多匹配五个候选，同批结果也参与匹配。重复只补来源，新增或不确定独立保留，补充、状态变化、纠错和冲突按事项合并改写；每批生成最多八条归纳。同一次 Add 对同一事项只生成一个版本，失败不提交任何新记忆。归纳向量增加一条最多 50 个候选、权重 1.0 的召回路径，沿来源事实回到原文，继续使用 20 个种子、邻居恢复和 16,000 token 证据预算。
+
+时间保留来源的精度和时区信息，未知值为空；系统写入时间仅用于审计。版本、来源和决策记录保存在独立的新 schema 索引中。模型、提示词、时间与判断规则参与指纹；旧索引不迁移，必须从原文重建。
+
+```bash
+uv run --env-file .env python scripts/jevsight_experiments.py --prepare
+uv run --env-file .env python scripts/jevsight_experiments.py --run dev --workers 2
+uv run --env-file .env python scripts/jevsight_experiments.py --run validation --workers 2
+uv run python scripts/jevsight_experiments.py --report
+```
+
+固定清单与源码对照位于 `artifacts/jevsight/selections/` 和 `artifacts/jevsight/baseline/`。已完成的五个 benchmark 开发样本 A/B/C/D 对照见 `artifacts/jevsight/available-results.md`、`available-results.json`；它们来自同一历史源码快照，当前源码尚未完成整套重新验证。原计划每组运行 44 道开发题和 90 道固定验证题，目前只有 LoCoMo 的 A/B 固定验证完整，因此不能据此判定最终效果。每次运行保留源码、配置、提示词、逐题预测和评分、逐调用成本与耗时；费用缺失值为空，供应商返回的 credits 与 USD 分开记录。
+
+这是本地固定样本实验，不能称为五套完整或官方 Full 评测。LongMemEval 的源会话在开发与验证划分间可能交叉；BEAM 采用本地平均 rubric 分数；CLBench 沿用已有语义任务完成评分协议，其 Answer 可见 rubric，Judge 读取原始历史。
+
 ## Docker
 
 ```bash
@@ -61,3 +80,18 @@ docker run -p 8000:8000 -v "$PWD/data:/app/data" -v "$PWD/artifacts:/app/artifac
 ```bash
 uv run pytest -q
 ```
+
+## 官方服务部署
+
+官方开源文本赛道使用 `configs/service/official-c.yaml`：Jevsight C 的时间字段和增量归纳流程，事实提炼、关系判断及改写均使用 `openai/gpt-4o-mini`，向量使用 `openai/text-embedding-3-small`（1024 维），不调用 Jev 模型。`competition_mode` 校验生成模型；向量模型在申请时如实披露。
+
+Docker 镜像通过 `uv.lock` 固定 Python 依赖，以非 root 用户运行，并预置 tokenizer 缓存。源码、提示词和服务配置进入镜像，密钥与评测数据保存在镜像外。Compose 默认使用独立的 `memory-data`、`memory-artifacts` 持久卷并仅绑定 `127.0.0.1:8000`，公网由 HTTPS 反向代理转发。Add/Search 的代理超时设为 1800 秒，与平台的单次请求上限一致。
+
+```bash
+docker compose --env-file /opt/anchormem/.env \
+  --project-name anchormem \
+  -f /opt/anchormem/source/compose.yaml \
+  -f /opt/anchormem/compose.override.yaml up -d --build
+```
+
+密钥文件 `/opt/anchormem/.env` 仅供服务端读取。服务端源码目录为 `/opt/anchormem/source`，后续构建、测试和调试在该目录执行。运行官方评测前须先提交自托管接口申请，由 AML 审核签发 Eval Key，再运行 Smoke 和 Full；本地接口检查不构成官方评测结果。

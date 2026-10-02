@@ -1,0 +1,19 @@
+services:
+  memory:
+    build: .
+    image: anchormem:20261002
+    restart: unless-stopped
+    init: true
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      AML_CONFIG_PATH: ${AML_CONFIG_PATH:-configs/service/official-c.yaml}
+      AML_MEMORY_KEY: ${AML_MEMORY_KEY:?Set AML_MEMORY_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:?Set OPENAI_API_KEY}
+    volumes:
+      - memory-data:/app/data
+      - memory-artifacts:/app/artifacts
+
+volumes:
+  memory-data:
+  memory-artifacts:

@@ -1,0 +1,427 @@
+{
+  "scope": "Independent synthetic manually assigned two-level structure; no production search changes or five benchmark reruns.",
+  "rows": [
+    {
+      "leaf_directories": 10,
+      "parent_summaries": 8,
+      "queries": 6,
+      "jev_calls_per_query": 1,
+      "routing_seconds_median": 0.4649304579997988,
+      "without_jev_seconds_median": 0.002885750000132248,
+      "with_jev_seconds_median": 0.4654134994998458,
+      "full_branch_coverage_cases": 5,
+      "credits_per_query_median": 9.7503e-05,
+      "previous_flat_degree_routing_seconds_median": 0.3504364580003312,
+      "current_degree_routing_seconds": 1.5950181250009337
+    },
+    {
+      "leaf_directories": 100,
+      "parent_summaries": 8,
+      "queries": 6,
+      "jev_calls_per_query": 1,
+      "routing_seconds_median": 0.558512833500572,
+      "without_jev_seconds_median": 0.020833458000197425,
+      "with_jev_seconds_median": 0.5627973749997182,
+      "full_branch_coverage_cases": 5,
+      "credits_per_query_median": 9.7503e-05,
+      "previous_flat_degree_routing_seconds_median": 3.8283303329990304,
+      "current_degree_routing_seconds": 0.6120999170016148
+    },
+    {
+      "leaf_directories": 300,
+      "parent_summaries": 8,
+      "queries": 6,
+      "jev_calls_per_query": 1,
+      "routing_seconds_median": 0.454287791499155,
+      "without_jev_seconds_median": 0.06699166650105326,
+      "with_jev_seconds_median": 0.46770468750037253,
+      "full_branch_coverage_cases": 5,
+      "credits_per_query_median": 9.7503e-05,
+      "previous_flat_degree_routing_seconds_median": 11.222537707999436,
+      "current_degree_routing_seconds": 0.45977200000197627
+    }
+  ],
+  "known_credits": 0.001756062,
+  "missing_cost_calls": 0,
+  "failure_cases": [
+    {
+      "size": 10,
+      "case": "trip",
+      "query": "What health precautions do I need for my planned trip?",
+      "expected_parents": [
+        "health",
+        "travel"
+      ],
+      "selected_parents": [
+        "health"
+      ],
+      "selected_leaves": 1,
+      "gold_leaf_coverage": 0.5,
+      "parent_precision": 1.0,
+      "global_vectors": 1000,
+      "scoped_vectors": 100,
+      "routing_seconds": 0.46411308299866505,
+      "without_jev_seconds": 0.0029846249999536667,
+      "with_jev_seconds": 0.46449495799970464,
+      "local_seconds": {
+        "global": [
+          0.004159792002610629,
+          0.0029846249999536667,
+          0.0027570000020205043,
+          0.004091333001269959,
+          0.0037516669981414452,
+          0.0026411660001031123,
+          0.0024158750020433217
+        ],
+        "scoped": [
+          0.0006340410000120755,
+          0.00038137500087032095,
+          0.00043770800039055757,
+          0.00029312499827938154,
+          0.0005190839983697515,
+          0.0003235000003769528,
+          0.0003818750010395888
+        ]
+      },
+      "decisions": [
+        {
+          "id": "education",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0,
+            "relevant": 0,
+            "irrelevant": 1
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "work",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "health",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.98,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "travel",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.36,
+            "relevant": 0.44,
+            "irrelevant": 0.2
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "finance",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "family",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "relevant": 0.01,
+            "irrelevant": 0.95
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "hobbies",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0,
+            "relevant": 0,
+            "irrelevant": 1
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "housing",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0,
+            "relevant": 0,
+            "irrelevant": 1
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "logical_calls": 1,
+      "known_credits": 9.7524e-05,
+      "missing_cost_calls": 0
+    },
+    {
+      "size": 100,
+      "case": "trip",
+      "query": "What health precautions do I need for my planned trip?",
+      "expected_parents": [
+        "health",
+        "travel"
+      ],
+      "selected_parents": [
+        "health"
+      ],
+      "selected_leaves": 13,
+      "gold_leaf_coverage": 0.5,
+      "parent_precision": 1.0,
+      "global_vectors": 10000,
+      "scoped_vectors": 1300,
+      "routing_seconds": 1.0817997080011992,
+      "without_jev_seconds": 0.02253629199913121,
+      "with_jev_seconds": 1.0848117909990833,
+      "local_seconds": {
+        "global": [
+          0.02275533299689414,
+          0.022675917000015033,
+          0.02035858299859683,
+          0.021788834001199575,
+          0.02253629199913121,
+          0.02286854200065136,
+          0.020474165998166427
+        ],
+        "scoped": [
+          0.003600749998440733,
+          0.0032990409999911208,
+          0.003060416001972044,
+          0.0030120829978841357,
+          0.002876624999771593,
+          0.002330041999812238,
+          0.002885665999201592
+        ]
+      },
+      "decisions": [
+        {
+          "id": "education",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 1,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "work",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "health",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "travel",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.38,
+            "irrelevant": 0.26,
+            "uncertain": 0.36
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "finance",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "family",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.94,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "hobbies",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 1,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "housing",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 1,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "logical_calls": 1,
+      "known_credits": 9.7524e-05,
+      "missing_cost_calls": 0
+    },
+    {
+      "size": 300,
+      "case": "trip",
+      "query": "What health precautions do I need for my planned trip?",
+      "expected_parents": [
+        "health",
+        "travel"
+      ],
+      "selected_parents": [
+        "health"
+      ],
+      "selected_leaves": 38,
+      "gold_leaf_coverage": 0.5,
+      "parent_precision": 1.0,
+      "global_vectors": 30000,
+      "scoped_vectors": 3800,
+      "routing_seconds": 0.4528369580002618,
+      "without_jev_seconds": 0.06487700000070618,
+      "with_jev_seconds": 0.46279375000085565,
+      "local_seconds": {
+        "global": [
+          0.06477900000027148,
+          0.06487700000070618,
+          0.06740066700149328,
+          0.06581058299707365,
+          0.06605587500234833,
+          0.06461954100086587,
+          0.06409120799798984
+        ],
+        "scoped": [
+          0.01038762499956647,
+          0.00995679200059385,
+          0.010362958997575333,
+          0.009331458000815473,
+          0.009203582998452475,
+          0.010798041999805719,
+          0.009493082998233149
+        ]
+      },
+      "decisions": [
+        {
+          "id": "education",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "work",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "health",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.97,
+            "irrelevant": 0,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "travel",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.21,
+            "relevant": 0.44,
+            "uncertain": 0.35
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "finance",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "family",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.95,
+            "relevant": 0.01,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "hobbies",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "housing",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "logical_calls": 1,
+      "known_credits": 9.7524e-05,
+      "missing_cost_calls": 0
+    }
+  ],
+  "resolved_models": [
+    "typesafe/jev-1.13-20260917"
+  ],
+  "prompt_cache_hit_calls": 0
+}

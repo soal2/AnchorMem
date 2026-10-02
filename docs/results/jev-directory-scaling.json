@@ -1,0 +1,66 @@
+{
+  "rows": [
+    {
+      "directories": 10,
+      "vectors": 1000,
+      "calls_per_query": 1,
+      "jev_seconds_median": 0.3504364580003312,
+      "jev_seconds_min": 0.31998475000000326,
+      "jev_seconds_max": 0.7825242500002787,
+      "api_call_seconds_median": 0.349671624997427,
+      "global_seconds_median": 0.0029113340024196077,
+      "local_scoped_seconds_median": 0.0013369160005822778,
+      "with_jev_seconds_median": 0.3516921660011576,
+      "credits_per_query_median": 0.000127722,
+      "missing_cost_calls": 0
+    },
+    {
+      "directories": 50,
+      "vectors": 5000,
+      "calls_per_query": 5,
+      "jev_seconds_median": 1.8081712079983845,
+      "jev_seconds_min": 1.7480299999988347,
+      "jev_seconds_max": 1.843487832997198,
+      "api_call_seconds_median": 0.35944224999911967,
+      "global_seconds_median": 0.010667917002137983,
+      "local_scoped_seconds_median": 0.0009516249992884696,
+      "with_jev_seconds_median": 1.8090623329990194,
+      "credits_per_query_median": 0.0006416340000000001,
+      "missing_cost_calls": 0
+    },
+    {
+      "directories": 100,
+      "vectors": 10000,
+      "calls_per_query": 10,
+      "jev_seconds_median": 3.8283303329990304,
+      "jev_seconds_min": 3.740490875003161,
+      "jev_seconds_max": 4.938106459001574,
+      "api_call_seconds_median": 0.3596065000001545,
+      "global_seconds_median": 0.020289707998017548,
+      "local_scoped_seconds_median": 0.0008243749980465509,
+      "with_jev_seconds_median": 3.829154707997077,
+      "credits_per_query_median": 0.0012840240000000001,
+      "missing_cost_calls": 0
+    },
+    {
+      "directories": 300,
+      "vectors": 30000,
+      "calls_per_query": 30,
+      "jev_seconds_median": 11.222537707999436,
+      "jev_seconds_min": 11.12851637499989,
+      "jev_seconds_max": 11.460119250001298,
+      "api_call_seconds_median": 0.35134137450040726,
+      "global_seconds_median": 0.06112599999687518,
+      "local_scoped_seconds_median": 0.0009029579996422399,
+      "with_jev_seconds_median": 11.22345654200035,
+      "credits_per_query_median": 0.003861984,
+      "missing_cost_calls": 0
+    }
+  ],
+  "total_known_credits": 0.017746092,
+  "missing_cost_calls": 0,
+  "resolved_models": [
+    "typesafe/jev-1.13-20260917"
+  ],
+  "prompt_cache_hit_calls": 0
+}

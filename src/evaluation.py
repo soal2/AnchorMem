@@ -3,6 +3,7 @@ import hashlib
 import json
 import random
 import re
+import shutil
 import subprocess
 from collections import defaultdict
 from datetime import datetime, timezone
@@ -465,7 +466,7 @@ def _failure_diagnostics(error: Exception, run_dir: Path, question_index: int) -
     return details
 
 
-def evaluate(config: EvaluationConfig, config_path: Path):
+def evaluate(config: EvaluationConfig, config_path: Path, *, reuse_index_from: Path | None = None):
     run_started = perf_counter()
     service_path = resolved_path(config_path, config.service_config_path)
     service, service_path = load_config(service_path, ServiceConfig)
@@ -559,6 +560,22 @@ def evaluate(config: EvaluationConfig, config_path: Path):
         (run_dir / "selection.json").write_bytes(selection_path.read_bytes())
         manifest["selection_sha256"] = sha256(run_dir / "selection.json")
         manifest["isolation"] = json.loads(selection_path.read_text()).get("isolation")
+    manifest["index_mode"] = "fresh"
+    if reuse_index_from is not None:
+        reuse_index_from = Path(reuse_index_from).resolve()
+        baseline = json.loads((reuse_index_from / "manifest.json").read_text())
+        if any(baseline.get(key) != manifest[key] for key in
+               ("dataset", "data_sha256", "chosen_questions_sha256", "scoring_protocol",
+                "answer_prompt_sha256", "judge_prompt_sha256", "models")):
+            raise ValueError("frozen index run does not match the selected dataset, questions, models or scoring")
+        source_index = reuse_index_from / "memory-index"
+        source_hash = sha256(source_index)
+        shutil.copytree(source_index, run_dir / "memory-index")
+        if sha256(run_dir / "memory-index") != source_hash:
+            raise ValueError("frozen index copy does not match its source")
+        manifest.update(index_mode="frozen-reuse", index_source_run=str(reuse_index_from),
+                        index_source_sha256=source_hash,
+                        ingestion_note="Add validates existing request payloads; skipped writes are not a speedup.")
     (run_dir / "manifest.json").write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     for filename in ("predictions.jsonl", "retrieval.jsonl", "failures.jsonl", "model-calls.jsonl", "ingestion.jsonl"):
         (run_dir / filename).touch()
@@ -607,7 +624,12 @@ def evaluate(config: EvaluationConfig, config_path: Path):
                     if messages:
                         request = AddRequest(request_id=f"{user_id}:{session['id']}:{offset}", user_id=user_id,
                                              session_id=f"{user_id}:{session['id']}", messages=messages)
-                        new_request = request.request_id not in ingested_requests
+                        if reuse_index_from is not None:
+                            with engine.store.connect(user_id, create=False) as db:
+                                if db is None or db.execute("SELECT 1 FROM requests WHERE request_id=?",
+                                                            (request.request_id,)).fetchone() is None:
+                                    raise ValueError("frozen index is missing an ingestion request")
+                        new_request = reuse_index_from is None and request.request_id not in ingested_requests
                         add_started = perf_counter()
                         add_success = False
                         try:
@@ -710,7 +732,7 @@ def evaluate(config: EvaluationConfig, config_path: Path):
         question_timings.append(timings)
     total = sum(value[0] for value in counts.values())
     correct = sum(value[1] for value in counts.values())
-    metrics = {"label": "local-development", "dataset": config.dataset, "scoring_protocol": scoring_protocol,
+    metrics = {"label": "local-development", "index_mode": manifest["index_mode"], "dataset": config.dataset, "scoring_protocol": scoring_protocol,
                "requested": len(examples), "evaluated": total, "failed": sum(failures.values()), "correct": correct,
                "completion_rate": total / len(examples), "accuracy_denominator": "evaluated",
                "correct_per_requested": correct / len(examples),

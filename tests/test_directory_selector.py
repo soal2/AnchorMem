@@ -160,3 +160,12 @@ def test_invalid_candidates_fail_before_call(transport, invalid):
 def test_pins_decision_model():
     with pytest.raises(ValueError, match="pins"):
         directory_selector.JevDirectorySelector(config().model_copy(update={"name": "openai/gpt-4o-mini"}))
+
+
+def test_topic_classification_uses_distinct_instructions_and_telemetry(transport):
+    requests = transport(lambda body: httpx.Response(200, json=envelope()))
+    events = []
+    selector = directory_selector.JevDirectorySelector(config(), events.append)
+    selector.classify("I studied medicine and now work as a doctor.", candidates())
+    assert "Classify" in requests[0][1]["questions"]["d0"]["instructions"]
+    assert events[0]["stage"] == "directory_classification_jev"

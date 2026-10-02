@@ -1,6 +1,6 @@
 version: vikingjev-1
 competition_mode: false
-database_dir: ../../data/vikingjev-clbench-smoke
+database_dir: ../../data/vikingjev-topics-clbench-smoke
 snapshot_dir: ../../artifacts/vikingjev/benchmark-smoke/clbench-service
 host: 0.0.0.0
 port: 8000
@@ -32,6 +32,7 @@ facts:
   prior_context_tokens: 1024
   temporal: true
 retrieval:
+  directory_routing_threshold: 300000
   bm25_candidates: 50
   chunk_vector_candidates: 50
   fact_vector_candidates: 50

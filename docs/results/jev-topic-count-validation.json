@@ -1,0 +1,5895 @@
+{
+  "vectors": 81920,
+  "directories": 4096,
+  "rows": [
+    {
+      "topics": 4,
+      "calls": 1,
+      "global_seconds_median": 0.18064533299912,
+      "routed_seconds_median": 0.7695239589993434,
+      "credits_median": 7.3626e-05,
+      "single": {
+        "case": "single",
+        "topics": 4,
+        "selected_parents": [
+          "t00"
+        ],
+        "scoped_vectors": 20480,
+        "gold_leaf_coverage": 1.0,
+        "routing_seconds": 1.053504666997469,
+        "global_seconds": 0.1890529999982391,
+        "scoped_seconds": 0.05361270800131024,
+        "routed_seconds": 1.1071173749987793,
+        "timings": {
+          "global": [
+            0.22738820900121937,
+            0.17258104100255878,
+            0.1739917909981159,
+            0.1890529999982391,
+            0.17792324999754783,
+            0.20094916700327303,
+            0.19203220800045528
+          ],
+          "scoped": [
+            0.05431529199995566,
+            0.05191104099867516,
+            0.05361270800131024,
+            0.05326620800042292,
+            0.0529402089996438,
+            0.055029375002050074,
+            0.05381462500008638
+          ]
+        },
+        "decisions": [
+          {
+            "id": "t00",
+            "choice": "relevant",
+            "probabilities": {
+              "relevant": 0.95,
+              "irrelevant": 0,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t01",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "irrelevant": 0.99,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t02",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "irrelevant": 0.99,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t03",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "irrelevant": 0.99,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          }
+        ],
+        "calls": 1,
+        "known_credits": 7.3542e-05,
+        "missing_cost_calls": 0
+      },
+      "complete_coverage": 3
+    },
+    {
+      "topics": 8,
+      "calls": 1,
+      "global_seconds_median": 0.17384479199972702,
+      "routed_seconds_median": 0.5950719589964137,
+      "credits_median": 0.000113778,
+      "single": {
+        "case": "single",
+        "topics": 8,
+        "selected_parents": [
+          "t00"
+        ],
+        "scoped_vectors": 10240,
+        "gold_leaf_coverage": 1.0,
+        "routing_seconds": 0.48264179100078763,
+        "global_seconds": 0.17501383300259477,
+        "scoped_seconds": 0.0275916659993527,
+        "routed_seconds": 0.5102334570001403,
+        "timings": {
+          "global": [
+            0.19165624999732245,
+            0.1723444590024883,
+            0.18117004099985934,
+            0.17122370799916098,
+            0.17380045800018706,
+            0.17501383300259477,
+            0.17719741700057057
+          ],
+          "scoped": [
+            0.028359667001495836,
+            0.0275916659993527,
+            0.042123666000406956,
+            0.026507874998060288,
+            0.026746125000499887,
+            0.026322707999497652,
+            0.027732665999792516
+          ]
+        },
+        "decisions": [
+          {
+            "id": "t00",
+            "choice": "relevant",
+            "probabilities": {
+              "irrelevant": 0,
+              "relevant": 0.97,
+              "uncertain": 0.03
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t01",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "relevant": 0,
+              "uncertain": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t02",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "relevant": 0,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t03",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "relevant": 0,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t04",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "relevant": 0,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t05",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "relevant": 0,
+              "uncertain": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t06",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "relevant": 0,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t07",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "relevant": 0,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          }
+        ],
+        "calls": 1,
+        "known_credits": 0.000113694,
+        "missing_cost_calls": 0
+      },
+      "complete_coverage": 3
+    },
+    {
+      "topics": 16,
+      "calls": 2,
+      "global_seconds_median": 0.17848712500199326,
+      "routed_seconds_median": 1.140163832998951,
+      "credits_median": 0.000206052,
+      "single": {
+        "case": "single",
+        "topics": 16,
+        "selected_parents": [
+          "t01"
+        ],
+        "scoped_vectors": 5120,
+        "gold_leaf_coverage": 1.0,
+        "routing_seconds": 1.126432000000932,
+        "global_seconds": 0.1833946670012665,
+        "scoped_seconds": 0.013731832998018945,
+        "routed_seconds": 1.140163832998951,
+        "timings": {
+          "global": [
+            0.1753288750005595,
+            0.18280158299967297,
+            0.2089670000023034,
+            0.18432187500002328,
+            0.1833946670012665,
+            0.18666412500169827,
+            0.18122362500071176
+          ],
+          "scoped": [
+            0.013921666999522131,
+            0.013650332999532111,
+            0.013974624998809304,
+            0.013409375002083834,
+            0.013731832998018945,
+            0.013554583998484304,
+            0.014058208998903865
+          ]
+        },
+        "decisions": [
+          {
+            "id": "t00",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "uncertain": 0.01,
+              "relevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t01",
+            "choice": "relevant",
+            "probabilities": {
+              "irrelevant": 0,
+              "uncertain": 0.04,
+              "relevant": 0.96
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t02",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "uncertain": 0,
+              "relevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t03",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "uncertain": 0,
+              "relevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t04",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "uncertain": 0.01,
+              "relevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t05",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "uncertain": 0.01,
+              "relevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t06",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "uncertain": 0.01,
+              "relevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t07",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "uncertain": 0.01,
+              "relevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t08",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "uncertain": 0,
+              "relevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t09",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "uncertain": 0,
+              "relevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t10",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.97,
+              "relevant": 0,
+              "uncertain": 0.03
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t11",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.9299999999999999,
+              "relevant": 0.01,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t12",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "relevant": 0.01,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t13",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.94,
+              "relevant": 0.01,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t14",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.97,
+              "relevant": 0,
+              "uncertain": 0.03
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t15",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.98,
+              "relevant": 0,
+              "uncertain": 0.02
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          }
+        ],
+        "calls": 2,
+        "known_credits": 0.000205884,
+        "missing_cost_calls": 0
+      },
+      "complete_coverage": 3
+    },
+    {
+      "topics": 32,
+      "calls": 4,
+      "global_seconds_median": 0.17680662499697064,
+      "routed_seconds_median": 2.254066416997375,
+      "credits_median": 0.0003906,
+      "single": {
+        "case": "single",
+        "topics": 32,
+        "selected_parents": [
+          "t02"
+        ],
+        "scoped_vectors": 2560,
+        "gold_leaf_coverage": 1.0,
+        "routing_seconds": 2.7085682500000985,
+        "global_seconds": 0.17399674999978743,
+        "scoped_seconds": 0.006364125001709908,
+        "routed_seconds": 2.7149323750018084,
+        "timings": {
+          "global": [
+            0.17044800000076066,
+            0.17436029100281303,
+            0.17376525000145193,
+            0.17105895799977588,
+            0.17766612499690382,
+            0.17744287499954225,
+            0.17399674999978743
+          ],
+          "scoped": [
+            0.006382833002135158,
+            0.006108166999183595,
+            0.006364125001709908,
+            0.006262167000386398,
+            0.006736999999702675,
+            0.0061560419999295846,
+            0.006723499998770421
+          ]
+        },
+        "decisions": [
+          {
+            "id": "t00",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "relevant": 0,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t01",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "relevant": 0,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t02",
+            "choice": "relevant",
+            "probabilities": {
+              "irrelevant": 0,
+              "relevant": 0.98,
+              "uncertain": 0.02
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t03",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "relevant": 0,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t04",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "relevant": 0,
+              "uncertain": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t05",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "relevant": 0,
+              "uncertain": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t06",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "relevant": 0,
+              "uncertain": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t07",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "relevant": 0,
+              "uncertain": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t08",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 1,
+              "relevant": 0,
+              "uncertain": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t09",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.99,
+              "relevant": 0,
+              "uncertain": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t10",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.03,
+              "relevant": 0,
+              "irrelevant": 0.97
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t11",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.04,
+              "relevant": 0,
+              "irrelevant": 0.96
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t12",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.04,
+              "relevant": 0,
+              "irrelevant": 0.96
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t13",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.03,
+              "relevant": 0,
+              "irrelevant": 0.97
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t14",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.03,
+              "relevant": 0,
+              "irrelevant": 0.97
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t15",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.04,
+              "relevant": 0,
+              "irrelevant": 0.96
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t16",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.03,
+              "relevant": 0,
+              "irrelevant": 0.97
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t17",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.04,
+              "relevant": 0,
+              "irrelevant": 0.96
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t18",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.03,
+              "relevant": 0,
+              "irrelevant": 0.97
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t19",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.03,
+              "relevant": 0,
+              "irrelevant": 0.97
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t20",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.96,
+              "relevant": 0,
+              "uncertain": 0.04
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t21",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.9400000000000001,
+              "relevant": 0,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t22",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.95,
+              "relevant": 0,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t23",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.96,
+              "relevant": 0,
+              "uncertain": 0.04
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t24",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.96,
+              "relevant": 0,
+              "uncertain": 0.04
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t25",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.91,
+              "relevant": 0.01,
+              "uncertain": 0.08
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t26",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.9299999999999999,
+              "relevant": 0.01,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t27",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.95,
+              "relevant": 0,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t28",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.95,
+              "relevant": 0,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t29",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.95,
+              "relevant": 0,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t30",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "irrelevant": 0.95,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t31",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "irrelevant": 0.96,
+              "uncertain": 0.04
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          }
+        ],
+        "calls": 4,
+        "known_credits": 0.00039026400000000003,
+        "missing_cost_calls": 0
+      },
+      "complete_coverage": 3
+    },
+    {
+      "topics": 64,
+      "calls": 7,
+      "global_seconds_median": 0.17808483300177613,
+      "routed_seconds_median": 3.5995609579986194,
+      "credits_median": 0.000747726,
+      "single": {
+        "case": "single",
+        "topics": 64,
+        "selected_parents": [
+          "t05"
+        ],
+        "scoped_vectors": 1280,
+        "gold_leaf_coverage": 1.0,
+        "routing_seconds": 3.5961154579999857,
+        "global_seconds": 0.18336012500003562,
+        "scoped_seconds": 0.0034454999986337498,
+        "routed_seconds": 3.5995609579986194,
+        "timings": {
+          "global": [
+            0.17758883300120942,
+            0.16862420799952815,
+            0.1860326249989157,
+            0.18392037500234437,
+            0.18336012500003562,
+            0.18484095800158684,
+            0.17401954099841532
+          ],
+          "scoped": [
+            0.003684750001411885,
+            0.002933374998974614,
+            0.0035041659975831863,
+            0.0033358750006300397,
+            0.0034454999986337498,
+            0.0029908750002505258,
+            0.0038238750021264423
+          ]
+        },
+        "decisions": [
+          {
+            "id": "t00",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "uncertain": 0.02,
+              "irrelevant": 0.98
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t01",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.01,
+              "relevant": 0,
+              "irrelevant": 0.99
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t02",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "uncertain": 0.01,
+              "irrelevant": 0.99
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t03",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.01,
+              "relevant": 0,
+              "irrelevant": 0.99
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t04",
+            "choice": "irrelevant",
+            "probabilities": {
+              "uncertain": 0.01,
+              "relevant": 0,
+              "irrelevant": 0.99
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t05",
+            "choice": "relevant",
+            "probabilities": {
+              "uncertain": 0.08,
+              "relevant": 0.92,
+              "irrelevant": 0
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t06",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "uncertain": 0.01,
+              "irrelevant": 0.99
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t07",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "uncertain": 0.01,
+              "irrelevant": 0.99
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t08",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "uncertain": 0.01,
+              "irrelevant": 0.99
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t09",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0,
+              "uncertain": 0.01,
+              "irrelevant": 0.99
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t10",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "relevant": 0.02,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t11",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "relevant": 0.02,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t12",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.94,
+              "relevant": 0.01,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t13",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.92,
+              "relevant": 0.03,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t14",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.94,
+              "relevant": 0.02,
+              "uncertain": 0.04
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t15",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.92,
+              "relevant": 0.02,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t16",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "relevant": 0.02,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t17",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.9299999999999999,
+              "relevant": 0.02,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t18",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.95,
+              "relevant": 0.01,
+              "uncertain": 0.04
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t19",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.95,
+              "relevant": 0.01,
+              "uncertain": 0.04
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t20",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.94,
+              "uncertain": 0.04,
+              "relevant": 0.02
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t21",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.92,
+              "uncertain": 0.07,
+              "relevant": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t22",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.92,
+              "uncertain": 0.06,
+              "relevant": 0.02
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t23",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.9,
+              "uncertain": 0.07,
+              "relevant": 0.03
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t24",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.94,
+              "uncertain": 0.05,
+              "relevant": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t25",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.91,
+              "uncertain": 0.07,
+              "relevant": 0.02
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t26",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "uncertain": 0.06,
+              "relevant": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t27",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "uncertain": 0.06,
+              "relevant": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t28",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "uncertain": 0.05,
+              "relevant": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t29",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "uncertain": 0.06,
+              "relevant": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t30",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.02,
+              "uncertain": 0.06,
+              "irrelevant": 0.92
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t31",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.03,
+              "uncertain": 0.07,
+              "irrelevant": 0.9
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t32",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.03,
+              "uncertain": 0.07,
+              "irrelevant": 0.9
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t33",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.03,
+              "uncertain": 0.07,
+              "irrelevant": 0.9
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t34",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.05,
+              "uncertain": 0.05,
+              "irrelevant": 0.9
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t35",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.06,
+              "uncertain": 0.07,
+              "irrelevant": 0.87
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t36",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.03,
+              "uncertain": 0.06,
+              "irrelevant": 0.91
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t37",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.01,
+              "uncertain": 0.04,
+              "irrelevant": 0.95
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t38",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.02,
+              "uncertain": 0.04,
+              "irrelevant": 0.94
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t39",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.01,
+              "uncertain": 0.06,
+              "irrelevant": 0.93
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t40",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.94,
+              "relevant": 0.02,
+              "uncertain": 0.04
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t41",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.91,
+              "relevant": 0.02,
+              "uncertain": 0.07
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t42",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.92,
+              "relevant": 0.02,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t43",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.91,
+              "relevant": 0.03,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t44",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.91,
+              "relevant": 0.03,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t45",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.9,
+              "relevant": 0.02,
+              "uncertain": 0.08
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t46",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "relevant": 0.01,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t47",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.94,
+              "relevant": 0.01,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t48",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.94,
+              "relevant": 0.01,
+              "uncertain": 0.05
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t49",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "relevant": 0.01,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t50",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.86,
+              "relevant": 0.05,
+              "uncertain": 0.09
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t51",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.9,
+              "uncertain": 0.07,
+              "relevant": 0.03
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t52",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.89,
+              "uncertain": 0.08,
+              "relevant": 0.03
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t53",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.9,
+              "uncertain": 0.08,
+              "relevant": 0.02
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t54",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.9,
+              "uncertain": 0.07,
+              "relevant": 0.03
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t55",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.89,
+              "uncertain": 0.08,
+              "relevant": 0.03
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t56",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.91,
+              "uncertain": 0.07,
+              "relevant": 0.02
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t57",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.91,
+              "uncertain": 0.07,
+              "relevant": 0.02
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t58",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.93,
+              "uncertain": 0.05,
+              "relevant": 0.02
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t59",
+            "choice": "irrelevant",
+            "probabilities": {
+              "irrelevant": 0.92,
+              "uncertain": 0.07,
+              "relevant": 0.01
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t60",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.01,
+              "irrelevant": 0.93,
+              "uncertain": 0.06
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t61",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.02,
+              "irrelevant": 0.9,
+              "uncertain": 0.08
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t62",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.02,
+              "irrelevant": 0.9,
+              "uncertain": 0.08
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          },
+          {
+            "id": "t63",
+            "choice": "irrelevant",
+            "probabilities": {
+              "relevant": 0.01,
+              "irrelevant": 0.92,
+              "uncertain": 0.07
+            },
+            "model": "typesafe/jev-1.13-20260917"
+          }
+        ],
+        "calls": 7,
+        "known_credits": 0.000747138,
+        "missing_cost_calls": 0
+      },
+      "complete_coverage": 3
+    }
+  ],
+  "cases": [
+    {
+      "case": "single",
+      "topics": 4,
+      "selected_parents": [
+        "t00"
+      ],
+      "scoped_vectors": 20480,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 1.053504666997469,
+      "global_seconds": 0.1890529999982391,
+      "scoped_seconds": 0.05361270800131024,
+      "routed_seconds": 1.1071173749987793,
+      "timings": {
+        "global": [
+          0.22738820900121937,
+          0.17258104100255878,
+          0.1739917909981159,
+          0.1890529999982391,
+          0.17792324999754783,
+          0.20094916700327303,
+          0.19203220800045528
+        ],
+        "scoped": [
+          0.05431529199995566,
+          0.05191104099867516,
+          0.05361270800131024,
+          0.05326620800042292,
+          0.0529402089996438,
+          0.055029375002050074,
+          0.05381462500008638
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.95,
+            "irrelevant": 0,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 1,
+      "known_credits": 7.3542e-05,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "single",
+      "topics": 8,
+      "selected_parents": [
+        "t00"
+      ],
+      "scoped_vectors": 10240,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 0.48264179100078763,
+      "global_seconds": 0.17501383300259477,
+      "scoped_seconds": 0.0275916659993527,
+      "routed_seconds": 0.5102334570001403,
+      "timings": {
+        "global": [
+          0.19165624999732245,
+          0.1723444590024883,
+          0.18117004099985934,
+          0.17122370799916098,
+          0.17380045800018706,
+          0.17501383300259477,
+          0.17719741700057057
+        ],
+        "scoped": [
+          0.028359667001495836,
+          0.0275916659993527,
+          0.042123666000406956,
+          0.026507874998060288,
+          0.026746125000499887,
+          0.026322707999497652,
+          0.027732665999792516
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0,
+            "relevant": 0.97,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 1,
+      "known_credits": 0.000113694,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "single",
+      "topics": 16,
+      "selected_parents": [
+        "t01"
+      ],
+      "scoped_vectors": 5120,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 1.126432000000932,
+      "global_seconds": 0.1833946670012665,
+      "scoped_seconds": 0.013731832998018945,
+      "routed_seconds": 1.140163832998951,
+      "timings": {
+        "global": [
+          0.1753288750005595,
+          0.18280158299967297,
+          0.2089670000023034,
+          0.18432187500002328,
+          0.1833946670012665,
+          0.18666412500169827,
+          0.18122362500071176
+        ],
+        "scoped": [
+          0.013921666999522131,
+          0.013650332999532111,
+          0.013974624998809304,
+          0.013409375002083834,
+          0.013731832998018945,
+          0.013554583998484304,
+          0.014058208998903865
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "uncertain": 0.01,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0,
+            "uncertain": 0.04,
+            "relevant": 0.96
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "uncertain": 0,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "uncertain": 0,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "uncertain": 0.01,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "uncertain": 0.01,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "uncertain": 0.01,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "uncertain": 0.01,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t08",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "uncertain": 0,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t09",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "uncertain": 0,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t10",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.97,
+            "relevant": 0,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t11",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9299999999999999,
+            "relevant": 0.01,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t12",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "relevant": 0.01,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t13",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.94,
+            "relevant": 0.01,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t14",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.97,
+            "relevant": 0,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t15",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "relevant": 0,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 2,
+      "known_credits": 0.000205884,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "single",
+      "topics": 32,
+      "selected_parents": [
+        "t02"
+      ],
+      "scoped_vectors": 2560,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 2.7085682500000985,
+      "global_seconds": 0.17399674999978743,
+      "scoped_seconds": 0.006364125001709908,
+      "routed_seconds": 2.7149323750018084,
+      "timings": {
+        "global": [
+          0.17044800000076066,
+          0.17436029100281303,
+          0.17376525000145193,
+          0.17105895799977588,
+          0.17766612499690382,
+          0.17744287499954225,
+          0.17399674999978743
+        ],
+        "scoped": [
+          0.006382833002135158,
+          0.006108166999183595,
+          0.006364125001709908,
+          0.006262167000386398,
+          0.006736999999702675,
+          0.0061560419999295846,
+          0.006723499998770421
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0,
+            "relevant": 0.98,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t08",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t09",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t10",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0,
+            "irrelevant": 0.97
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t11",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "relevant": 0,
+            "irrelevant": 0.96
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t12",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "relevant": 0,
+            "irrelevant": 0.96
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t13",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0,
+            "irrelevant": 0.97
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t14",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0,
+            "irrelevant": 0.97
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t15",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "relevant": 0,
+            "irrelevant": 0.96
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t16",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0,
+            "irrelevant": 0.97
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t17",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "relevant": 0,
+            "irrelevant": 0.96
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t18",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0,
+            "irrelevant": 0.97
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t19",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0,
+            "irrelevant": 0.97
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t20",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.96,
+            "relevant": 0,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t21",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9400000000000001,
+            "relevant": 0,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t22",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.95,
+            "relevant": 0,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t23",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.96,
+            "relevant": 0,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t24",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.96,
+            "relevant": 0,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t25",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.91,
+            "relevant": 0.01,
+            "uncertain": 0.08
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t26",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9299999999999999,
+            "relevant": 0.01,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t27",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.95,
+            "relevant": 0,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t28",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.95,
+            "relevant": 0,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t29",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.95,
+            "relevant": 0,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t30",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.95,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t31",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.96,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 4,
+      "known_credits": 0.00039026400000000003,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "single",
+      "topics": 64,
+      "selected_parents": [
+        "t05"
+      ],
+      "scoped_vectors": 1280,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 3.5961154579999857,
+      "global_seconds": 0.18336012500003562,
+      "scoped_seconds": 0.0034454999986337498,
+      "routed_seconds": 3.5995609579986194,
+      "timings": {
+        "global": [
+          0.17758883300120942,
+          0.16862420799952815,
+          0.1860326249989157,
+          0.18392037500234437,
+          0.18336012500003562,
+          0.18484095800158684,
+          0.17401954099841532
+        ],
+        "scoped": [
+          0.003684750001411885,
+          0.002933374998974614,
+          0.0035041659975831863,
+          0.0033358750006300397,
+          0.0034454999986337498,
+          0.0029908750002505258,
+          0.0038238750021264423
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.02,
+            "irrelevant": 0.98
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.08,
+            "relevant": 0.92,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t08",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t09",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t10",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "relevant": 0.02,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t11",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "relevant": 0.02,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t12",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.94,
+            "relevant": 0.01,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t13",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.92,
+            "relevant": 0.03,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t14",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.94,
+            "relevant": 0.02,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t15",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.92,
+            "relevant": 0.02,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t16",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "relevant": 0.02,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t17",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9299999999999999,
+            "relevant": 0.02,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t18",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.95,
+            "relevant": 0.01,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t19",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.95,
+            "relevant": 0.01,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t20",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.94,
+            "uncertain": 0.04,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t21",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.92,
+            "uncertain": 0.07,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t22",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.92,
+            "uncertain": 0.06,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t23",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9,
+            "uncertain": 0.07,
+            "relevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t24",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.94,
+            "uncertain": 0.05,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t25",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.91,
+            "uncertain": 0.07,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t26",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "uncertain": 0.06,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t27",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "uncertain": 0.06,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t28",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "uncertain": 0.05,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t29",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "uncertain": 0.06,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t30",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "uncertain": 0.06,
+            "irrelevant": 0.92
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t31",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.03,
+            "uncertain": 0.07,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t32",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.03,
+            "uncertain": 0.07,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t33",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.03,
+            "uncertain": 0.07,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t34",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.05,
+            "uncertain": 0.05,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t35",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.06,
+            "uncertain": 0.07,
+            "irrelevant": 0.87
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t36",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.03,
+            "uncertain": 0.06,
+            "irrelevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t37",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.04,
+            "irrelevant": 0.95
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t38",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "uncertain": 0.04,
+            "irrelevant": 0.94
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t39",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.06,
+            "irrelevant": 0.93
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t40",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.94,
+            "relevant": 0.02,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t41",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.91,
+            "relevant": 0.02,
+            "uncertain": 0.07
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t42",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.92,
+            "relevant": 0.02,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t43",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.91,
+            "relevant": 0.03,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t44",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.91,
+            "relevant": 0.03,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t45",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9,
+            "relevant": 0.02,
+            "uncertain": 0.08
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t46",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "relevant": 0.01,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t47",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.94,
+            "relevant": 0.01,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t48",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.94,
+            "relevant": 0.01,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t49",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "relevant": 0.01,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t50",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.86,
+            "relevant": 0.05,
+            "uncertain": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t51",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9,
+            "uncertain": 0.07,
+            "relevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t52",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.89,
+            "uncertain": 0.08,
+            "relevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t53",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9,
+            "uncertain": 0.08,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t54",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9,
+            "uncertain": 0.07,
+            "relevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t55",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.89,
+            "uncertain": 0.08,
+            "relevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t56",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.91,
+            "uncertain": 0.07,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t57",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.91,
+            "uncertain": 0.07,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t58",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.93,
+            "uncertain": 0.05,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t59",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.92,
+            "uncertain": 0.07,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t60",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.93,
+            "uncertain": 0.06
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t61",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "irrelevant": 0.9,
+            "uncertain": 0.08
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t62",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "irrelevant": 0.9,
+            "uncertain": 0.08
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t63",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.92,
+            "uncertain": 0.07
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 7,
+      "known_credits": 0.000747138,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "cross",
+      "topics": 64,
+      "selected_parents": [
+        "t05",
+        "t42"
+      ],
+      "scoped_vectors": 2560,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 3.495693749999191,
+      "global_seconds": 0.1749401660017611,
+      "scoped_seconds": 0.00670120799986762,
+      "routed_seconds": 3.5023949579990585,
+      "timings": {
+        "global": [
+          0.1749401660017611,
+          0.17236712500016438,
+          0.1758086670015473,
+          0.17018749999988358,
+          0.17486420800196356,
+          0.18056145800073864,
+          0.18309320800108253
+        ],
+        "scoped": [
+          0.006760415999451652,
+          0.00670120799986762,
+          0.006525042001157999,
+          0.006178042000101414,
+          0.006991125002969056,
+          0.0066902079997817054,
+          0.007535500000813045
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.97,
+            "uncertain": 0.03,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "uncertain": 0.01,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "uncertain": 0.02,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.97,
+            "uncertain": 0.03,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "uncertain": 0.02,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.01,
+            "uncertain": 0.11,
+            "relevant": 0.88
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.96,
+            "uncertain": 0.03,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "uncertain": 0.02,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t08",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "uncertain": 0.02,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t09",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "uncertain": 0.02,
+            "relevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t10",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "uncertain": 0.05,
+            "irrelevant": 0.9299999999999999
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t11",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.09,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t12",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.08,
+            "irrelevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t13",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "uncertain": 0.1,
+            "irrelevant": 0.88
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t14",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "uncertain": 0.08,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t15",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.1,
+            "irrelevant": 0.89
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t16",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.09,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t17",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.08,
+            "irrelevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t18",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.08,
+            "irrelevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t19",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.08,
+            "irrelevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t20",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.07,
+            "relevant": 0.02,
+            "irrelevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t21",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.09,
+            "relevant": 0.02,
+            "irrelevant": 0.89
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t22",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.08,
+            "relevant": 0.02,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t23",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.09,
+            "relevant": 0.02,
+            "irrelevant": 0.89
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t24",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.1,
+            "relevant": 0.02,
+            "irrelevant": 0.88
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t25",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.08,
+            "relevant": 0.02,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t26",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.08,
+            "relevant": 0.02,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t27",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.08,
+            "relevant": 0.02,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t28",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.07,
+            "relevant": 0.01,
+            "irrelevant": 0.92
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t29",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.09,
+            "relevant": 0.01,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t30",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.08,
+            "relevant": 0.01,
+            "irrelevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t31",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.05,
+            "irrelevant": 0.93,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t32",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.06,
+            "relevant": 0.01,
+            "irrelevant": 0.93
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t33",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.07,
+            "irrelevant": 0.91,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t34",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.05,
+            "irrelevant": 0.94,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t35",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.06,
+            "irrelevant": 0.92,
+            "relevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t36",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.05,
+            "relevant": 0.01,
+            "irrelevant": 0.94
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t37",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.06,
+            "relevant": 0.02,
+            "irrelevant": 0.92
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t38",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.05,
+            "irrelevant": 0.93,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t39",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.08,
+            "relevant": 0.02,
+            "irrelevant": 0.9
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t40",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.97,
+            "relevant": 0.01,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t41",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.97,
+            "relevant": 0.01,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t42",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0,
+            "relevant": 0.95,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t43",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "relevant": 0,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t44",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t45",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "relevant": 0,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t46",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "relevant": 0,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t47",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "relevant": 0,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t48",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t49",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "relevant": 0,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t50",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "irrelevant": 0.87,
+            "uncertain": 0.11
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t51",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "irrelevant": 0.88,
+            "uncertain": 0.1
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t52",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.9,
+            "uncertain": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t53",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.89,
+            "uncertain": 0.1
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t54",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "irrelevant": 0.89,
+            "uncertain": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t55",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.9,
+            "uncertain": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t56",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.9,
+            "uncertain": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t57",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.9,
+            "uncertain": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t58",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "irrelevant": 0.89,
+            "uncertain": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t59",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.92,
+            "uncertain": 0.07
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t60",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9,
+            "relevant": 0.02,
+            "uncertain": 0.08
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t61",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.86,
+            "relevant": 0.02,
+            "uncertain": 0.12
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t62",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.9,
+            "relevant": 0.01,
+            "uncertain": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t63",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.92,
+            "relevant": 0.01,
+            "uncertain": 0.07
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 7,
+      "known_credits": 0.000747726,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "cross",
+      "topics": 32,
+      "selected_parents": [
+        "t02",
+        "t21"
+      ],
+      "scoped_vectors": 5120,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 2.067126999998436,
+      "global_seconds": 0.1768559579977591,
+      "scoped_seconds": 0.01377541699912399,
+      "routed_seconds": 2.08090241699756,
+      "timings": {
+        "global": [
+          0.16644437500144704,
+          0.17939129200021853,
+          0.1801411249980447,
+          0.173557999998593,
+          0.1768559579977591,
+          0.1776785000001837,
+          0.16870329200173728
+        ],
+        "scoped": [
+          0.013372208002692787,
+          0.013365500002691988,
+          0.014428792001126567,
+          0.013959500000055414,
+          0.013811999997415114,
+          0.01377541699912399,
+          0.01333662500110222
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.02,
+            "relevant": 0.79,
+            "uncertain": 0.19
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t08",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t09",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.98,
+            "relevant": 0,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t10",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.98,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t11",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.97,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t12",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.95,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t13",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.97,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t14",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.97,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t15",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.97,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t16",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.96,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t17",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.97,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t18",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "irrelevant": 0.96,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t19",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.02,
+            "irrelevant": 0.89,
+            "uncertain": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t20",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t21",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.84,
+            "irrelevant": 0.01,
+            "uncertain": 0.15
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t22",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t23",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t24",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t25",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t26",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t27",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t28",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t29",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "irrelevant": 0.99,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t30",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.95,
+            "uncertain": 0.04,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t31",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.94,
+            "uncertain": 0.05,
+            "relevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 4,
+      "known_credits": 0.0003906,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "cross",
+      "topics": 16,
+      "selected_parents": [
+        "t01",
+        "t10"
+      ],
+      "scoped_vectors": 10240,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 1.049393917000998,
+      "global_seconds": 0.17848712500199326,
+      "scoped_seconds": 0.027748708002036437,
+      "routed_seconds": 1.0771426250030345,
+      "timings": {
+        "global": [
+          0.17924016699907952,
+          0.18069383300098707,
+          0.17785949999961304,
+          0.17658216600102605,
+          0.17901433299994096,
+          0.17688825000004726,
+          0.17848712500199326
+        ],
+        "scoped": [
+          0.02793749999909778,
+          0.027668417002132628,
+          0.028436541997507447,
+          0.027496750000864267,
+          0.027748708002036437,
+          0.02756375000171829,
+          0.028108957998483675
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.83,
+            "uncertain": 0.16,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t08",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0,
+            "uncertain": 0.01,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t09",
+          "choice": "irrelevant",
+          "probabilities": {
+            "relevant": 0.01,
+            "uncertain": 0.02,
+            "irrelevant": 0.97
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t10",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.22,
+            "relevant": 0.73,
+            "irrelevant": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t11",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t12",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t13",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t14",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t15",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 2,
+      "known_credits": 0.000206052,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "cross",
+      "topics": 8,
+      "selected_parents": [
+        "t00",
+        "t05"
+      ],
+      "scoped_vectors": 20480,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 0.5417710839974461,
+      "global_seconds": 0.17166516699944623,
+      "scoped_seconds": 0.05330087499896763,
+      "routed_seconds": 0.5950719589964137,
+      "timings": {
+        "global": [
+          0.17783241700090002,
+          0.18200062500181957,
+          0.1817006669989496,
+          0.17166516699944623,
+          0.1715787499997532,
+          0.17157462500108522,
+          0.1708834159981052
+        ],
+        "scoped": [
+          0.05485849999968195,
+          0.05476095800258918,
+          0.054250999997748295,
+          0.05198279199976241,
+          0.05330087499896763,
+          0.052120083000772865,
+          0.05316283299907809
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.97,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0,
+            "relevant": 0,
+            "irrelevant": 1
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0,
+            "relevant": 0,
+            "irrelevant": 1
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0,
+            "irrelevant": 0.99
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "relevant": 0.95,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0,
+            "relevant": 0,
+            "irrelevant": 1
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "irrelevant",
+          "probabilities": {
+            "uncertain": 0,
+            "relevant": 0,
+            "irrelevant": 1
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 1,
+      "known_credits": 0.000113778,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "cross",
+      "topics": 4,
+      "selected_parents": [
+        "t00",
+        "t02"
+      ],
+      "scoped_vectors": 40960,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 0.5294562919989403,
+      "global_seconds": 0.17335433299740544,
+      "scoped_seconds": 0.11314095899797394,
+      "routed_seconds": 0.6425972509969142,
+      "timings": {
+        "global": [
+          0.1892783330004022,
+          0.16982337500303402,
+          0.17335433299740544,
+          0.1719093329993484,
+          0.17101945800095564,
+          0.18049499999688123,
+          0.1774662090028869
+        ],
+        "scoped": [
+          0.11511566699846298,
+          0.1103222919991822,
+          0.1068665000020701,
+          0.10817462499835528,
+          0.11314095899797394,
+          0.12592683299953933,
+          0.11346020800192491
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.01,
+            "relevant": 0.94,
+            "uncertain": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 1,
+            "relevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0,
+            "relevant": 0.96,
+            "uncertain": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "irrelevant",
+          "probabilities": {
+            "irrelevant": 0.99,
+            "relevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 1,
+      "known_credits": 7.3626e-05,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "all",
+      "topics": 16,
+      "selected_parents": [
+        "t00",
+        "t01",
+        "t02",
+        "t03",
+        "t04",
+        "t05",
+        "t06",
+        "t07",
+        "t08",
+        "t09",
+        "t10",
+        "t11",
+        "t12",
+        "t13",
+        "t14",
+        "t15"
+      ],
+      "scoped_vectors": 81920,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 1.0093126669999037,
+      "global_seconds": 0.1738843339990126,
+      "scoped_seconds": 0.2201969999987341,
+      "routed_seconds": 1.2295096669986378,
+      "timings": {
+        "global": [
+          0.18080670799827203,
+          0.18323466700167046,
+          0.18306583300000057,
+          0.17033579200142412,
+          0.17065000000002328,
+          0.17081662499913364,
+          0.1738843339990126
+        ],
+        "scoped": [
+          0.22186679099831963,
+          0.21801879199847463,
+          0.23399341700132936,
+          0.2201969999987341,
+          0.21859054200103856,
+          0.22000233300059335,
+          0.22653854199961643
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0.99,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0.99,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0.99,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0.99,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0.99,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "uncertain": 0.02,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.98,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "uncertain": 0.01,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t08",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.01,
+            "relevant": 0.99,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t09",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.95,
+            "irrelevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t10",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0.01,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t11",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t12",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t13",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t14",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 1,
+            "irrelevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t15",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 2,
+      "known_credits": 0.000206304,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "all",
+      "topics": 4,
+      "selected_parents": [
+        "t00",
+        "t01",
+        "t02",
+        "t03"
+      ],
+      "scoped_vectors": 81920,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 0.5481682499994349,
+      "global_seconds": 0.18064533299912,
+      "scoped_seconds": 0.22135570899990853,
+      "routed_seconds": 0.7695239589993434,
+      "timings": {
+        "global": [
+          0.17270416599785676,
+          0.18256937499972992,
+          0.17988204199718894,
+          0.18064533299912,
+          0.17610995799986995,
+          0.1845376670025871,
+          0.18142183399686473
+        ],
+        "scoped": [
+          0.21726824999859673,
+          0.21945975000198814,
+          0.22816191699894262,
+          0.2260331249999581,
+          0.22409887500180048,
+          0.2193035830023291,
+          0.22135570899990853
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0.01,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 1,
+      "known_credits": 7.3752e-05,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "all",
+      "topics": 64,
+      "selected_parents": [
+        "t00",
+        "t01",
+        "t02",
+        "t03",
+        "t04",
+        "t05",
+        "t06",
+        "t07",
+        "t08",
+        "t09",
+        "t10",
+        "t11",
+        "t12",
+        "t13",
+        "t14",
+        "t15",
+        "t16",
+        "t17",
+        "t18",
+        "t19",
+        "t20",
+        "t21",
+        "t22",
+        "t23",
+        "t24",
+        "t25",
+        "t26",
+        "t27",
+        "t28",
+        "t29",
+        "t30",
+        "t31",
+        "t32",
+        "t33",
+        "t34",
+        "t35",
+        "t36",
+        "t37",
+        "t38",
+        "t39",
+        "t40",
+        "t41",
+        "t42",
+        "t43",
+        "t44",
+        "t45",
+        "t46",
+        "t47",
+        "t48",
+        "t49",
+        "t50",
+        "t51",
+        "t52",
+        "t53",
+        "t54",
+        "t55",
+        "t56",
+        "t57",
+        "t58",
+        "t59",
+        "t60",
+        "t61",
+        "t62",
+        "t63"
+      ],
+      "scoped_vectors": 81920,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 3.603063916998508,
+      "global_seconds": 0.17808483300177613,
+      "scoped_seconds": 0.22616983399711899,
+      "routed_seconds": 3.829233750995627,
+      "timings": {
+        "global": [
+          0.17264337500091642,
+          0.18013525000060326,
+          0.18294450000030338,
+          0.17727179199937382,
+          0.1765162080009759,
+          0.17808483300177613,
+          0.17893016599919065
+        ],
+        "scoped": [
+          0.2253958330002206,
+          0.22691045900137397,
+          0.22737525000047754,
+          0.23405154200008838,
+          0.22421041699999478,
+          0.22616983399711899,
+          0.22526987500168616
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "uncertain": 0.02,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.97,
+            "uncertain": 0.02,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.96,
+            "uncertain": 0.03,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.96,
+            "uncertain": 0.03,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.96,
+            "uncertain": 0.03,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.96,
+            "uncertain": 0.03,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.97,
+            "uncertain": 0.02,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.97,
+            "uncertain": 0.02,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t08",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.97,
+            "uncertain": 0.02,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t09",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.95,
+            "uncertain": 0.03,
+            "irrelevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t10",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "irrelevant": 0.06,
+            "relevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t11",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "irrelevant": 0.06,
+            "relevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t12",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.93,
+            "irrelevant": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t13",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "irrelevant": 0.04,
+            "relevant": 0.93
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t14",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.9400000000000001,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t15",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "irrelevant": 0.04,
+            "relevant": 0.93
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t16",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "irrelevant": 0.02,
+            "relevant": 0.95
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t17",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.94,
+            "irrelevant": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t18",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "irrelevant": 0.04,
+            "relevant": 0.92
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t19",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "irrelevant": 0.04,
+            "relevant": 0.93
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t20",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.91,
+            "uncertain": 0.02,
+            "irrelevant": 0.07
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t21",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.92,
+            "uncertain": 0.03,
+            "irrelevant": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t22",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.92,
+            "uncertain": 0.03,
+            "irrelevant": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t23",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.92,
+            "uncertain": 0.03,
+            "irrelevant": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t24",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.93,
+            "uncertain": 0.03,
+            "irrelevant": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t25",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.94,
+            "uncertain": 0.03,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t26",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.92,
+            "uncertain": 0.04,
+            "irrelevant": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t27",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.93,
+            "uncertain": 0.03,
+            "irrelevant": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t28",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.95,
+            "uncertain": 0.02,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t29",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.89,
+            "uncertain": 0.04,
+            "irrelevant": 0.07
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t30",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "relevant": 0.89,
+            "irrelevant": 0.07
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t31",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.95,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t32",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.93,
+            "irrelevant": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t33",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.94,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t34",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.94,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t35",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.94,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t36",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.96,
+            "irrelevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t37",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.96,
+            "irrelevant": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t38",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.94,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t39",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "relevant": 0.93,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t40",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.89,
+            "irrelevant": 0.08
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t41",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.94,
+            "irrelevant": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t42",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.93,
+            "irrelevant": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t43",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.93,
+            "irrelevant": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t44",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.94,
+            "irrelevant": 0.04
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t45",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.95,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t46",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.95,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t47",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.02,
+            "relevant": 0.95,
+            "irrelevant": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t48",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.03,
+            "relevant": 0.92,
+            "irrelevant": 0.05
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t49",
+          "choice": "relevant",
+          "probabilities": {
+            "uncertain": 0.04,
+            "relevant": 0.87,
+            "irrelevant": 0.09
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t50",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.06,
+            "uncertain": 0.03,
+            "relevant": 0.91
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t51",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.05,
+            "relevant": 0.92,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t52",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.04,
+            "relevant": 0.93,
+            "uncertain": 0.03
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t53",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.04,
+            "uncertain": 0.03,
+            "relevant": 0.93
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t54",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.04,
+            "uncertain": 0.03,
+            "relevant": 0.9299999999999999
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t55",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.03,
+            "relevant": 0.95,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t56",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.03,
+            "uncertain": 0.03,
+            "relevant": 0.94
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t57",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.02,
+            "uncertain": 0.02,
+            "relevant": 0.96
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t58",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.03,
+            "uncertain": 0.02,
+            "relevant": 0.95
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t59",
+          "choice": "relevant",
+          "probabilities": {
+            "irrelevant": 0.02,
+            "uncertain": 0.02,
+            "relevant": 0.96
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t60",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.97,
+            "irrelevant": 0.02,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t61",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.97,
+            "irrelevant": 0.01,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t62",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t63",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 7,
+      "known_credits": 0.000748608,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "all",
+      "topics": 8,
+      "selected_parents": [
+        "t00",
+        "t01",
+        "t02",
+        "t03",
+        "t04",
+        "t05",
+        "t06",
+        "t07"
+      ],
+      "scoped_vectors": 81920,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 0.5055307920010819,
+      "global_seconds": 0.17384479199972702,
+      "scoped_seconds": 0.2205920000014885,
+      "routed_seconds": 0.7261227920025703,
+      "timings": {
+        "global": [
+          0.17271579199950793,
+          0.17117575000156648,
+          0.17384479199972702,
+          0.18165200000294135,
+          0.17551491699850885,
+          0.17208512499928474,
+          0.17442816600305378
+        ],
+        "scoped": [
+          0.22018445800131303,
+          0.2205920000014885,
+          0.22380675000022165,
+          0.22748095899805776,
+          0.2297765410003194,
+          0.22013724999851547,
+          0.2201467919985589
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0.01,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 1,
+      "known_credits": 0.000113904,
+      "missing_cost_calls": 0
+    },
+    {
+      "case": "all",
+      "topics": 32,
+      "selected_parents": [
+        "t00",
+        "t01",
+        "t02",
+        "t03",
+        "t04",
+        "t05",
+        "t06",
+        "t07",
+        "t08",
+        "t09",
+        "t10",
+        "t11",
+        "t12",
+        "t13",
+        "t14",
+        "t15",
+        "t16",
+        "t17",
+        "t18",
+        "t19",
+        "t20",
+        "t21",
+        "t22",
+        "t23",
+        "t24",
+        "t25",
+        "t26",
+        "t27",
+        "t28",
+        "t29",
+        "t30",
+        "t31"
+      ],
+      "scoped_vectors": 81920,
+      "gold_leaf_coverage": 1.0,
+      "routing_seconds": 2.0274461669978336,
+      "global_seconds": 0.17680662499697064,
+      "scoped_seconds": 0.22662024999954156,
+      "routed_seconds": 2.254066416997375,
+      "timings": {
+        "global": [
+          0.18149416699816356,
+          0.17488125000090804,
+          0.1798778750016936,
+          0.17299520799861057,
+          0.1717982089976431,
+          0.17680662499697064,
+          0.1768086249976477
+        ],
+        "scoped": [
+          0.228662917001202,
+          0.22018145800029743,
+          0.22662024999954156,
+          0.22764987499976996,
+          0.21987074999924516,
+          0.2217325419987901,
+          0.22725616699972306
+        ]
+      },
+      "decisions": [
+        {
+          "id": "t00",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t01",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t02",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t03",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t04",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t05",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t06",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t07",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t08",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t09",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.9299999999999999,
+            "irrelevant": 0.05,
+            "uncertain": 0.02
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t10",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.97,
+            "irrelevant": 0.02,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t11",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0.01,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t12",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0.01,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t13",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0.01,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t14",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0.01,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t15",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 1,
+            "irrelevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t16",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t17",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t18",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t19",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "irrelevant": 0.01,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t20",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "uncertain": 0.01,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t21",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "uncertain": 0.01,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t22",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "uncertain": 0.01,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t23",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.98,
+            "uncertain": 0.01,
+            "irrelevant": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t24",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "uncertain": 0.01,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t25",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 1,
+            "uncertain": 0,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t26",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "uncertain": 0.01,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t27",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "uncertain": 0.01,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t28",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "uncertain": 0.01,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t29",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 1,
+            "uncertain": 0,
+            "irrelevant": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t30",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 0.99,
+            "irrelevant": 0,
+            "uncertain": 0.01
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        },
+        {
+          "id": "t31",
+          "choice": "relevant",
+          "probabilities": {
+            "relevant": 1,
+            "irrelevant": 0,
+            "uncertain": 0
+          },
+          "model": "typesafe/jev-1.13-20260917"
+        }
+      ],
+      "calls": 4,
+      "known_credits": 0.00039110400000000003,
+      "missing_cost_calls": 0
+    }
+  ],
+  "total_known_credits": 0.004595976,
+  "missing_cost_calls": 0,
+  "scope": "Synthetic controlled fixed corpus; no GPT generation; one live route per query/topic count, 7 interleaved local repetitions."
+}

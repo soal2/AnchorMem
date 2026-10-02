@@ -13,6 +13,7 @@ import tiktoken
 from .config import ServiceConfig, index_fingerprint, resolved_path
 from .contracts import AddRequest, AddResponse, Evidence, SearchRequest, SearchResponse
 from .directory_memory import DirectoryMemory
+from .topics import candidates as topic_candidates, selected_topics
 from .providers import Embedder, LLM, OpenAIDecision
 from .storage import Store
 
@@ -61,7 +62,8 @@ class MemoryEngine:
             if directory_selector is None:
                 raise ValueError("directory memory requires a directory selector")
             directory_rules = hashlib.sha256(Path(__file__).with_name("directory_memory.py").read_bytes()
-                                             + Path(__file__).with_name("directory_selector.py").read_bytes()).hexdigest()
+                                             + Path(__file__).with_name("directory_selector.py").read_bytes()
+                                             + Path(__file__).with_name("topics.py").read_bytes()).hexdigest()
         self.store = Store(resolved_path(config_path, config.database_dir),
                            index_fingerprint(config, self.prompt, self.consolidation_prompt, decision_rules,
                                              temporal_rules, directory_rules))
@@ -169,7 +171,12 @@ class MemoryEngine:
             texts = [c["content"] for c in chunks] + [f["content"] for f in facts]
             directory = self.directories.build(request, messages, facts) if self.directories else None
             if directory:
-                texts.append(directory["overview"])
+                directory["topic_decisions"] = self.directory_selector.classify(
+                    json.dumps([{"role": m["role"], "content": m["content"]} for m in messages], ensure_ascii=False),
+                    topic_candidates())
+                directory["topics"] = selected_topics(directory["topic_decisions"], [t["id"] for t in topic_candidates()])
+                if not directory["topics"]:
+                    raise ValueError("directory classification must select at least one topic")
             vectors = [normalized(v, self.config.embedding.dimensions) for v in self.embedder.embed(texts)]
             if len(vectors) != len(texts):
                 raise ValueError("embedding count does not match text count")
@@ -223,38 +230,51 @@ class MemoryEngine:
                     (:id,:path,:parent_path,:abstract,:overview,:source_sha256)""", directory)
                 db.executemany("INSERT INTO message_sources VALUES (?,?)",
                                [(message["id"], directory["id"]) for message in messages])
-                db.execute("INSERT INTO embeddings VALUES ('directory',?,?,?,?)",
-                           (directory["id"], self.config.embedding.name,
-                            self.config.embedding.dimensions, vectors[-1].tobytes()))
+                db.executemany("INSERT OR IGNORE INTO memory_topics VALUES (:id,:path,:abstract,:overview)", topic_candidates())
+                db.executemany("INSERT INTO directory_topics VALUES (?,?,?,?)", [
+                    (directory["id"], decision["id"], int(decision["id"] in directory["topics"]),
+                     json.dumps(decision, ensure_ascii=False)) for decision in directory["topic_decisions"]])
             db.execute("INSERT INTO requests VALUES (?,?,?)", (request.request_id, payload_hash, response.model_dump_json()))
             db.commit()
         except BaseException:
             db.rollback()
             raise
 
-    def _select_directories(self, db, request, ranked_chunks):
-        mapping = {row["id"]: row["directory_id"] for row in db.execute("""
-            SELECT c.id, s.directory_id FROM chunks c JOIN message_sources s ON s.message_id=c.message_id""")}
-        candidates = []
-        seen = set()
-        for chunk_id in ranked_chunks:
-            directory_id = mapping[chunk_id]
-            if directory_id not in seen:
-                candidates.append(dict(db.execute("SELECT id,path,abstract,overview FROM memory_directories WHERE id=?",
-                                                  (directory_id,)).fetchone()))
-                seen.add(directory_id)
-            if len(candidates) == 10:
-                break
-        decisions = self.directory_selector.select(request.query, request.options, candidates)
-        if (len(decisions) != len(candidates) or {item["id"] for item in decisions} != seen
-                or any(item["choice"] not in {"relevant", "irrelevant", "uncertain"} for item in decisions)):
-            raise ValueError("directory selection returned invalid candidate decisions")
-        accepted = {item["id"] for item in decisions if item["choice"] != "irrelevant"}
-        return {chunk_id for chunk_id, directory_id in mapping.items() if directory_id in accepted}
+    def _select_directories(self, db, request):
+        topics = [dict(row) for row in db.execute("""SELECT * FROM memory_topics
+            WHERE id IN (SELECT topic_id FROM directory_topics WHERE selected=1) ORDER BY id""")]
+        if not topics:
+            raise ValueError("directory memory has no classified topics")
+        decisions = self.directory_selector.select(request.query, request.options, topics)
+        selected = selected_topics(decisions, [t["id"] for t in topics])
+        if not selected:
+            return []
+        return [row[0] for row in db.execute("SELECT DISTINCT directory_id FROM directory_topics "
+            "WHERE selected=1 AND topic_id IN (" + ",".join("?" for _ in selected) + ") ORDER BY directory_id", selected)]
 
-    def _vector_rank(self, db, query_vector: np.ndarray, owner_type: str, limit: int) -> list[str]:
+    @staticmethod
+    def _directory_chunks(directory_ids):
+        return ("SELECT c.id FROM chunks c JOIN message_sources s ON s.message_id=c.message_id "
+                "WHERE s.directory_id IN (" + ",".join("?" for _ in directory_ids) + ")")
+
+    def _vector_rank(self, db, query_vector: np.ndarray, owner_type: str, limit: int, directory_ids=None) -> list[str]:
         """按 cosine similarity 对 chunk 或 fact 做向量召回，只返回排名后的 ID。"""
-        rows = db.execute("SELECT owner_id,vector FROM embeddings WHERE owner_type=?", (owner_type,)).fetchall()
+        sql = "SELECT owner_id,vector FROM embeddings WHERE owner_type=?"
+        parameters = [owner_type]
+        if directory_ids is not None:
+            if not directory_ids:
+                return []
+            chunks = self._directory_chunks(directory_ids)
+            owners = {
+                "chunk": chunks,
+                "fact": "SELECT fact_id FROM fact_sources WHERE chunk_id IN (" + chunks + ")",
+                "observation": """SELECT os.observation_id FROM observation_sources os
+                    JOIN observations o ON o.id=os.observation_id AND o.current_revision=os.revision
+                    JOIN fact_sources fs ON fs.fact_id=os.fact_id WHERE fs.chunk_id IN (""" + chunks + ")",
+            }
+            sql += " AND owner_id IN (" + owners[owner_type] + ")"
+            parameters.extend(directory_ids)
+        rows = db.execute(sql, parameters).fetchall()
         if not rows:
             return []
         matrix = np.frombuffer(b"".join(row["vector"] for row in rows), dtype=np.float32).reshape(len(rows), self.config.embedding.dimensions)
@@ -262,15 +282,35 @@ class MemoryEngine:
         positions = np.argsort(-scores, kind="stable")[:limit]
         return [rows[int(i)]["owner_id"] for i in positions]
 
-    @staticmethod
-    def _bm25_rank(db, query: str, limit: int) -> list[str]:
+    def _bm25_rank(self, db, query: str, limit: int, directory_ids=None) -> list[str]:
         """使用 SQLite FTS5 对原始 chunk 做 lexical/BM25 召回。"""
         words = re.findall(r"\w+", query, flags=re.UNICODE)
         if not words:
             return []
         expression = " OR ".join('"' + word.replace('"', '') + '"' for word in words)
-        rows = db.execute("SELECT chunk_id FROM chunks_fts WHERE chunks_fts MATCH ? ORDER BY bm25(chunks_fts) LIMIT ?", (expression, limit)).fetchall()
+        sql = "SELECT chunk_id FROM chunks_fts WHERE chunks_fts MATCH ?"
+        parameters = [expression]
+        if directory_ids is not None:
+            if not directory_ids:
+                return []
+            sql += " AND chunk_id IN (" + self._directory_chunks(directory_ids) + ")"
+            parameters.extend(directory_ids)
+        rows = db.execute(sql + " ORDER BY bm25(chunks_fts) LIMIT ?", [*parameters, limit]).fetchall()
         return [row[0] for row in rows]
+
+    def _retrieval_vector_count(self, db):
+        retrieval = self.config.retrieval
+        kinds = []
+        if retrieval.chunk_vector_weight:
+            kinds.append("chunk")
+        if retrieval.fact_vector_weight:
+            kinds.append("fact")
+        if self.config.consolidation.mode != "off":
+            kinds.append("observation")
+        if not kinds:
+            return 0
+        return db.execute("SELECT COUNT(*) FROM embeddings WHERE owner_type IN (" +
+                          ",".join("?" for _ in kinds) + ")", kinds).fetchone()[0]
 
     def search(self, request: SearchRequest) -> SearchResponse:
         """混合检索并返回原文证据，而不是直接返回 LLM 提炼的事实。
@@ -297,23 +337,35 @@ class MemoryEngine:
                 query_vectors = [normalized(v, self.config.embedding.dimensions) for v in self.embedder.embed([q for q, _ in query_specs])]
                 if len(query_vectors) != len(query_specs):
                     raise ValueError("query embedding count mismatch")
+                directory_ids = None
+                scoped_rows = None
+                if (self.directories and self._retrieval_vector_count(db)
+                        > retrieval.directory_routing_threshold):
+                    directory_ids = self._select_directories(db, request)
+                    if not directory_ids:
+                        return SearchResponse(data=[])
+                    scoped_rows = db.execute("SELECT * FROM chunks WHERE id IN (" +
+                        self._directory_chunks(directory_ids) + ") ORDER BY session_id,message_seq,chunk_seq",
+                        directory_ids).fetchall()
+                allowed = {row["id"] for row in scoped_rows} if scoped_rows is not None else None
+                scope = (directory_ids,) if directory_ids is not None else ()
                 scores: dict[str, float] = defaultdict(float)
                 for (query, query_weight), vector in zip(query_specs, query_vectors):
                     routes = []
                     # 每条 route 各自返回一个排名列表；route 的原始分数不会跨算法直接相加。
                     if retrieval.bm25_weight:
-                        routes.append((list(enumerate(self._bm25_rank(db, query, retrieval.bm25_candidates), 1)), retrieval.bm25_weight))
+                        routes.append((list(enumerate(self._bm25_rank(db, query, retrieval.bm25_candidates, *scope), 1)), retrieval.bm25_weight))
                     if retrieval.chunk_vector_weight:
-                        routes.append((list(enumerate(self._vector_rank(db, vector, "chunk", retrieval.chunk_vector_candidates), 1)), retrieval.chunk_vector_weight))
+                        routes.append((list(enumerate(self._vector_rank(db, vector, "chunk", retrieval.chunk_vector_candidates, *scope), 1)), retrieval.chunk_vector_weight))
                     if retrieval.fact_vector_weight:
                         # fact 只用于找到相关内容，随后通过 fact_sources 映射回可追溯的原文 chunk。
-                        fact_ids = self._vector_rank(db, vector, "fact", retrieval.fact_vector_candidates)
+                        fact_ids = self._vector_rank(db, vector, "fact", retrieval.fact_vector_candidates, *scope)
                         mapped = []
                         for rank, fact_id in enumerate(fact_ids, 1):
                             mapped.extend((rank, row[0]) for row in db.execute("SELECT chunk_id FROM fact_sources WHERE fact_id=? ORDER BY chunk_id", (fact_id,)))
                         routes.append((mapped, retrieval.fact_vector_weight))
                     if self.config.consolidation.mode != "off":
-                        observation_ids = self._vector_rank(db, vector, "observation", 50)
+                        observation_ids = self._vector_rank(db, vector, "observation", 50, *scope)
                         mapped = []
                         for rank, observation_id in enumerate(observation_ids, 1):
                             rows = db.execute("""SELECT DISTINCT fs.chunk_id FROM observations o
@@ -322,19 +374,10 @@ class MemoryEngine:
                                 WHERE o.id=? ORDER BY fs.chunk_id""", (observation_id,))
                             mapped.extend((rank, row[0]) for row in rows)
                         routes.append((mapped, 1.0))
-                    if self.directories:
-                        directory_ids = self._vector_rank(db, vector, "directory", 50)
-                        mapped = []
-                        for rank, directory_id in enumerate(directory_ids, 1):
-                            rows = db.execute("""SELECT c.id FROM chunks c
-                                JOIN message_sources s ON s.message_id=c.message_id
-                                WHERE s.directory_id=? ORDER BY c.message_seq,c.chunk_seq""", (directory_id,))
-                            mapped.extend((rank, row[0]) for row in rows)
-                        routes.append((mapped, 1.0))
                     for ranked_ids, route_weight in routes:
                         seen = set()
                         for rank, chunk_id in ranked_ids:
-                            if chunk_id not in seen:
+                            if chunk_id not in seen and (allowed is None or chunk_id in allowed):
                                 # 加权 Reciprocal Rank Fusion：排名越靠前，贡献越大；seen 防止同一路重复计分。
                                 scores[chunk_id] += query_weight * route_weight / (retrieval.rrf_k + rank)
                                 seen.add(chunk_id)
@@ -343,11 +386,11 @@ class MemoryEngine:
 
                 # 先选少量高分 seed，再以 seed 为中心恢复上下文，避免每个召回 chunk 都单独返回。
                 ranked = sorted(scores, key=lambda key: (-scores[key], key))
-                allowed = self._select_directories(db, request, ranked) if self.directories else None
                 seeds = [key for key in ranked if allowed is None or key in allowed][:retrieval.seed_count]
                 if not seeds:
                     return SearchResponse(data=[])
-                all_rows = db.execute("SELECT * FROM chunks ORDER BY session_id,message_seq,chunk_seq").fetchall()
+                all_rows = scoped_rows if scoped_rows is not None else db.execute(
+                    "SELECT * FROM chunks ORDER BY session_id,message_seq,chunk_seq").fetchall()
                 by_id = {row["id"]: row for row in all_rows}
                 sessions: dict[str, list] = defaultdict(list)
                 for row in all_rows:
@@ -360,18 +403,25 @@ class MemoryEngine:
                     # neighbor_count=1 时，同时取 seed 前后各一个 chunk；B0/B1 为 0，B2/B3 为 1。
                     selected[row["session_id"]].update(
                         i for i in range(max(0, position - retrieval.neighbor_count), min(len(session), position + retrieval.neighbor_count + 1))
-                        if allowed is None or session[i]["id"] in allowed)
+                        if (allowed is None or session[i]["id"] in allowed)
+                        and abs(session[i]["message_seq"] - row["message_seq"]) <= retrieval.neighbor_count)
                 hydrated = {}
                 if self.directories:
                     rows = [sessions[session_id][i] for session_id, positions in selected.items() for i in positions]
                     hydrated = {row["id"]: row for row in self.directories.hydrate_chunks(db, request.user_id, rows)}
                 windows = []
                 for session_id, positions in selected.items():
+                    session = sessions[session_id]
                     ordered = sorted(positions)
                     groups = []
                     for position in ordered:
                         # 相邻位置合并为一个窗口；不连续的位置拆成多个证据窗口。
-                        if not groups or position > groups[-1][-1] + 1:
+                        previous = session[groups[-1][-1]] if groups else None
+                        current = session[position]
+                        adjacent = previous is not None and (
+                            (current["message_seq"] == previous["message_seq"] and current["chunk_seq"] == previous["chunk_seq"] + 1)
+                            or current["message_seq"] == previous["message_seq"] + 1)
+                        if not groups or position > groups[-1][-1] + 1 or not adjacent:
                             groups.append([])
                         groups[-1].append(position)
                     for group in groups:

@@ -63,6 +63,7 @@ class ConsolidationConfig(Settings):
 
 
 class RetrievalConfig(Settings):
+    directory_routing_threshold: int = Field(default=300_000, ge=0)
     bm25_candidates: int = Field(ge=1)
     chunk_vector_candidates: int = Field(ge=1)
     fact_vector_candidates: int = Field(ge=1)
@@ -165,7 +166,7 @@ def config_hash(config: Settings) -> str:
 
 
 def index_fingerprint(config: ServiceConfig, prompt: str, consolidation_prompt: str = "", decision_rules: str = "", temporal_rules: str = "", directory_rules: str = "") -> str:
-    data = {"schema": 3, "embedding": [config.embedding.name, config.embedding.dimensions],
+    data = {"schema": 4, "embedding": [config.embedding.name, config.embedding.dimensions],
             "chunk": config.chunk.model_dump(),
             "facts": [config.llm.model_dump(), prompt, config.facts.temporal, config.facts.prior_context_tokens, temporal_rules],
             "consolidation": {"mode": config.consolidation.mode,

@@ -66,7 +66,7 @@ uv run python scripts/jevsight_experiments.py --report
 
 ## VikingJev 目录记忆实验
 
-`VikingJev` 在 Jevsight 上参考 OpenViking 源码增加目录内的 L0 摘要、L1 概览和 L2 原始消息，向量与来源关系独立存放于 SQLite。向量召回后由 Jev 批量判断候选目录，再读取原文证据交给 GPT。使用 `configs/service/vikingjev.yaml` 和独立的 schema 3 新索引；旧库不迁移。
+`VikingJev` 在 Jevsight 上参考 OpenViking 源码增加目录内的 L0 摘要、L1 概览和 L2 原始消息，向量与来源关系独立存放于 SQLite。写入时由 Jev 将原文归入固定主题；查询时按当前用户启用路线的向量条数切换：不超过可配置阈值 300,000 时全量检索，超过时判断少量上层主题并限定目录范围。使用 `configs/service/vikingjev.yaml` 和独立的 schema 4 新索引；旧库需从原文重建，不迁移。
 
 ```bash
 uv run --env-file .env python -m scripts.vikingjev_smoke

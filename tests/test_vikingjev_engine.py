@@ -58,11 +58,17 @@ class Selector:
         self.fail = False
         self.choose = lambda item: "relevant"
 
+    def classify(self, content, candidates):
+        topic = "housing" if "UNRELATED" in content or "SECRET DISTRACTOR" in content else "hobbies"
+        return [{"id": item["id"], "choice": "relevant" if item["id"] == topic else "irrelevant", "model": "fake",
+                 "probabilities": {"relevant": float(item["id"] == topic), "irrelevant": float(item["id"] != topic), "uncertain": 0}}
+                for item in candidates]
+
     def select(self, query, options, candidates):
         self.calls.append((query, options, candidates))
         if self.fail:
             raise RuntimeError("selector unavailable")
-        return [{"id": item["id"], "choice": self.choose(item), "model": "fake", "probabilities": None}
+        return [{"id": item["id"], "choice": self.choose(item), "model": "fake", "probabilities": {key: float(key == self.choose(item)) for key in ("relevant", "irrelevant", "uncertain")}}
                 for item in candidates]
 
 
@@ -71,6 +77,7 @@ def memory(tmp_path):
     config, path = load_config("configs/service/jevsight-d.yaml", ServiceConfig)
     config = config.model_copy(update={"database_dir": str(tmp_path / "index"),
                                        "directory_selector": config.consolidation.decision_model})
+    config.retrieval.directory_routing_threshold = 0
     llm, embedder, relations, selector = FactModel(), Embedder(), Relations(), Selector()
     engine = MemoryEngine(config, path, llm, embedder, decision_model=relations, directory_selector=selector)
     return engine, llm, embedder, relations, selector
@@ -90,7 +97,7 @@ def counts(engine, user="u1"):
         return {table: db.execute(f"SELECT count(*) FROM {table}").fetchone()[0] for table in (
             "messages", "chunks", "facts", "fact_sources", "observations", "observation_revisions",
             "observation_sources", "consolidation_decisions", "embeddings", "requests",
-            "memory_directories", "message_sources", "chunks_fts")}
+            "memory_directories", "memory_topics", "directory_topics", "message_sources", "chunks_fts")}
 
 
 def source_files(engine):
@@ -107,7 +114,7 @@ def test_directory_sources_and_vectors_are_separate_and_search_returns_original(
         assert db.execute("SELECT content FROM messages").fetchone()[0] == ""
         assert db.execute("SELECT content FROM chunks").fetchone()[0] == ""
         assert {row[0] for row in db.execute("SELECT DISTINCT owner_type FROM embeddings")} == {
-            "chunk", "fact", "observation", "directory"}
+            "chunk", "fact", "observation"}
         assert db.execute("SELECT count(*) FROM facts").fetchone()[0] == 1
         assert db.execute("SELECT count(*) FROM observations").fetchone()[0] == 1
         assert db.execute("SELECT directory_id FROM message_sources").fetchone()[0] == directory["id"]
@@ -120,17 +127,17 @@ def test_directory_sources_and_vectors_are_separate_and_search_returns_original(
     result = search(engine)
     assert [item.content for item in result.data] == [raw]
     assert all("DERIVED" not in item.content for item in result.data)
-    assert selector.calls[0][2] == [{key: directory[key] for key in ("id", "path", "abstract", "overview")}]
+    assert [t["id"] for t in selector.calls[0][2]] == ["hobbies"]
 
 
-def test_directory_vector_route_can_recover_evidence_without_other_routes(memory, monkeypatch):
+def test_directory_routing_requires_local_evidence_retrieval(memory, monkeypatch):
     engine, _, _, _, _ = memory
     engine.add(request("r1", "I prefer jasmine tea."))
     with engine.store.connect("u1") as db:
         identity = db.execute("SELECT id FROM memory_directories").fetchone()[0]
-    monkeypatch.setattr(engine, "_vector_rank", lambda db, vector, kind, limit: [identity] if kind == "directory" else [])
+    monkeypatch.setattr(engine, "_vector_rank", lambda db, vector, kind, limit, *scope: [identity] if kind == "directory" else [])
     monkeypatch.setattr(engine, "_bm25_rank", lambda *args: [])
-    assert [item.content for item in search(engine).data] == ["I prefer jasmine tea."]
+    assert search(engine).data == []
 
 
 def test_original_chunk_offsets_and_neighbor_windows_are_reconstructed(memory, monkeypatch):
@@ -142,7 +149,10 @@ def test_original_chunk_offsets_and_neighbor_windows_are_reconstructed(memory, m
     assert len(rows) > 4
     tokens = engine.tokenizer.encode(raw)
     expected = "\n".join(engine.tokenizer.decode(tokens[row["token_start"]:row["token_end"]]) for row in rows[1:4])
-    monkeypatch.setattr(engine, "_vector_rank", lambda db, vector, kind, limit: [rows[2]["id"]] if kind == "chunk" else [])
+    with engine.store.connect("u1") as db:
+        directory_id = db.execute("SELECT id FROM memory_directories").fetchone()[0]
+    monkeypatch.setattr(engine, "_vector_rank", lambda db, vector, kind, limit, *scope:
+                        [directory_id] if kind == "directory" else [rows[2]["id"]] if kind == "chunk" else [])
     monkeypatch.setattr(engine, "_bm25_rank", lambda *args: [])
     assert [item.content for item in search(engine).data] == [expected]
     assert expected != raw
@@ -182,17 +192,17 @@ def test_unsafe_user_and_session_ids_stay_inside_root_and_users_remain_isolated(
     assert search(engine, "missing").data == []
 
 
-def test_irrelevant_directory_cannot_return_through_session_neighbors_and_uncertain_stays(memory):
+def test_probability_routing_keeps_multiple_directories_even_if_label_is_irrelevant(memory):
     engine, _, _, _, selector = memory
     engine.add(request("r1", "SECRET DISTRACTOR: the dishwasher is blue."))
     engine.add(request("r2", "I prefer tea."))
-    selector.choose = lambda item: "irrelevant" if "SECRET DISTRACTOR" in item["overview"] else "uncertain"
+    selector.choose = lambda item: "irrelevant" if item["id"] == "housing" else "uncertain"
     response = search(engine)
     assert [item.content for item in response.data] == ["I prefer tea."]
     assert len(selector.calls[0][2]) == 2
 
 
-def test_all_irrelevant_returns_empty(memory):
+def test_all_irrelevant_topics_return_empty(memory):
     engine, _, _, _, selector = memory
     engine.add(request("r1", "This is unrelated."))
     selector.choose = lambda item: "irrelevant"
@@ -311,7 +321,7 @@ def test_interruption_before_commit_removes_published_sources_and_leaves_no_reco
     assert search(engine).data == []
 
 
-def test_selection_batches_no_more_than_ten_distinct_directories(memory):
+def test_many_directories_require_only_one_parent_decision_request(memory):
     engine, _, _, _, selector = memory
     for index in range(11):
         engine.add(request(f"r{index}", f"Preference number {index}.", session=f"session-{index}"))
@@ -319,5 +329,199 @@ def test_selection_batches_no_more_than_ten_distinct_directories(memory):
     assert len(selector.calls) == 1
     query, options, directories = selector.calls[0]
     assert (query, options) == ("Preference", ["tea", "coffee"])
-    assert len(directories) == len({item["id"] for item in directories}) == 10
-    assert len(response.data) == 10
+    assert [item["id"] for item in directories] == ["hobbies"]
+    assert len(response.data) == 11
+
+
+def test_jev_precedes_local_retrieval_and_rejected_vectors_are_never_loaded(memory, monkeypatch):
+    engine, _, _, relations, selector = memory
+    relations.decide = lambda state, criteria: {"choice": "new", "model": "fake",
+        "probabilities": {key: float(key == "new") for key in criteria}}
+    engine.add(request("keep", "I prefer jasmine tea.", session="keep"))
+    engine.add(request("drop", "UNRELATED: car maintenance.", session="drop"))
+    for i in range(3):
+        engine.add(request(f"extra-{i}", f"Extra tea preference {i}.", session=f"extra-{i}"))
+    selector.choose = lambda item: "irrelevant" if item["id"] == "housing" else "relevant"
+    with engine.store.connect("u1") as db:
+        keep = db.execute("SELECT id FROM memory_directories WHERE overview NOT LIKE '%UNRELATED%'").fetchone()[0]
+        drop = db.execute("SELECT id FROM memory_directories WHERE overview LIKE '%UNRELATED%'").fetchone()[0]
+        # A global vector load would fail to decode these bytes. Directory vectors remain valid.
+        for kind in ("chunk", "fact", "observation"):
+            if kind == "chunk":
+                ids = db.execute("SELECT c.id FROM chunks c JOIN message_sources s ON s.message_id=c.message_id WHERE s.directory_id=?", (drop,))
+            elif kind == "fact":
+                ids = db.execute("SELECT fs.fact_id FROM fact_sources fs JOIN chunks c ON c.id=fs.chunk_id JOIN message_sources s ON s.message_id=c.message_id WHERE s.directory_id=?", (drop,))
+            else:
+                ids = db.execute("SELECT os.observation_id FROM observation_sources os JOIN fact_sources fs ON fs.fact_id=os.fact_id JOIN chunks c ON c.id=fs.chunk_id JOIN message_sources s ON s.message_id=c.message_id WHERE s.directory_id=?", (drop,))
+            identities = [row[0] for row in ids]
+            assert identities
+            db.executemany("UPDATE embeddings SET vector=? WHERE owner_type=? AND owner_id=?",
+                           [(b"bad", kind, identity) for identity in identities])
+    calls = []
+    original = engine._vector_rank
+
+    def checked(db, vector, kind, limit, directory_ids=None):
+        if kind != "directory":
+            assert len(selector.calls) == 1
+            assert keep in directory_ids and drop not in directory_ids
+            assert len(directory_ids) == 4
+        calls.append(kind)
+        return original(db, vector, kind, limit, directory_ids)
+
+    monkeypatch.setattr(engine, "_vector_rank", checked)
+    assert "I prefer jasmine tea." in [item.content for item in search(engine).data]
+    assert calls == ["chunk", "fact", "observation"]
+
+
+def test_bm25_scope_is_applied_before_candidate_limit(memory):
+    engine, _, _, _, _ = memory
+    engine.add(request("keep", "jasmine tea with breakfast", session="keep"))
+    engine.add(request("drop", "jasmine jasmine jasmine jasmine", session="drop"))
+    with engine.store.connect("u1") as db:
+        directory = db.execute("SELECT id FROM memory_directories WHERE overview LIKE '%breakfast%'").fetchone()[0]
+        chunk = db.execute("SELECT c.id FROM chunks c JOIN message_sources s ON s.message_id=c.message_id WHERE s.directory_id=?", (directory,)).fetchone()[0]
+        assert engine._bm25_rank(db, "jasmine", 1, [directory]) == [chunk]
+        assert engine._bm25_rank(db, "jasmine", 1, []) == []
+
+
+def test_rejected_gap_does_not_create_new_neighbors_or_merge_windows(memory, monkeypatch):
+    engine, _, _, _, selector = memory
+    engine.add(request("first", "I prefer tea."))
+    engine.add(request("gap", "UNRELATED message."))
+    engine.add(request("last", "I also like coffee."))
+    selector.choose = lambda item: "irrelevant" if item["id"] == "housing" else "relevant"
+    for i in range(2):
+        engine.add(request(f"extra-{i}", f"Extra preference {i}.", session=f"extra-{i}"))
+    engine.config.retrieval.seed_count = 1
+    original = engine._vector_rank
+    with engine.store.connect("u1") as db:
+        first = db.execute("SELECT id FROM chunks ORDER BY message_seq LIMIT 1").fetchone()[0]
+    def rank(db, vector, kind, limit, directory_ids=None):
+        return original(db, vector, kind, limit, directory_ids) if kind == "directory" else [first] if kind == "chunk" else []
+    monkeypatch.setattr(engine, "_vector_rank", rank)
+    monkeypatch.setattr(engine, "_bm25_rank", lambda *args: [])
+    assert [item.content for item in search(engine).data] == ["I prefer tea."]
+
+
+def test_evaluation_reuses_frozen_index_without_reextracting_or_counting_skips_as_writes(memory, tmp_path, monkeypatch):
+    from src import evaluation, directory_selector
+    from src.config import EvaluationConfig, resolved_path, write_snapshot
+
+    engine, llm, embedder, relations, selector = memory
+    llm.complete = lambda system, prompt, json_response=True: '{"label":"CORRECT"}' if json_response else "Paris"
+    monkeypatch.setattr(evaluation, "OpenAILLM", lambda *a, **k: llm)
+    monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda *a, **k: embedder)
+    monkeypatch.setattr(evaluation, "OpenAIDecision", lambda *a, **k: relations)
+    monkeypatch.setattr(directory_selector, "JevDirectorySelector", lambda *a, **k: selector)
+    service = engine.config.model_copy(deep=True)
+    origin = Path("configs/service/jevsight-d.yaml").resolve()
+    service.facts.prompt_path = str(resolved_path(origin, service.facts.prompt_path))
+    service.consolidation.prompt_path = str(resolved_path(origin, service.consolidation.prompt_path))
+    service_path = tmp_path / "service.yaml"
+    write_snapshot(service, service_path)
+    data = tmp_path / "data.json"
+    data.write_text(json.dumps([{"question_id": "q1", "question": "Where?", "answer": "Paris",
+                                "haystack_sessions": [[{"role": "user", "content": "Paris"}]]}]))
+    contract = tmp_path / "contract"
+    pipeline = contract / "data/longmemeval-s/pipeline.py"
+    pipeline.parent.mkdir(parents=True)
+    pipeline.write_text('OPEN_ENDED_ANSWER_TEMPLATE = "{{question}} {{speaker_1_memories}}"\n'
+                        'ACCURACY_PROMPT = "{question} {gold_answer} {generated_answer}"\n')
+    config, path = load_config("configs/evaluation/longmemeval-dev.yaml", EvaluationConfig)
+    config = config.model_copy(update={"service_config_path": str(service_path), "data_path": str(data),
+        "data_sha256": evaluation.sha256(data), "contract_repository_path": str(contract),
+        "output_dir": str(tmp_path / "runs")})
+    monkeypatch.setattr(evaluation, "_commit", lambda *args: config.contract_commit)
+    first = evaluation.evaluate(config, path)
+    original_hash = evaluation.sha256(first / "memory-index")
+    extraction_calls = len(llm.calls)
+    second = evaluation.evaluate(config, path, reuse_index_from=first)
+    metrics = json.loads((second / "metrics.json").read_text())
+    assert metrics["requested"] == metrics["evaluated"] == 1 and metrics["failed"] == 0
+    assert metrics["index_mode"] == "frozen-reuse"
+    assert metrics["actual_ingestion_seconds"] == 0 and metrics["ingestion_groups"] == {}
+    assert (second / "ingestion.jsonl").read_text() == ""
+    assert len(llm.calls) == extraction_calls
+    assert evaluation.sha256(first / "memory-index") == original_hash
+    manifest = json.loads((first / "manifest.json").read_text())
+    manifest["data_sha256"] = "wrong"
+    (first / "manifest.json").write_text(json.dumps(manifest))
+    with pytest.raises(ValueError, match="frozen index run does not match"):
+        evaluation.evaluate(config, path, reuse_index_from=first)
+
+
+def test_classification_failure_rolls_back_everything(memory, monkeypatch):
+    engine, _, _, _, selector = memory
+    monkeypatch.setattr(selector, "classify", lambda *args: [])
+    with pytest.raises(ValueError, match="invalid candidate decisions"):
+        engine.add(request("r1", "Tea."))
+    assert all(value == 0 for value in counts(engine).values())
+    assert source_files(engine) == {}
+
+
+def test_topic_membership_multilabel_and_idempotence(memory, monkeypatch):
+    engine, _, _, _, selector = memory
+    calls = []
+    original = selector.classify
+    def classify(*args):
+        calls.append(args)
+        decisions = original(*args)
+        for d in decisions:
+            if d["id"] == "health":
+                d.update(choice="relevant", probabilities={"relevant": 1, "irrelevant": 0, "uncertain": 0})
+        return decisions
+    monkeypatch.setattr(selector, "classify", classify)
+    req = request("r1", "Tea helps me relax.")
+    engine.add(req)
+    engine.add(req)
+    assert len(calls) == 1
+    with engine.store.connect("u1") as db:
+        assert {r[0] for r in db.execute("SELECT topic_id FROM directory_topics WHERE selected=1")} == {"health", "hobbies"}
+        assert db.execute("SELECT count(*) FROM directory_topics").fetchone()[0] == 9
+    assert len(search(engine).data) == 1
+
+
+@pytest.mark.parametrize("threshold,expect_routing", [(2, True), (3, False), (4, False)])
+def test_vector_threshold_boundary(memory, threshold, expect_routing):
+    engine, _, _, _, selector = memory
+    engine.add(request("r1", "I prefer tea."))
+    engine.config.retrieval.directory_routing_threshold = threshold
+    with engine.store.connect("u1") as db:
+        assert engine._retrieval_vector_count(db) == 3
+    assert [item.content for item in search(engine).data] == ["I prefer tea."]
+    assert bool(selector.calls) == expect_routing
+
+
+def test_small_memory_skips_jev_even_if_selector_unavailable(memory):
+    engine, _, _, _, selector = memory
+    engine.add(request("r1", "I prefer tea."))
+    engine.config.retrieval.directory_routing_threshold = 100
+    selector.fail = True
+    assert [item.content for item in search(engine).data] == ["I prefer tea."]
+    assert not selector.calls
+
+
+def test_threshold_counts_only_current_user_enabled_vector_routes(memory):
+    engine, _, _, _, selector = memory
+    engine.add(request("r1", "I prefer tea."))
+    engine.add(request("other", "Private other user data.", user="other"))
+    engine.config.retrieval.fact_vector_weight = 0
+    engine.config.retrieval.directory_routing_threshold = 2
+    with engine.store.connect("u1") as db:
+        assert engine._retrieval_vector_count(db) == 2
+    assert [item.content for item in search(engine).data] == ["I prefer tea."]
+    assert not selector.calls
+
+
+def test_index_threshold_is_query_only_and_growth_crosses_boundary(memory):
+    from src.config import index_fingerprint
+    engine, _, _, _, selector = memory
+    before = index_fingerprint(engine.config, engine.prompt)
+    engine.config.retrieval.directory_routing_threshold = 3
+    assert index_fingerprint(engine.config, engine.prompt) == before
+    engine.add(request("r1", "Tea."))
+    search(engine)
+    assert not selector.calls
+    engine.add(request("r2", "Coffee.", session="s2"))
+    search(engine)
+    assert len(selector.calls) == 1

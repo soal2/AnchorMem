@@ -1,5 +1,6 @@
 import argparse
 import logging
+from pathlib import Path
 
 import uvicorn
 
@@ -15,6 +16,8 @@ def main():
     for name in ("serve", "evaluate"):
         command = commands.add_parser(name)
         command.add_argument("--config", required=True)
+        if name == "evaluate":
+            command.add_argument("--reuse-index-from", type=Path, help="Prior frozen evaluation run; validate Add and rerun Search/Answer/Judge")
     args = parser.parse_args()
     if args.command == "serve":
         config, config_path = load_config(args.config, ServiceConfig)
@@ -32,7 +35,7 @@ def main():
         from .evaluation import evaluate
 
         config, config_path = load_config(args.config, EvaluationConfig)
-        evaluate(config, config_path)
+        evaluate(config, config_path, reuse_index_from=args.reuse_index_from)
 
 
 if __name__ == "__main__":

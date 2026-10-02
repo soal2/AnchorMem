@@ -1,0 +1,20 @@
+{
+  "dataset": "clbench",
+  "split": "dev",
+  "seed": 42,
+  "data_sha256": "39ec65bfb7774521f7626119152bf5cb964beaac24ef675e09e3c5b4a2786457",
+  "selection_method": "first question from the existing frozen development list; full source history retained; no outcome-based selection",
+  "quotas": 1,
+  "isolation": {
+    "unit": "conversation/persona/task group",
+    "shared_dev_validation_source_sessions": null,
+    "note": "group-disjoint dev and validation; PersonaMem/CLBench use one unseen group per selected question"
+  },
+  "questions": [
+    {
+      "id": "cl-be9cc79d-258c-4eaf-b594-ba72ed51b530",
+      "group": "be9cc79d-258c-4eaf-b594-ba72ed51b530",
+      "category": "clbench"
+    }
+  ]
+}

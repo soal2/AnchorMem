@@ -1,0 +1,20 @@
+{
+  "dataset": "longmemeval",
+  "split": "dev",
+  "seed": 42,
+  "data_sha256": "7648154ac85b33b42dc794a85b5d396e37c4f68ac6c42c88ac56b94f3b6213cb",
+  "selection_method": "first question from the existing frozen development list; full source history retained; no outcome-based selection",
+  "quotas": 1,
+  "isolation": {
+    "unit": "complete-history hash",
+    "shared_dev_validation_source_sessions": 1397,
+    "note": "LongMemEval question and complete-history split does not guarantee source-session disjointness"
+  },
+  "questions": [
+    {
+      "id": "e47becba",
+      "group": "b027679abe1110864e8a",
+      "category": "single-session-user"
+    }
+  ]
+}

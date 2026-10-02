@@ -1,0 +1,20 @@
+{
+  "dataset": "personamem",
+  "split": "dev",
+  "seed": 42,
+  "data_sha256": "ab0752e9a18096f475b061c92065a98d9b9e76a9059883609285487401a48d59",
+  "selection_method": "first question from the existing frozen development list; full source history retained; no outcome-based selection",
+  "quotas": 1,
+  "isolation": {
+    "unit": "conversation/persona/task group",
+    "shared_dev_validation_source_sessions": null,
+    "note": "group-disjoint dev and validation; PersonaMem/CLBench use one unseen group per selected question"
+  },
+  "questions": [
+    {
+      "id": "pm-521-Health-0",
+      "group": "persona-521",
+      "category": "Health"
+    }
+  ]
+}

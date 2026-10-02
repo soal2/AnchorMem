@@ -66,7 +66,7 @@ uv run python scripts/jevsight_experiments.py --report
 
 ## VikingJev 目录记忆实验
 
-`VikingJev` 在 Jevsight 上参考 OpenViking 源码增加目录内的 L0 摘要、L1 概览和 L2 原始消息，向量与来源关系独立存放于 SQLite。向量召回后由 Jev 批量判断候选目录，再读取原文证据交给 GPT。使用 `configs/service/vikingjev.yaml` 和独立的 schema 3 新索引；不迁移旧库，也不重跑已有 benchmark。
+`VikingJev` 在 Jevsight 上参考 OpenViking 源码增加目录内的 L0 摘要、L1 概览和 L2 原始消息，向量与来源关系独立存放于 SQLite。向量召回后由 Jev 批量判断候选目录，再读取原文证据交给 GPT。使用 `configs/service/vikingjev.yaml` 和独立的 schema 3 新索引；旧库不迁移。
 
 ```bash
 uv run --env-file .env python -m scripts.vikingjev_smoke
@@ -74,7 +74,11 @@ uv run --env-file .env python -m scripts.vikingjev_smoke
 
 源码参考、目录树、原文完整性和实验边界见 [VikingJev 说明](docs/vikingjev.md)。
 
-本次真实 OpenRouter 冒烟结果：3 次写入、2/2 问答通过，330 项工程测试通过；费用与耗时见 [结果报告](docs/vikingjev-smoke-results.md)。
+合成数据 OpenRouter 冒烟结果：3 次写入、2/2 问答通过，330 项工程测试通过；费用与耗时见 [结果报告](docs/vikingjev-smoke-results.md)。
+
+五个真实 benchmark 的冒烟配置位于 `configs/evaluation/vikingjev-smoke/`，各取既有开发清单的第一题，保留完整历史、数据哈希和原生评分流程。CLBench 使用 `vikingjev-clbench-smoke.yaml`，把抽取/归纳模型输出上限提高到 16,384，避免长输入的事实抽取被截断。冒烟验证完整链路，答案得分单独记录。
+
+五套均已完成 `requested=evaluated=1, failed=0`；其中 BEAM 样本回答错误，结果保留。逐套评分、完整历史验证、判断耗时和实际调用费用见 [五套 benchmark 冒烟报告](docs/vikingjev-benchmark-smoke-results.md)。
 
 ## Docker
 

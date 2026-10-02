@@ -1,0 +1,397 @@
+{
+  "generated_at": "2026-10-02T07:19:59.201031+00:00",
+  "status": "all_pipelines_passed",
+  "source_commit": "94dd453809e5bfac118cc3b42c53b32dfee09b1c",
+  "completed_benchmarks": 5,
+  "requested_benchmarks": 5,
+  "results": {
+    "locomo": {
+      "run_path": "artifacts/vikingjev/benchmark-smoke/runs/20261002T070140999621Z-vikingjev-smoke-locomo",
+      "question_id": "conv-41#q0000",
+      "pipeline_passed": true,
+      "requested": 1,
+      "evaluated": 1,
+      "failed": 0,
+      "primary_metric": "accuracy",
+      "primary_value": 1.0,
+      "answer_label": "CORRECT",
+      "scoring_protocol": "aml-binary-v1",
+      "history_messages": 663,
+      "add_batches": 46,
+      "original_directories": 46,
+      "source_hashes_verified": true,
+      "evidence_count": 1,
+      "code_commit": "94dd453809e5bfac118cc3b42c53b32dfee09b1c",
+      "data_sha256": "d7f1920f023b22b8877e1431bab9df01cb72153d7d28438a89f6434b45cc373c",
+      "selection_sha256": "be537d0044ebeed65293d778c7ca3ff5780fd57b18ca41eb97a3bfbdc569a165",
+      "timings_seconds": {
+        "add": 931.4441769119985,
+        "search": 1.9851901659967552,
+        "answer": 1.4444403749985213,
+        "judge": 1.1211779589975777,
+        "total_run": 936.612680416998
+      },
+      "costs": {
+        "calls": 569,
+        "known_provider_cost_credits": 0.11471149,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.11471149,
+        "provider_latency_seconds": 932.853514179973
+      },
+      "costs_by_phase": {
+        "ingestion": {
+          "calls": 565,
+          "known_provider_cost_credits": 0.113833234,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.113833234,
+          "provider_latency_seconds": 928.4663043459732
+        },
+        "search": {
+          "calls": 2,
+          "known_provider_cost_credits": 0.000575406,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.000575406,
+          "provider_latency_seconds": 1.8246027499990305
+        },
+        "answer": {
+          "calls": 1,
+          "known_provider_cost_credits": 0.0001995,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.0001995,
+          "provider_latency_seconds": 1.442946999999549
+        },
+        "judge": {
+          "calls": 1,
+          "known_provider_cost_credits": 0.00010335,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.00010335,
+          "provider_latency_seconds": 1.1196600840012252
+        }
+      },
+      "jev_directory_selection": {
+        "calls": 1,
+        "known_provider_cost_credits": 0.000575106,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.000575106,
+        "provider_latency_seconds": 0.6634285830004956
+      }
+    },
+    "longmemeval": {
+      "run_path": "artifacts/vikingjev/benchmark-smoke/runs/20261002T070138257935Z-vikingjev-smoke-longmemeval",
+      "question_id": "e47becba",
+      "pipeline_passed": true,
+      "requested": 1,
+      "evaluated": 1,
+      "failed": 0,
+      "primary_metric": "accuracy",
+      "primary_value": 1.0,
+      "answer_label": "CORRECT",
+      "scoring_protocol": "aml-binary-v1",
+      "history_messages": 550,
+      "add_batches": 53,
+      "original_directories": 53,
+      "source_hashes_verified": true,
+      "evidence_count": 1,
+      "code_commit": "94dd453809e5bfac118cc3b42c53b32dfee09b1c",
+      "data_sha256": "7648154ac85b33b42dc794a85b5d396e37c4f68ac6c42c88ac56b94f3b6213cb",
+      "selection_sha256": "5555bfb6bedd3de8c11ed507041476cb2eca08599b59a2516f64fc9feb4b9ed9",
+      "timings_seconds": {
+        "add": 1060.5237024150192,
+        "search": 2.9774322910016053,
+        "answer": 1.0080341670000053,
+        "judge": 1.292290208999475,
+        "total_run": 1068.9636367499988
+      },
+      "costs": {
+        "calls": 660,
+        "known_provider_cost_credits": 0.12920361,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.12920361,
+        "provider_latency_seconds": 1061.60005433693
+      },
+      "costs_by_phase": {
+        "ingestion": {
+          "calls": 656,
+          "known_provider_cost_credits": 0.127884994,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.127884994,
+          "provider_latency_seconds": 1056.5041357529335
+        },
+        "search": {
+          "calls": 2,
+          "known_provider_cost_credits": 0.000526316,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.000526316,
+          "provider_latency_seconds": 2.8064729169964266
+        },
+        "answer": {
+          "calls": 1,
+          "known_provider_cost_credits": 0.00069105,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.00069105,
+          "provider_latency_seconds": 1.0074354999997013
+        },
+        "judge": {
+          "calls": 1,
+          "known_provider_cost_credits": 0.00010125,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.00010125,
+          "provider_latency_seconds": 1.2820101670004078
+        }
+      },
+      "jev_directory_selection": {
+        "calls": 1,
+        "known_provider_cost_credits": 0.000526176,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.000526176,
+        "provider_latency_seconds": 1.6602950419983245
+      }
+    },
+    "personamem": {
+      "run_path": "artifacts/vikingjev/benchmark-smoke/runs/20261002T070251845423Z-vikingjev-smoke-personamem",
+      "question_id": "pm-521-Health-0",
+      "pipeline_passed": true,
+      "requested": 1,
+      "evaluated": 1,
+      "failed": 0,
+      "primary_metric": "accuracy",
+      "primary_value": 1.0,
+      "answer_label": "CORRECT",
+      "scoring_protocol": "personamem-choice-v1",
+      "history_messages": 189,
+      "add_batches": 10,
+      "original_directories": 10,
+      "source_hashes_verified": true,
+      "evidence_count": 1,
+      "code_commit": "94dd453809e5bfac118cc3b42c53b32dfee09b1c",
+      "data_sha256": "ab0752e9a18096f475b061c92065a98d9b9e76a9059883609285487401a48d59",
+      "selection_sha256": "f7cc0a91c6c90ae1d295d9e311492cb8855c0f3f81315817aa461d357aad0073",
+      "timings_seconds": {
+        "add": 237.82637979099673,
+        "search": 1.6934160000018892,
+        "answer": 1.53092129200013,
+        "judge": 6.754199785063975e-05,
+        "total_run": 242.15705945800073
+      },
+      "costs": {
+        "calls": 154,
+        "known_provider_cost_credits": 0.033239134,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.033239134,
+        "provider_latency_seconds": 240.3910453339995
+      },
+      "costs_by_phase": {
+        "ingestion": {
+          "calls": 151,
+          "known_provider_cost_credits": 0.03212712,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.03212712,
+          "provider_latency_seconds": 237.24850329100082
+        },
+        "search": {
+          "calls": 2,
+          "known_provider_cost_credits": 0.000627214,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.000627214,
+          "provider_latency_seconds": 1.6122475839983963
+        },
+        "answer": {
+          "calls": 1,
+          "known_provider_cost_credits": 0.0004848,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.0004848,
+          "provider_latency_seconds": 1.530294459000288
+        }
+      },
+      "jev_directory_selection": {
+        "calls": 1,
+        "known_provider_cost_credits": 0.000621894,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.000621894,
+        "provider_latency_seconds": 0.6898484589983127
+      }
+    },
+    "beam": {
+      "run_path": "artifacts/vikingjev/benchmark-smoke/runs/20261002T070114183500Z-vikingjev-smoke-beam",
+      "question_id": "beam-3-abstention-0",
+      "pipeline_passed": true,
+      "requested": 1,
+      "evaluated": 1,
+      "failed": 0,
+      "primary_metric": "mean_rubric_score",
+      "primary_value": 0.0,
+      "answer_label": "WRONG",
+      "scoring_protocol": "beam-rubric-v1",
+      "history_messages": 194,
+      "add_batches": 10,
+      "original_directories": 10,
+      "source_hashes_verified": true,
+      "evidence_count": 7,
+      "code_commit": "94dd453809e5bfac118cc3b42c53b32dfee09b1c",
+      "data_sha256": "5d52fc7171bc9df3c4d2fce052fd328ff3787b73e6245357bfd63b9da43ea4b9",
+      "selection_sha256": "056e0fd8e3ccb71227fb01506152aa77c96c384b25886f96eb2b102c234e4caf",
+      "timings_seconds": {
+        "add": 277.68920420900395,
+        "search": 1.7497145839988661,
+        "answer": 4.3852805419992364,
+        "judge": 2.9980568339997262,
+        "total_run": 287.53565291700215
+      },
+      "costs": {
+        "calls": 155,
+        "known_provider_cost_credits": 0.05207372,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.05207372,
+        "provider_latency_seconds": 286.13487720800913
+      },
+      "costs_by_phase": {
+        "ingestion": {
+          "calls": 151,
+          "known_provider_cost_credits": 0.04901484,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.04901484,
+          "provider_latency_seconds": 277.09500808301163
+        },
+        "search": {
+          "calls": 2,
+          "known_provider_cost_credits": 0.00052433,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.00052433,
+          "provider_latency_seconds": 1.659199207995698
+        },
+        "answer": {
+          "calls": 1,
+          "known_provider_cost_credits": 0.00234885,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.00234885,
+          "provider_latency_seconds": 4.384209374999045
+        },
+        "judge": {
+          "calls": 1,
+          "known_provider_cost_credits": 0.0001857,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.0001857,
+          "provider_latency_seconds": 2.996460542002751
+        }
+      },
+      "jev_directory_selection": {
+        "calls": 1,
+        "known_provider_cost_credits": 0.00052395,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.00052395,
+        "provider_latency_seconds": 0.7304388329976064
+      }
+    },
+    "clbench": {
+      "run_path": "artifacts/vikingjev/benchmark-smoke/runs/20261002T070401256543Z-vikingjev-smoke-clbench",
+      "question_id": "cl-be9cc79d-258c-4eaf-b594-ba72ed51b530",
+      "pipeline_passed": true,
+      "requested": 1,
+      "evaluated": 1,
+      "failed": 0,
+      "primary_metric": "accuracy",
+      "primary_value": 1.0,
+      "answer_label": "CORRECT",
+      "scoring_protocol": "clbench-semantic-v1",
+      "history_messages": 6,
+      "add_batches": 1,
+      "original_directories": 1,
+      "source_hashes_verified": true,
+      "evidence_count": 4,
+      "code_commit": "94dd453809e5bfac118cc3b42c53b32dfee09b1c",
+      "data_sha256": "39ec65bfb7774521f7626119152bf5cb964beaac24ef675e09e3c5b4a2786457",
+      "selection_sha256": "116c4e17c741918649027de43327469b4bc40b7faa707cb88582fd35a5cb0705",
+      "timings_seconds": {
+        "add": 56.64990379200026,
+        "search": 1.353704540997569,
+        "answer": 15.16152987500027,
+        "judge": 5.044666542002233,
+        "total_run": 79.0808408749981
+      },
+      "costs": {
+        "calls": 44,
+        "known_provider_cost_credits": 0.013550648,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.013550648,
+        "provider_latency_seconds": 78.08067933701386
+      },
+      "costs_by_phase": {
+        "ingestion": {
+          "calls": 40,
+          "known_provider_cost_credits": 0.007883652,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.007883652,
+          "provider_latency_seconds": 56.55597433701405
+        },
+        "search": {
+          "calls": 2,
+          "known_provider_cost_credits": 9.1046e-05,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 9.1046e-05,
+          "provider_latency_seconds": 1.3223034580005333
+        },
+        "answer": {
+          "calls": 1,
+          "known_provider_cost_credits": 0.00282585,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.00282585,
+          "provider_latency_seconds": 15.160352916998818
+        },
+        "judge": {
+          "calls": 1,
+          "known_provider_cost_credits": 0.0027501,
+          "missing_cost_calls": 0,
+          "complete_provider_cost_credits": 0.0027501,
+          "provider_latency_seconds": 5.0420486250004615
+        }
+      },
+      "jev_directory_selection": {
+        "calls": 1,
+        "known_provider_cost_credits": 9.0426e-05,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 9.0426e-05,
+        "provider_latency_seconds": 0.7585794160004298
+      }
+    }
+  },
+  "failed_attempts": [
+    {
+      "dataset": "clbench",
+      "run_path": "artifacts/vikingjev/benchmark-smoke/runs/20261002T070143612466Z-vikingjev-smoke-clbench",
+      "question_id": "cl-be9cc79d-258c-4eaf-b594-ba72ed51b530",
+      "requested": 1,
+      "evaluated": 0,
+      "failed": 1,
+      "elapsed_seconds": 68.09018545800063,
+      "costs": {
+        "calls": 1,
+        "known_provider_cost_credits": 0.005532,
+        "missing_cost_calls": 0,
+        "complete_provider_cost_credits": 0.005532,
+        "provider_latency_seconds": 67.1343686250002
+      },
+      "finish_reason": "length"
+    }
+  ],
+  "successful_runs_costs": {
+    "calls": 1582,
+    "known_provider_cost_credits": 0.342778602,
+    "missing_cost_calls": 0,
+    "complete_provider_cost_credits": 0.342778602,
+    "provider_latency_seconds": 2599.0601703959255
+  },
+  "failed_attempts_costs": {
+    "calls": 1,
+    "known_provider_cost_credits": 0.005532,
+    "missing_cost_calls": 0,
+    "complete_provider_cost_credits": 0.005532,
+    "provider_latency_seconds": 67.1343686250002
+  },
+  "all_attempts_observed_costs": {
+    "calls": 1583,
+    "known_provider_cost_credits": 0.348310602,
+    "missing_cost_calls": 0,
+    "complete_provider_cost_credits": 0.348310602,
+    "provider_latency_seconds": 2666.1945390209257
+  }
+}

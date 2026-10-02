@@ -1,6 +1,6 @@
 # VikingJev
 
-本分支在 Jevsight 的时间事实、归纳版本和来源关系上，增加目录化原文、目录摘要向量召回，以及读取原文前的 Jev 相关性判断。实验目标是验证小样本链路可运行，不重跑已有 benchmark，也不声称准确率或费用已有提升。
+本分支在 Jevsight 的时间事实、归纳版本和来源关系上，增加目录化原文、目录摘要向量召回，以及读取原文前的 Jev 相关性判断。先完成合成样例，再完成五个真实 benchmark 各一题的完整历史冒烟；结果见 [五套 benchmark 报告](vikingjev-benchmark-smoke-results.md)。本轮验证链路可运行，不据此声称准确率或费用已有提升。
 
 ## 对照的 OpenViking 源码
 

@@ -1,0 +1,20 @@
+{
+  "dataset": "locomo",
+  "split": "dev",
+  "seed": 42,
+  "data_sha256": "d7f1920f023b22b8877e1431bab9df01cb72153d7d28438a89f6434b45cc373c",
+  "selection_method": "first question from the existing frozen development list; full source history retained; no outcome-based selection",
+  "quotas": 1,
+  "isolation": {
+    "unit": "conversation/persona/task group",
+    "shared_dev_validation_source_sessions": null,
+    "note": "group-disjoint dev and validation; PersonaMem/CLBench use one unseen group per selected question"
+  },
+  "questions": [
+    {
+      "id": "conv-41#q0000",
+      "group": "conv-41",
+      "category": "2"
+    }
+  ]
+}

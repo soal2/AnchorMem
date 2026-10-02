@@ -27,6 +27,7 @@ COPY configs/service ./configs/service
 COPY prompts ./prompts
 RUN useradd --uid 10001 --create-home app \
     && mkdir -p /app/data /app/artifacts \
+    && chmod -R a+rX /app/configs /app/prompts \
     && chown app:app /app/data /app/artifacts
 USER app
 EXPOSE 8000

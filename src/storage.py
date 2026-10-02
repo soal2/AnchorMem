@@ -16,6 +16,15 @@ CREATE TABLE IF NOT EXISTS messages (
   role TEXT NOT NULL, content TEXT NOT NULL, timestamp INTEGER,
   UNIQUE(session_id, seq)
 );
+CREATE TABLE IF NOT EXISTS memory_directories (
+  id TEXT PRIMARY KEY, path TEXT NOT NULL UNIQUE, parent_path TEXT NOT NULL,
+  abstract TEXT NOT NULL, overview TEXT NOT NULL, source_sha256 TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS message_sources (
+  message_id TEXT PRIMARY KEY REFERENCES messages(id),
+  directory_id TEXT NOT NULL REFERENCES memory_directories(id)
+);
+CREATE INDEX IF NOT EXISTS message_sources_directory ON message_sources(directory_id);
 CREATE TABLE IF NOT EXISTS chunks (
   id TEXT PRIMARY KEY, message_id TEXT NOT NULL REFERENCES messages(id),
   session_id TEXT NOT NULL, message_seq INTEGER NOT NULL, chunk_seq INTEGER NOT NULL,
@@ -55,7 +64,7 @@ CREATE TABLE IF NOT EXISTS consolidation_decisions (
   decision_json TEXT NOT NULL, PRIMARY KEY(request_id, fact_id)
 );
 CREATE TABLE IF NOT EXISTS embeddings (
-  owner_type TEXT NOT NULL CHECK(owner_type IN ('chunk','fact','observation')),
+  owner_type TEXT NOT NULL CHECK(owner_type IN ('chunk','fact','observation','directory')),
   owner_id TEXT NOT NULL, model TEXT NOT NULL, dimension INTEGER NOT NULL,
   vector BLOB NOT NULL, PRIMARY KEY(owner_type, owner_id)
 );
@@ -64,6 +73,7 @@ CREATE TRIGGER IF NOT EXISTS embeddings_source_check BEFORE INSERT ON embeddings
     WHEN NEW.owner_type='chunk' AND NOT EXISTS(SELECT 1 FROM chunks WHERE id=NEW.owner_id) THEN RAISE(ABORT, 'embedding chunk source missing')
     WHEN NEW.owner_type='fact' AND NOT EXISTS(SELECT 1 FROM facts WHERE id=NEW.owner_id) THEN RAISE(ABORT, 'embedding fact source missing')
     WHEN NEW.owner_type='observation' AND NOT EXISTS(SELECT 1 FROM observations WHERE id=NEW.owner_id) THEN RAISE(ABORT, 'embedding observation source missing')
+    WHEN NEW.owner_type='directory' AND NOT EXISTS(SELECT 1 FROM memory_directories WHERE id=NEW.owner_id) THEN RAISE(ABORT, 'embedding directory source missing')
   END;
 END;
 CREATE VIRTUAL TABLE IF NOT EXISTS chunks_fts USING fts5(content, chunk_id UNINDEXED, tokenize='unicode61');
@@ -94,13 +104,13 @@ class Store:
             connection.execute("PRAGMA journal_mode=WAL")
             if new_database:
                 connection.executescript(SCHEMA)
-                connection.execute("INSERT OR IGNORE INTO metadata VALUES ('schema_version','2')")
+                connection.execute("INSERT OR IGNORE INTO metadata VALUES ('schema_version','3')")
                 connection.execute("INSERT OR IGNORE INTO metadata VALUES ('index_fingerprint',?)", (self.fingerprint,))
             stored = connection.execute("SELECT value FROM metadata WHERE key='index_fingerprint'").fetchone()
             if stored is None or stored[0] != self.fingerprint:
                 raise ValueError("index configuration changed; use a new database directory")
             schema = connection.execute("SELECT value FROM metadata WHERE key='schema_version'").fetchone()
-            if schema is None or schema[0] != "2":
+            if schema is None or schema[0] != "3":
                 raise ValueError("database schema version is unsupported; use a new database directory")
             yield connection
         finally:

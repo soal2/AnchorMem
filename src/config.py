@@ -102,6 +102,7 @@ class ServiceConfig(Settings):
     facts: FactConfig
     retrieval: RetrievalConfig
     consolidation: ConsolidationConfig = Field(default_factory=ConsolidationConfig)
+    directory_selector: ModelConfig | None = None
 
     @model_validator(mode="after")
     def check_competition(self):
@@ -117,6 +118,11 @@ class ServiceConfig(Settings):
             raise ValueError("consolidation requires temporal facts")
         if self.competition_mode and self.consolidation.mode == "jev":
             raise ValueError("Jevsight is a local experiment; set competition_mode=false")
+        if self.directory_selector is not None:
+            if self.competition_mode:
+                raise ValueError("VikingJev is a local experiment; set competition_mode=false")
+            if self.directory_selector.name != "typesafe/jev-1.13":
+                raise ValueError("directory selection requires typesafe/jev-1.13")
         return self
 
 
@@ -158,13 +164,15 @@ def config_hash(config: Settings) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
-def index_fingerprint(config: ServiceConfig, prompt: str, consolidation_prompt: str = "", decision_rules: str = "", temporal_rules: str = "") -> str:
-    data = {"schema": 2, "embedding": [config.embedding.name, config.embedding.dimensions],
+def index_fingerprint(config: ServiceConfig, prompt: str, consolidation_prompt: str = "", decision_rules: str = "", temporal_rules: str = "", directory_rules: str = "") -> str:
+    data = {"schema": 3, "embedding": [config.embedding.name, config.embedding.dimensions],
             "chunk": config.chunk.model_dump(),
             "facts": [config.llm.model_dump(), prompt, config.facts.temporal, config.facts.prior_context_tokens, temporal_rules],
             "consolidation": {"mode": config.consolidation.mode,
                               "model": config.consolidation.decision_model.model_dump() if config.consolidation.decision_model else None,
-                              "prompt": consolidation_prompt, "rules": decision_rules}}
+                              "prompt": consolidation_prompt, "rules": decision_rules},
+            "directory_memory": {"selector": config.directory_selector.model_dump() if config.directory_selector else None,
+                                 "rules": directory_rules}}
     return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 

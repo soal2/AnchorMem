@@ -574,6 +574,10 @@ def evaluate(config: EvaluationConfig, config_path: Path):
     decision = (OpenAIDecision(service.consolidation.decision_model, mode=service.consolidation.mode, telemetry=record_call)
                 if service.consolidation.mode != "off" else None)
     engine_args = {"decision_model": decision} if decision is not None else {}
+    if service.directory_selector:
+        from .directory_selector import JevDirectorySelector
+
+        engine_args["directory_selector"] = JevDirectorySelector(service.directory_selector, telemetry=record_call)
     engine = MemoryEngine(service, service_path, OpenAILLM(service.llm, telemetry=record_call),
                           OpenAIEmbedder(service.embedding, telemetry=record_call), **engine_args)
     answer_llm = OpenAILLM(config.answer, telemetry=record_call)

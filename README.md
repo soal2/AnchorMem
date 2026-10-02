@@ -64,6 +64,18 @@ uv run python scripts/jevsight_experiments.py --report
 
 这是本地固定样本实验，不能称为五套完整或官方 Full 评测。LongMemEval 的源会话在开发与验证划分间可能交叉；BEAM 采用本地平均 rubric 分数；CLBench 沿用已有语义任务完成评分协议，其 Answer 可见 rubric，Judge 读取原始历史。
 
+## VikingJev 目录记忆实验
+
+`VikingJev` 在 Jevsight 上参考 OpenViking 源码增加目录内的 L0 摘要、L1 概览和 L2 原始消息，向量与来源关系独立存放于 SQLite。向量召回后由 Jev 批量判断候选目录，再读取原文证据交给 GPT。使用 `configs/service/vikingjev.yaml` 和独立的 schema 3 新索引；不迁移旧库，也不重跑已有 benchmark。
+
+```bash
+uv run --env-file .env python -m scripts.vikingjev_smoke
+```
+
+源码参考、目录树、原文完整性和实验边界见 [VikingJev 说明](docs/vikingjev.md)。
+
+本次真实 OpenRouter 冒烟结果：3 次写入、2/2 问答通过，330 项工程测试通过；费用与耗时见 [结果报告](docs/vikingjev-smoke-results.md)。
+
 ## Docker
 
 ```bash

@@ -11,8 +11,8 @@ from .engine import MemoryEngine
 from .providers import Embedder, LLM
 
 
-def create_app(config: ServiceConfig, config_path: Path, llm: LLM, embedder: Embedder, decision_model=None) -> FastAPI:
-    engine = MemoryEngine(config, config_path, llm, embedder, decision_model=decision_model)
+def create_app(config: ServiceConfig, config_path: Path, llm: LLM, embedder: Embedder, decision_model=None, directory_selector=None) -> FastAPI:
+    engine = MemoryEngine(config, config_path, llm, embedder, decision_model=decision_model, directory_selector=directory_selector)
     app = FastAPI(title="AML Memory", version=__version__)
     app.state.engine = engine
     expected_key = os.environ.get(config.auth_key_env)
@@ -29,6 +29,8 @@ def create_app(config: ServiceConfig, config_path: Path, llm: LLM, embedder: Emb
         model_keys = [config.llm.api_key_env, config.embedding.api_key_env]
         if config.consolidation.mode != "off":
             model_keys.append(config.consolidation.decision_model.api_key_env)
+        if config.directory_selector:
+            model_keys.append(config.directory_selector.api_key_env)
         return {"version": __version__, "config_hash": config_hash(config),
                 "model_ready": all(bool(os.environ.get(key)) for key in model_keys), "auth_ready": bool(expected_key)}
 

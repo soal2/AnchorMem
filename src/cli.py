@@ -6,6 +6,7 @@ import uvicorn
 from .service import create_app
 from .config import EvaluationConfig, ServiceConfig, load_config, required_key, resolved_path, write_snapshot
 from .providers import OpenAIDecision, OpenAIEmbedder, OpenAILLM
+from .directory_selector import JevDirectorySelector
 
 
 def main():
@@ -23,7 +24,9 @@ def main():
         write_snapshot(config, snapshot_dir / "resolved-service-config.yaml")
         decision_model = (OpenAIDecision(config.consolidation.decision_model, mode=config.consolidation.mode)
                           if config.consolidation.mode != "off" else None)
-        app = create_app(config, config_path, OpenAILLM(config.llm), OpenAIEmbedder(config.embedding), decision_model=decision_model)
+        directory_selector = JevDirectorySelector(config.directory_selector) if config.directory_selector else None
+        app = create_app(config, config_path, OpenAILLM(config.llm), OpenAIEmbedder(config.embedding),
+                         decision_model=decision_model, directory_selector=directory_selector)
         uvicorn.run(app, host=config.host, port=config.port, workers=config.workers)
     else:
         from .evaluation import evaluate

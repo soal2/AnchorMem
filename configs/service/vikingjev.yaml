@@ -1,0 +1,66 @@
+version: vikingjev-1
+competition_mode: false
+database_dir: ../../data/vikingjev
+snapshot_dir: ../../artifacts/vikingjev/service
+host: 0.0.0.0
+port: 8000
+workers: 1
+auth_key_env: AML_MEMORY_KEY
+log_level: info
+llm:
+  name: openai/gpt-4o-mini
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.0
+  max_output_tokens: 4096
+  timeout_seconds: 120.0
+  retries: 2
+embedding:
+  name: openai/text-embedding-3-small
+  base_url: https://openrouter.ai/api/v1
+  api_key_env: OPENAI_API_KEY
+  dimensions: 1024
+  batch_size: 10
+  timeout_seconds: 120.0
+  retries: 2
+chunk:
+  tokenizer: o200k_base
+  max_tokens: 512
+  overlap_tokens: 64
+facts:
+  prompt_path: ../../prompts/extract-temporal-facts.txt
+  prior_context_tokens: 1024
+  temporal: true
+retrieval:
+  bm25_candidates: 50
+  chunk_vector_candidates: 50
+  fact_vector_candidates: 50
+  bm25_weight: 1.0
+  chunk_vector_weight: 1.0
+  fact_vector_weight: 1.0
+  rrf_k: 60
+  question_weight: 1.0
+  options_weight: 0.5
+  seed_count: 20
+  neighbor_count: 1
+  evidence_budget_tokens: 16000
+  max_results: 100
+consolidation:
+  mode: jev
+  decision_model:
+    name: typesafe/jev-1.13
+    base_url: https://openrouter.ai/api/
+    api_key_env: OPENAI_API_KEY
+    temperature: 0.0
+    max_output_tokens: 512
+    timeout_seconds: 120.0
+    retries: 2
+  prompt_path: ../../prompts/consolidate.txt
+directory_selector:
+  name: typesafe/jev-1.13
+  base_url: https://openrouter.ai/api/
+  api_key_env: OPENAI_API_KEY
+  temperature: 0.0
+  max_output_tokens: 512
+  timeout_seconds: 120.0
+  retries: 2

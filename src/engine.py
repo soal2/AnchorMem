@@ -3,6 +3,7 @@ import json
 import re
 import threading
 from collections import defaultdict
+from contextlib import nullcontext
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -11,6 +12,7 @@ import tiktoken
 
 from .config import ServiceConfig, index_fingerprint, resolved_path
 from .contracts import AddRequest, AddResponse, Evidence, SearchRequest, SearchResponse
+from .directory_memory import DirectoryMemory
 from .providers import Embedder, LLM, OpenAIDecision
 from .storage import Store
 
@@ -35,11 +37,12 @@ def normalized(vector: list[float], dimension: int) -> np.ndarray:
 class MemoryEngine:
     """记忆系统的核心：负责写入记忆、建立索引和返回可追溯的原文证据。"""
 
-    def __init__(self, config: ServiceConfig, config_path: Path, llm: LLM, embedder: Embedder, decision_model=None):
+    def __init__(self, config: ServiceConfig, config_path: Path, llm: LLM, embedder: Embedder, decision_model=None, directory_selector=None):
         self.config = config
         self.llm = llm
         self.embedder = embedder
         self.decision_model = decision_model
+        self.directory_selector = directory_selector
         self.tokenizer = tiktoken.get_encoding(config.chunk.tokenizer)
         # 事实提炼的规则来自外部 prompt；prompt、分块配置和 embedding 配置会参与索引指纹。
         self.prompt = resolved_path(config_path, config.facts.prompt_path).read_text(encoding="utf-8")
@@ -53,8 +56,16 @@ class MemoryEngine:
             decision_rules = hashlib.sha256(Path(__file__).with_name("consolidation.py").read_bytes()
                                             + Path(__file__).with_name("providers.py").read_bytes()
                                             + OpenAIDecision.INSTRUCTIONS.encode()).hexdigest()
+        directory_rules = ""
+        if config.directory_selector is not None:
+            if directory_selector is None:
+                raise ValueError("directory memory requires a directory selector")
+            directory_rules = hashlib.sha256(Path(__file__).with_name("directory_memory.py").read_bytes()
+                                             + Path(__file__).with_name("directory_selector.py").read_bytes()).hexdigest()
         self.store = Store(resolved_path(config_path, config.database_dir),
-                           index_fingerprint(config, self.prompt, self.consolidation_prompt, decision_rules, temporal_rules))
+                           index_fingerprint(config, self.prompt, self.consolidation_prompt, decision_rules,
+                                             temporal_rules, directory_rules))
+        self.directories = DirectoryMemory(self.store.root, self.tokenizer) if config.directory_selector else None
         self._locks_guard = threading.Lock()
         self._locks: dict[str, threading.Lock] = {}
 
@@ -100,6 +111,12 @@ class MemoryEngine:
             # 只把当前 session 最近的历史消息交给事实模型，用于解析“他/那里/之前”等指代。
             # 历史消息不会被当成本次新增事实的来源，事实仍必须引用本次新 chunk。
             prior = self.store.prior_messages(db, request.session_id)
+            if self.directories:
+                identities = [row[0] for row in db.execute(
+                    "SELECT id FROM messages WHERE session_id=? ORDER BY seq", (request.session_id,))]
+                sources = self.directories.messages(db, request.user_id, identities)
+                prior = [{key: sources[identity][key] for key in ("role", "content", "timestamp")}
+                         for identity in identities]
             used = 0
             context = []
             for item in reversed(prior):
@@ -150,6 +167,9 @@ class MemoryEngine:
 
             # 原文 chunk 和提炼 fact 共用一次 embedding 调用，但在数据库中用 owner_type 区分。
             texts = [c["content"] for c in chunks] + [f["content"] for f in facts]
+            directory = self.directories.build(request, messages, facts) if self.directories else None
+            if directory:
+                texts.append(directory["overview"])
             vectors = [normalized(v, self.config.embedding.dimensions) for v in self.embedder.embed(texts)]
             if len(vectors) != len(texts):
                 raise ValueError("embedding count does not match text count")
@@ -160,7 +180,7 @@ class MemoryEngine:
                 existing = self.store.current_observations(db)
                 for observation in existing:
                     observation["vector"] = np.frombuffer(observation["vector"], dtype=np.float32)
-                observations, decisions = consolidate(facts, vectors[len(chunks):], existing, self.decision_model,
+                observations, decisions = consolidate(facts, vectors[len(chunks):len(chunks) + len(facts)], existing, self.decision_model,
                                                      self.llm, self.consolidation_prompt, request.request_id)
                 observation_vectors = [normalized(v, self.config.embedding.dimensions)
                                        for v in self.embedder.embed([item["content"] for item in observations])]
@@ -168,33 +188,69 @@ class MemoryEngine:
                     raise ValueError("observation embedding count mismatch")
             recorded_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
             response = AddResponse(request_id=request.request_id, user_id=request.user_id, session_id=request.session_id)
-            try:
-                # 只有所有外部模型调用成功后才开始事务；下面的表必须整体提交。
-                db.execute("BEGIN IMMEDIATE")
-                db.executemany("INSERT INTO messages VALUES (:id,:session_id,:seq,:role,:content,:timestamp)", messages)
-                db.executemany("INSERT INTO chunks VALUES (:id,:message_id,:session_id,:message_seq,:chunk_seq,:token_start,:token_end,:content,:timestamp)", chunks)
-                db.executemany("INSERT INTO chunks_fts(content,chunk_id) VALUES (?,?)", [(c["content"], c["id"]) for c in chunks])
-                db.executemany("INSERT INTO facts VALUES (?,?,?,?,?,?,?,?)",
-                    [(f["id"], f["content"], self.config.llm.name, f["occurred_start"], f["occurred_end"],
-                      f["occurred_precision"], f["mentioned_at"], recorded_at) for f in facts])
-                db.executemany("INSERT INTO fact_sources VALUES (?,?)", [(f["id"], s) for f in facts for s in f["sources"]])
-                db.executemany("INSERT INTO embeddings VALUES (?,?,?,?,?)", [
-                    # vectors 的前 len(chunks) 个属于原文，剩余部分属于事实。
-                    ("chunk" if i < len(chunks) else "fact", (chunks + facts)[i]["id"], self.config.embedding.name,
-                     self.config.embedding.dimensions, vectors[i].tobytes()) for i in range(len(vectors))
-                ])
-                self.store.save_observations(db, observations, decisions, request.request_id, recorded_at)
-                db.executemany("""INSERT INTO embeddings VALUES ('observation',?,?,?,?)
-                    ON CONFLICT(owner_type,owner_id) DO UPDATE SET
-                    model=excluded.model,dimension=excluded.dimension,vector=excluded.vector""",
-                    [(observation["id"], self.config.embedding.name, self.config.embedding.dimensions, vector.tobytes())
-                     for observation, vector in zip(observations, observation_vectors)])
-                db.execute("INSERT INTO requests VALUES (?,?,?)", (request.request_id, payload_hash, response.model_dump_json()))
-                db.commit()
-            except Exception:
-                db.rollback()
-                raise
+            with self.directories.publish(directory, db) if directory else nullcontext():
+                self._commit_add(db, request, response, payload_hash, messages, chunks, facts, vectors,
+                                 observations, decisions, observation_vectors, recorded_at, directory)
             return response
+
+    def _commit_add(self, db, request, response, payload_hash, messages, chunks, facts, vectors,
+                    observations, decisions, observation_vectors, recorded_at, directory):
+        try:
+            # 只有所有外部模型调用成功后才开始事务；下面的表必须整体提交。
+            db.execute("BEGIN IMMEDIATE")
+            db.executemany("INSERT INTO messages VALUES (:id,:session_id,:seq,:role,:content,:timestamp)",
+                           [{**message, "content": ""} for message in messages] if directory else messages)
+            db.executemany("INSERT INTO chunks VALUES (:id,:message_id,:session_id,:message_seq,:chunk_seq,:token_start,:token_end,:content,:timestamp)",
+                           [{**chunk, "content": ""} for chunk in chunks] if directory else chunks)
+            db.executemany("INSERT INTO chunks_fts(content,chunk_id) VALUES (?,?)", [(c["content"], c["id"]) for c in chunks])
+            db.executemany("INSERT INTO facts VALUES (?,?,?,?,?,?,?,?)",
+                [(f["id"], f["content"], self.config.llm.name, f["occurred_start"], f["occurred_end"],
+                  f["occurred_precision"], f["mentioned_at"], recorded_at) for f in facts])
+            db.executemany("INSERT INTO fact_sources VALUES (?,?)", [(f["id"], s) for f in facts for s in f["sources"]])
+            db.executemany("INSERT INTO embeddings VALUES (?,?,?,?,?)", [
+                # vectors 的前 len(chunks) 个属于原文，剩余部分属于事实。
+                ("chunk" if i < len(chunks) else "fact", (chunks + facts)[i]["id"], self.config.embedding.name,
+                 self.config.embedding.dimensions, vectors[i].tobytes()) for i in range(len(chunks) + len(facts))
+            ])
+            self.store.save_observations(db, observations, decisions, request.request_id, recorded_at)
+            db.executemany("""INSERT INTO embeddings VALUES ('observation',?,?,?,?)
+                ON CONFLICT(owner_type,owner_id) DO UPDATE SET
+                model=excluded.model,dimension=excluded.dimension,vector=excluded.vector""",
+                [(observation["id"], self.config.embedding.name, self.config.embedding.dimensions, vector.tobytes())
+                 for observation, vector in zip(observations, observation_vectors)])
+            if directory:
+                db.execute("""INSERT INTO memory_directories VALUES
+                    (:id,:path,:parent_path,:abstract,:overview,:source_sha256)""", directory)
+                db.executemany("INSERT INTO message_sources VALUES (?,?)",
+                               [(message["id"], directory["id"]) for message in messages])
+                db.execute("INSERT INTO embeddings VALUES ('directory',?,?,?,?)",
+                           (directory["id"], self.config.embedding.name,
+                            self.config.embedding.dimensions, vectors[-1].tobytes()))
+            db.execute("INSERT INTO requests VALUES (?,?,?)", (request.request_id, payload_hash, response.model_dump_json()))
+            db.commit()
+        except BaseException:
+            db.rollback()
+            raise
+
+    def _select_directories(self, db, request, ranked_chunks):
+        mapping = {row["id"]: row["directory_id"] for row in db.execute("""
+            SELECT c.id, s.directory_id FROM chunks c JOIN message_sources s ON s.message_id=c.message_id""")}
+        candidates = []
+        seen = set()
+        for chunk_id in ranked_chunks:
+            directory_id = mapping[chunk_id]
+            if directory_id not in seen:
+                candidates.append(dict(db.execute("SELECT id,path,abstract,overview FROM memory_directories WHERE id=?",
+                                                  (directory_id,)).fetchone()))
+                seen.add(directory_id)
+            if len(candidates) == 10:
+                break
+        decisions = self.directory_selector.select(request.query, request.options, candidates)
+        if (len(decisions) != len(candidates) or {item["id"] for item in decisions} != seen
+                or any(item["choice"] not in {"relevant", "irrelevant", "uncertain"} for item in decisions)):
+            raise ValueError("directory selection returned invalid candidate decisions")
+        accepted = {item["id"] for item in decisions if item["choice"] != "irrelevant"}
+        return {chunk_id for chunk_id, directory_id in mapping.items() if directory_id in accepted}
 
     def _vector_rank(self, db, query_vector: np.ndarray, owner_type: str, limit: int) -> list[str]:
         """按 cosine similarity 对 chunk 或 fact 做向量召回，只返回排名后的 ID。"""
@@ -266,6 +322,15 @@ class MemoryEngine:
                                 WHERE o.id=? ORDER BY fs.chunk_id""", (observation_id,))
                             mapped.extend((rank, row[0]) for row in rows)
                         routes.append((mapped, 1.0))
+                    if self.directories:
+                        directory_ids = self._vector_rank(db, vector, "directory", 50)
+                        mapped = []
+                        for rank, directory_id in enumerate(directory_ids, 1):
+                            rows = db.execute("""SELECT c.id FROM chunks c
+                                JOIN message_sources s ON s.message_id=c.message_id
+                                WHERE s.directory_id=? ORDER BY c.message_seq,c.chunk_seq""", (directory_id,))
+                            mapped.extend((rank, row[0]) for row in rows)
+                        routes.append((mapped, 1.0))
                     for ranked_ids, route_weight in routes:
                         seen = set()
                         for rank, chunk_id in ranked_ids:
@@ -277,7 +342,11 @@ class MemoryEngine:
                     return SearchResponse(data=[])
 
                 # 先选少量高分 seed，再以 seed 为中心恢复上下文，避免每个召回 chunk 都单独返回。
-                seeds = sorted(scores, key=lambda key: (-scores[key], key))[:retrieval.seed_count]
+                ranked = sorted(scores, key=lambda key: (-scores[key], key))
+                allowed = self._select_directories(db, request, ranked) if self.directories else None
+                seeds = [key for key in ranked if allowed is None or key in allowed][:retrieval.seed_count]
+                if not seeds:
+                    return SearchResponse(data=[])
                 all_rows = db.execute("SELECT * FROM chunks ORDER BY session_id,message_seq,chunk_seq").fetchall()
                 by_id = {row["id"]: row for row in all_rows}
                 sessions: dict[str, list] = defaultdict(list)
@@ -289,7 +358,13 @@ class MemoryEngine:
                     session = sessions[row["session_id"]]
                     position = next(i for i, item in enumerate(session) if item["id"] == seed)
                     # neighbor_count=1 时，同时取 seed 前后各一个 chunk；B0/B1 为 0，B2/B3 为 1。
-                    selected[row["session_id"]].update(range(max(0, position - retrieval.neighbor_count), min(len(session), position + retrieval.neighbor_count + 1)))
+                    selected[row["session_id"]].update(
+                        i for i in range(max(0, position - retrieval.neighbor_count), min(len(session), position + retrieval.neighbor_count + 1))
+                        if allowed is None or session[i]["id"] in allowed)
+                hydrated = {}
+                if self.directories:
+                    rows = [sessions[session_id][i] for session_id, positions in selected.items() for i in positions]
+                    hydrated = {row["id"]: row for row in self.directories.hydrate_chunks(db, request.user_id, rows)}
                 windows = []
                 for session_id, positions in selected.items():
                     ordered = sorted(positions)
@@ -300,7 +375,7 @@ class MemoryEngine:
                             groups.append([])
                         groups[-1].append(position)
                     for group in groups:
-                        rows = [sessions[session_id][i] for i in group]
+                        rows = [hydrated.get(sessions[session_id][i]["id"], sessions[session_id][i]) for i in group]
                         content = "\n".join(row["content"] for row in rows)
                         score = max(scores.get(row["id"], 0) for row in rows)
                         timestamp = next((row["timestamp"] for row in rows if row["timestamp"] is not None), None)

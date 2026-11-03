@@ -177,6 +177,31 @@ class TaskStore:
                                         (json_text({"dependency": task_id}), task["method"], task["group"]))
         return payload
 
+    def attempts(self, task_id):
+        return self.connection.execute("SELECT COUNT(*) FROM failures WHERE task_id=?", (task_id,)).fetchone()[0]
+
+    def requeue(self, max_attempts):
+        """Return failed tasks with attempts left, and QA blocked on a requeued build, to pending.
+
+        Completed units and stages are kept, so work resumes where it stopped.
+        Budget-stopped tasks are left alone. Returns the requeued task ids.
+        """
+        requeued = []
+        with self.connection:
+            for row in self.connection.execute("SELECT task_id, kind, method, group_id FROM tasks WHERE state='failed'"
+                                               " ORDER BY position").fetchall():
+                if self.attempts(row[0]) < max_attempts:
+                    self.connection.execute("UPDATE tasks SET state='pending', error=NULL WHERE task_id=?", (row[0],))
+                    requeued.append(row[0])
+            for row in self.connection.execute("SELECT task_id, method, group_id FROM tasks WHERE state='blocked'"
+                                               " AND kind='qa'").fetchall():
+                build = self.connection.execute("SELECT state FROM tasks WHERE kind='build' AND method=? AND group_id=?",
+                                                (row[1], row[2])).fetchone()
+                if build is not None and build[0] in ("pending", "running", "success"):
+                    self.connection.execute("UPDATE tasks SET state='pending', error=NULL WHERE task_id=?", (row[0],))
+                    requeued.append(row[0])
+        return requeued
+
     def failures(self):
         return [json.loads(row[0]) for row in self.connection.execute("SELECT payload FROM failures ORDER BY event_id")]
 

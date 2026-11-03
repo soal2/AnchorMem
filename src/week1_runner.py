@@ -17,7 +17,7 @@ from collections import defaultdict
 from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
-from time import perf_counter
+from time import perf_counter, sleep
 from urllib.parse import urlsplit
 from urllib.request import urlopen
 
@@ -435,6 +435,55 @@ def experiment_protocol(path):
     return sorted(pieces)
 
 
+# Task-level retry: a failed task is re-queued until it has failed this many times.
+MAX_TASK_ATTEMPTS = 4
+# Extra passes over re-queued tasks in one run, with a growing pause between them.
+MAX_RETRY_ROUNDS = 3
+RETRY_ROUND_PAUSE_SECONDS = 120
+# After this many consecutive task failures, pause before continuing (error bursts).
+FAILURE_BURST = 5
+FAILURE_BURST_PAUSE_SECONDS = 120
+# Code amendments may change only operational (retry/transport/bookkeeping) files.
+# Prompts, configs, data, method code and the answer/judge protocol stay frozen.
+AMENDABLE_FILES = frozenset({"src/week1_gateway.py", "src/week1_runner.py", "src/week1_tasks.py",
+                             "src/week1_baseline_worker.py"})
+
+
+def pause(seconds):
+    sleep(seconds)
+
+
+def effective_files(manifest):
+    amendments = manifest.get("code_amendments") or []
+    return amendments[-1]["files"] if amendments else manifest["frozen_files"]
+
+
+def amend_code(root, directory, reason):
+    """Record an operational code change in a frozen run without changing its protocol fingerprint."""
+    directory = directory.resolve()
+    manifest = json.loads((directory / "manifest.json").read_text())
+    current = frozen_files(root)
+    previous = effective_files(manifest)
+    if current == previous:
+        return {"amended": False}
+    if set(current) != set(manifest["frozen_files"]):
+        raise ValueError("code amendment cannot add or remove frozen files")
+    changed = sorted(name for name in current if current[name] != manifest["frozen_files"][name])
+    if set(changed) - AMENDABLE_FILES:
+        raise ValueError("code amendment touches protocol files: " + ", ".join(sorted(set(changed) - AMENDABLE_FILES)))
+    number = len(manifest.get("code_amendments") or []) + 1
+    snapshot = directory / "amendments" / str(number)
+    for name in changed:
+        target = snapshot / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(root / name, target)
+    record = {"number": number, "at": datetime.now(timezone.utc).isoformat(), "reason": reason,
+              "changed": changed, "files": current}
+    manifest.setdefault("code_amendments", []).append(record)
+    write_json(directory / "manifest.json", manifest)
+    return {"amended": True, "number": number, "changed": changed}
+
+
 def frozen_files(root):
     paths = [path for folder in ("src", "prompts") for path in (root / folder).rglob("*")
              if path.is_file() and "__pycache__" not in path.parts and (folder != "src" or path.suffix == ".py")]
@@ -463,8 +512,18 @@ def verify_resume(root, directory, manifest, config):
                                           "chunk_tokens": 500, "overlap": 0, "top_k": 20}):
         raise ValueError("frozen experiment configuration changed")
     current = frozen_files(root)
-    if current != manifest["frozen_files"]:
+    if current != effective_files(manifest):
         raise ValueError("frozen experiment protocol changed; freeze a new run and rebuild affected histories")
+    for amendment in manifest.get("code_amendments") or []:
+        if set(amendment["changed"]) - AMENDABLE_FILES or any(
+                amendment["files"][name] != manifest["frozen_files"][name]
+                for name in manifest["frozen_files"] if name not in amendment["changed"]):
+            raise ValueError("code amendment changed protocol files")
+        for name in amendment["changed"]:
+            saved = directory / "amendments" / str(amendment["number"]) / name
+            if not saved.is_file() or hashlib.sha256(saved.read_bytes()).hexdigest() != amendment["files"][name]:
+                raise ValueError("code amendment snapshot changed")
+    current = manifest["frozen_files"]
     expected = hashlib.sha256(json_text({"protocol": TASK_PROTOCOL, "files": current,
                                         "config": config.model_dump(), "benchmark": benchmark,
                                         "methods": methods}).encode()).hexdigest()
@@ -717,8 +776,17 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                 call_context(gateway, {"run_id": manifest["run_id"], **task}, stage,
                              task["task_id"], unit, manifest["protocol_sha256"])
 
+            streak = {"failures": 0, "pauses": 0}
+
             def failure(task, stage, error):
                 store.fail(task["task_id"], stage, clean_error(error), gateway.stopped)
+                streak["failures"] += 1
+                if streak["failures"] >= FAILURE_BURST and not gateway.stopped:
+                    wait = min(1800, FAILURE_BURST_PAUSE_SECONDS * (2 ** streak["pauses"]))
+                    print(f"{streak['failures']} consecutive failures; pausing {wait}s before continuing", flush=True)
+                    streak["failures"] = 0
+                    streak["pauses"] += 1
+                    pause(wait)
                 export_records(directory, store)
                 report(directory)
                 runtime_status(directory, store, "running", task, stage + "-failed")
@@ -758,109 +826,124 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                 for group_questions in groups.values():
                     for method in methods:
                         method_group_pairs.append((method, group_questions))
-            for method, group_questions in method_group_pairs:
-                example = group_questions[0]
-                build = store.build(method, example["group"])
-                if build["state"] in ("failed", "blocked"):
-                    continue
-                if build["state"] != "success":
-                    started = perf_counter()
-                    try:
-                        units = ingestion_units(example, method)
-                        for number, unit in enumerate(units, 1):
-                            if number <= build["completed_units"]:
-                                continue
-                            def ingest(memory):
-                                if method in ("ours", "mem0"):
-                                    memory.ingest_unit(example, unit)
-                                else:
-                                    memory.ingest(example)
-                            _, version = mutate(build, "ingestion", unit["id"], ingest)
-                            store.commit_build_unit(build["task_id"], number, version)
-                            prune_indexes(directory, store)
-                            build = store.get(build["task_id"])
-                            runtime_status(directory, store, "running", build, "ingestion-committed", number)
-                        store.commit_build(build["task_id"], {**identity(method, example), "success": True,
-                            "history_complete": True, "history_sha256": history_digest(example),
-                            "source_messages": sum(len(s["messages"]) for s in example["sessions"]),
-                            "source_tokens": example["source_tokens"], "seconds": perf_counter() - started,
-                            "protocol_sha256": manifest["protocol_sha256"]})
-                        export_records(directory, store)
-                        report(directory)
-                    except Exception as error:
-                        failure(build, "ingestion", error)
+            requeued = store.requeue(MAX_TASK_ATTEMPTS)
+            if requeued:
+                print(f"resume: {len(requeued)} failed or blocked tasks re-queued", flush=True)
+            for round_number in range(MAX_RETRY_ROUNDS + 1):
+                if round_number:
+                    if gateway.stopped:
+                        break
+                    requeued = store.requeue(MAX_TASK_ATTEMPTS)
+                    if not requeued:
+                        break
+                    wait = RETRY_ROUND_PAUSE_SECONDS * (2 ** (round_number - 1))
+                    print(f"retry round {round_number}: {len(requeued)} tasks re-queued; pausing {wait}s", flush=True)
+                    runtime_status(directory, store, "running", stage=f"retry-round-{round_number}")
+                    pause(wait)
+                for method, group_questions in method_group_pairs:
+                    example = group_questions[0]
+                    build = store.build(method, example["group"])
+                    if build["state"] in ("failed", "blocked"):
                         continue
-                for item in group_questions:
-                    task = store.question(method, item["id"])
-                    if task["state"] in ("success", "failed", "blocked"):
-                        continue
-                    stage = "retrieval"
-                    try:
-                        store.require_history(task["task_id"])
-                        question = item["question"]
-                        if item.get("question_date"):
-                            question = f"[Question date: {item['question_date']}]\n{question}"
-                        retrieved = store.stage(task["task_id"], "retrieval")
-                        if retrieved is None:
-                            started = perf_counter()
-                            evidence, version = mutate(task, "search", "retrieval", lambda memory:
-                                memory.search(question, item["group"]) if method == "ours" else memory.search(question))
-                            context, delivered, context_tokens = render_evidence(evidence, tokenizer)
-                            retrieved = {**identity(method, item), "data": delivered,
-                                         "evidence_tokens": context_tokens, "search_seconds": perf_counter() - started}
-                            store.commit_stage(task["task_id"], "retrieval", retrieved, index_path=version)
-                            prune_indexes(directory, store)
-                        else:
-                            context = "\n\n".join(f"[Memory {row['id']}]\n{row['content']}" for row in retrieved["data"])
-                        stage = "answer"
-                        saved = store.stage(task["task_id"], "answer")
-                        if saved is None:
-                            begin(task, stage, stage)
-                            started = perf_counter()
-                            response = client.chat.completions.create(model="openai/gpt-4o-mini", temperature=0,
-                                max_tokens=512, messages=[{"role": "system", "content": ANSWER_SYSTEM},
-                                {"role": "user", "content": f"Memory evidence:\n{context}\n\nQuestion:\n{question}"}])
-                            saved = {**identity(method, item), "answer": response.choices[0].message.content or "",
-                                "finish_reason": response.choices[0].finish_reason,
-                                "evidence_tokens": retrieved["evidence_tokens"], "search_seconds": retrieved["search_seconds"],
-                                "answer_seconds": perf_counter() - started}
-                            store.commit_stage(task["task_id"], "answer", saved)
-                        if saved["finish_reason"] != "stop":
-                            raise providers.ProviderError("answer output is incomplete", {"finish_reason": saved["finish_reason"]}, saved["answer"])
-                        judge_text = None
-                        if item["dataset"] in {"longmemeval", "memorybank"}:
-                            stage = "judge"
-                            judged = store.stage(task["task_id"], "judge")
-                            if judged is None:
+                    if build["state"] != "success":
+                        started = perf_counter()
+                        try:
+                            units = ingestion_units(example, method)
+                            for number, unit in enumerate(units, 1):
+                                if number <= build["completed_units"]:
+                                    continue
+                                def ingest(memory):
+                                    if method in ("ours", "mem0"):
+                                        memory.ingest_unit(example, unit)
+                                    else:
+                                        memory.ingest(example)
+                                _, version = mutate(build, "ingestion", unit["id"], ingest)
+                                store.commit_build_unit(build["task_id"], number, version)
+                                prune_indexes(directory, store)
+                                build = store.get(build["task_id"])
+                                runtime_status(directory, store, "running", build, "ingestion-committed", number)
+                            store.commit_build(build["task_id"], {**identity(method, example), "success": True,
+                                "history_complete": True, "history_sha256": history_digest(example),
+                                "source_messages": sum(len(s["messages"]) for s in example["sessions"]),
+                                "source_tokens": example["source_tokens"], "seconds": perf_counter() - started,
+                                "protocol_sha256": manifest["protocol_sha256"]})
+                            export_records(directory, store)
+                            report(directory)
+                        except Exception as error:
+                            failure(build, "ingestion", error)
+                            continue
+                    for item in group_questions:
+                        task = store.question(method, item["id"])
+                        if task["state"] in ("success", "failed", "blocked"):
+                            continue
+                        stage = "retrieval"
+                        try:
+                            store.require_history(task["task_id"])
+                            question = item["question"]
+                            if item.get("question_date"):
+                                question = f"[Question date: {item['question_date']}]\n{question}"
+                            retrieved = store.stage(task["task_id"], "retrieval")
+                            if retrieved is None:
+                                started = perf_counter()
+                                evidence, version = mutate(task, "search", "retrieval", lambda memory:
+                                    memory.search(question, item["group"]) if method == "ours" else memory.search(question))
+                                context, delivered, context_tokens = render_evidence(evidence, tokenizer)
+                                retrieved = {**identity(method, item), "data": delivered,
+                                             "evidence_tokens": context_tokens, "search_seconds": perf_counter() - started}
+                                store.commit_stage(task["task_id"], "retrieval", retrieved, index_path=version)
+                                prune_indexes(directory, store)
+                            else:
+                                context = "\n\n".join(f"[Memory {row['id']}]\n{row['content']}" for row in retrieved["data"])
+                            stage = "answer"
+                            saved = store.stage(task["task_id"], "answer")
+                            if saved is None:
                                 begin(task, stage, stage)
-                                if item["dataset"] == "memorybank":
-                                    judge_prompt = get_memorybank_judge_prompt(saved["answer"], item)
-                                else:
-                                    judge_prompt = get_lme_judge_prompt(saved["answer"], item)
-                                response = client.chat.completions.create(model="openai/gpt-4o-2024-08-06", temperature=0,
-                                    max_tokens=32, messages=[{"role": "user", "content": judge_prompt}])
-                                judged = {**identity(method, item), "judge_response": response.choices[0].message.content or "",
-                                          "finish_reason": response.choices[0].finish_reason, "request_id": response.id}
-                                store.commit_stage(task["task_id"], "judge", judged)
-                            if judged["finish_reason"] != "stop":
-                                raise providers.ProviderError("judge output is incomplete", {"finish_reason": judged["finish_reason"]}, judged["judge_response"])
-                            judge_text = judged["judge_response"]
-                        stage = "score"
-                        runtime_status(directory, store, "running", task, stage)
-                        if item["dataset"] == "locomo":
-                            score = float(score_locomo(saved["answer"], item))
-                        elif item["dataset"] == "memorybank":
-                            score = float(parse_memorybank_judge(judge_text))
-                        else:
-                            score = float(parse_lme_judge(judge_text))
-                        store.commit_stage(task["task_id"], "score", {**identity(method, item), "answer": saved["answer"],
-                            "score": score, "judge_response": judge_text, "evidence_tokens": saved["evidence_tokens"],
-                            "search_seconds": saved["search_seconds"], "answer_seconds": saved["answer_seconds"]})
-                        export_records(directory, store)
-                        report(directory)
-                        print(f"{method} {item['dataset']} {item['id']} score={score:.3f}", flush=True)
-                    except Exception as error:
-                        failure(task, stage, error)
+                                started = perf_counter()
+                                response = client.chat.completions.create(model="openai/gpt-4o-mini", temperature=0,
+                                    max_tokens=512, messages=[{"role": "system", "content": ANSWER_SYSTEM},
+                                    {"role": "user", "content": f"Memory evidence:\n{context}\n\nQuestion:\n{question}"}])
+                                saved = {**identity(method, item), "answer": response.choices[0].message.content or "",
+                                    "finish_reason": response.choices[0].finish_reason,
+                                    "evidence_tokens": retrieved["evidence_tokens"], "search_seconds": retrieved["search_seconds"],
+                                    "answer_seconds": perf_counter() - started}
+                                store.commit_stage(task["task_id"], "answer", saved)
+                            if saved["finish_reason"] != "stop":
+                                raise providers.ProviderError("answer output is incomplete", {"finish_reason": saved["finish_reason"]}, saved["answer"])
+                            judge_text = None
+                            if item["dataset"] in {"longmemeval", "memorybank"}:
+                                stage = "judge"
+                                judged = store.stage(task["task_id"], "judge")
+                                if judged is None:
+                                    begin(task, stage, stage)
+                                    if item["dataset"] == "memorybank":
+                                        judge_prompt = get_memorybank_judge_prompt(saved["answer"], item)
+                                    else:
+                                        judge_prompt = get_lme_judge_prompt(saved["answer"], item)
+                                    response = client.chat.completions.create(model="openai/gpt-4o-2024-08-06", temperature=0,
+                                        max_tokens=32, messages=[{"role": "user", "content": judge_prompt}])
+                                    judged = {**identity(method, item), "judge_response": response.choices[0].message.content or "",
+                                              "finish_reason": response.choices[0].finish_reason, "request_id": response.id}
+                                    store.commit_stage(task["task_id"], "judge", judged)
+                                if judged["finish_reason"] != "stop":
+                                    raise providers.ProviderError("judge output is incomplete", {"finish_reason": judged["finish_reason"]}, judged["judge_response"])
+                                judge_text = judged["judge_response"]
+                            stage = "score"
+                            runtime_status(directory, store, "running", task, stage)
+                            if item["dataset"] == "locomo":
+                                score = float(score_locomo(saved["answer"], item))
+                            elif item["dataset"] == "memorybank":
+                                score = float(parse_memorybank_judge(judge_text))
+                            else:
+                                score = float(parse_lme_judge(judge_text))
+                            store.commit_stage(task["task_id"], "score", {**identity(method, item), "answer": saved["answer"],
+                                "score": score, "judge_response": judge_text, "evidence_tokens": saved["evidence_tokens"],
+                                "search_seconds": saved["search_seconds"], "answer_seconds": saved["answer_seconds"]})
+                            export_records(directory, store)
+                            report(directory)
+                            print(f"{method} {item['dataset']} {item['id']} score={score:.3f}", flush=True)
+                            streak["failures"] = streak["pauses"] = 0
+                        except Exception as error:
+                            failure(task, stage, error)
             counts = store.counts()
             status = ("finished" if counts["qa"]["success"] == len(examples) * len(methods) else
                       "budget-stopped" if gateway.stopped else "incomplete")
@@ -999,7 +1082,8 @@ def report(directory, result_methods=None):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("phase", choices=("prepare", "preflight", "run", "report"))
+    parser.add_argument("phase", choices=("prepare", "preflight", "run", "report", "amend-code"))
+    parser.add_argument("--reason", default="")
     parser.add_argument("--budget-usd", type=float, default=20)
     parser.add_argument("--run-dir", type=Path)
     parser.add_argument("--inherit-run", type=Path)
@@ -1026,6 +1110,10 @@ def main():
             raise KeyboardInterrupt
         signal.signal(signal.SIGTERM, stop)
         print(run(root, args.budget_usd, args.run_dir, args.inherit_run, benchmark=args.benchmark))
+    elif args.phase == "amend-code":
+        if not args.run_dir or not args.reason:
+            raise SystemExit("amend-code requires --run-dir and --reason")
+        print(json.dumps(amend_code(root, args.run_dir, args.reason), ensure_ascii=False, indent=2))
     else:
         directory = args.run_dir or max((root / "artifacts/week1").glob("*/manifest.json")).parent
         print(json.dumps(report(directory), ensure_ascii=False, indent=2))

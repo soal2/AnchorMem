@@ -21,7 +21,8 @@ class DirectoryMemory:
         # User-controlled identifiers never become filesystem path components.
         parent = f"user/{_hash(request.user_id)}/memories/sessions/{_hash(request.session_id)}"
         source = json.dumps({"user_id": request.user_id, "session_id": request.session_id,
-                             "request_id": request.request_id, "messages": messages},
+                             "request_id": request.request_id, "project_id": request.project_id,
+                             "messages": messages},
                             ensure_ascii=False, sort_keys=True, indent=2).encode()
         lines = [f"Session: {request.session_id}",
                  f"Source order: {messages[0]['seq']}–{messages[-1]['seq']}",
@@ -123,6 +124,5 @@ class DirectoryMemory:
 
     def hydrate_chunks(self, db, user_id: str, rows: list) -> list[dict]:
         messages = self.messages(db, user_id, list(dict.fromkeys(row["message_id"] for row in rows)))
-        tokens = {identity: self.tokenizer.encode(message["content"]) for identity, message in messages.items()}
-        return [{**dict(row), "content": self.tokenizer.decode(
-            tokens[row["message_id"]][row["token_start"]:row["token_end"]])} for row in rows]
+        return [{**dict(row), "content": messages[row["message_id"]]["content"][row["char_start"]:row["char_end"]]}
+                for row in rows]

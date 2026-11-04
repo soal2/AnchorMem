@@ -1,0 +1,27 @@
+{
+  "schema": 1,
+  "snapshot_id": "20261101T042649023385Z",
+  "published_at": "2026-11-01T04:32:41.577033+00:00",
+  "questions": 23,
+  "score_rows": 92,
+  "files_sha256": {
+    "comparable-scores.json": "da3271d520105738183a599aef74b5c1c8d6acd3ba023edd7a8d127c0155126e",
+    "comparable-scores.csv": "21ed9a905f0f287c24e9ed9ad1c10a374603e337a27f9b34480c2e497f108f5f",
+    "paired-comparisons.csv": "c236f7904fa8e12ed8b1ff969589ea908517ca9b6fd8074e86235f63278f34a3",
+    "summary.json": "d965e3e6d53f37361c757644074b8eacbd2e326eec80bf7cef1834c18155a207",
+    "summary.md": "fbc8796483f9fec52d7f5be9bcca63a2fa951bf519b532fef0787c6fdc35e12d",
+    "README.md": "efda8ec0e5e4f60a9eb5f87dcd91e8b56e9f4766242237e070c2013d4cb283db",
+    "costs.json": "0d713f8fa77e548f2e42c5c6bddeb0be00b305deef79fb0fce10aeec7c2abeb8",
+    "by-run.csv": "43f9b92d064f2e0d352f81f1da92b7724df896e9e898a966617f4328d4249819",
+    "by-stage.csv": "b6952d22ec598d46cd39f87d7de54b45f78b89987dacfc1bc02fd1defde2d83a",
+    "campaign-stages.csv": "aaebcc136f45878569293897c9a7a3e23183d80b935f6d07d4e81f5c817c9f2e",
+    "version-provenance.json": "63b32f8f0de23c0369d5f9fb77c7b4c8143731586e3c64dcc03a1401e07e0da8",
+    "VERSION-PROVENANCE.md": "3223f6abf7e2c14fc5f6d1fde5788628568dc5c43776a4849e97f0b639fc4fc9",
+    "validation.json": "cedcba00615831e79f04ec9ef9368fb3dd79db8fe5e8e6a1a5577f89d8d96f84"
+  },
+  "source_directory": "/Users/eversse/Documents/Codex/2026-10-18/task/experiment-records/vikingjev-comparisons/records/20261101T042649023385Z",
+  "experimental_artifact_writes": 0,
+  "model_calls": 0,
+  "evaluation_calls": 0,
+  "selection": "Only saved same-question VikingJev/Mem0/MemoryBank valid intersections; optional same-question RAG."
+}

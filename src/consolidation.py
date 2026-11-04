@@ -11,6 +11,26 @@ from .temporal import time_bounds
 
 RELATIONS = ("duplicate", "supplement", "state_change", "correction", "conflict")
 TIME_FIELDS = ("occurred_start", "occurred_end", "occurred_precision", "mentioned_at")
+CONTEXT_FIELDS = ("topic", "scope", "project_id", "matter_id")
+
+
+def _partition(record: dict) -> tuple[str, str, str | None]:
+    if any(field not in record for field in CONTEXT_FIELDS):
+        raise ValueError("consolidation record is missing context metadata")
+    topic, scope, project_id = (record[field] for field in CONTEXT_FIELDS[:3])
+    if not isinstance(topic, str) or not topic or scope not in ("global", "project", "unresolved"):
+        raise ValueError("invalid consolidation context")
+    if scope == "project":
+        if not isinstance(project_id, str) or not project_id.strip():
+            raise ValueError("project consolidation requires project_id")
+    elif project_id is not None:
+        raise ValueError("non-project consolidation cannot carry project_id")
+    if topic == "events":
+        if not isinstance(record["matter_id"], str) or not record["matter_id"]:
+            raise ValueError("event consolidation requires matter_id")
+    elif record["matter_id"] is not None:
+        raise ValueError("non-event consolidation cannot carry matter_id")
+    return topic, scope, project_id
 
 
 def _new_id(request_id: str, fact_id: str, choice: str) -> str:
@@ -26,7 +46,8 @@ def _unit(vector) -> np.ndarray:
 
 
 def _fact(fact: dict) -> dict:
-    return {key: fact[key] for key in ("id", "content", *TIME_FIELDS) if key in fact}
+    return {key: fact[key] for key in ("id", "content", *CONTEXT_FIELDS, *TIME_FIELDS,
+                                     "event_status", "conditions", "verification") if key in fact}
 
 
 def _time_metadata(stage: dict) -> dict:
@@ -92,6 +113,7 @@ def _state(fact: dict, candidates: list[dict]) -> dict:
         "new_fact": _fact(fact),
         "candidate_observations": [
             {"id": candidate["id"], "content": candidate["content"],
+             **{field: candidate[field] for field in CONTEXT_FIELDS},
              "source_facts": candidate["source_facts"], "pending_facts": candidate["pending_facts"],
              "pending_relations": candidate["relations"], "time_metadata": _time_metadata(candidate),
              "temporal_comparisons": [_temporal_comparison(source, fact)
@@ -101,6 +123,9 @@ def _state(fact: dict, candidates: list[dict]) -> dict:
         "time_policy": "Use source mentioned_at and occurred intervals. Arrival order does not establish current truth. "
                        "Late old information may add history without replacing a newer state. Unknown times stay unknown. "
                        "temporal_comparisons are code-computed source-to-new interval relations, not truth judgments.",
+        "context_policy": "Candidates share the new fact's topic, scope and project_id. For events, distinguish "
+                          "the same facet from a different facet of the same matter; a shared event name alone is not "
+                          "enough to establish the same matter.",
     }
 
 
@@ -122,6 +147,12 @@ def _criteria(candidates: list[dict]) -> tuple[dict, dict]:
             choice = f"target{index}_{relation}"
             criteria[choice] = f"Target {candidate['id']}: {descriptions[relation]}"
             choices[choice] = (candidate["id"], relation)
+        if candidate["topic"] == "events":
+            choice = f"target{index}_same_matter"
+            criteria[choice] = (f"Target {candidate['id']}: A distinct facet of the same concrete matter, supported "
+                                "by the event context; keep it as a separate observation linked to that matter. "
+                                "A shared name or topic alone does not establish the same matter.")
+            choices[choice] = (candidate["id"], "same_matter")
     return criteria, choices
 
 
@@ -136,11 +167,15 @@ def consolidate(facts: list[dict], fact_vectors: list[np.ndarray], existing: lis
         raise ValueError("fact vector count does not match facts")
     stages = {}
     for observation in existing:
+        _partition(observation)
+        if observation["scope"] == "unresolved":
+            continue
         sources = list(dict.fromkeys(observation["sources"]))
         if not sources:
             raise ValueError("observation must have sources")
         stages[observation["id"]] = {
             "id": observation["id"], "content": observation["content"],
+            **{field: observation[field] for field in CONTEXT_FIELDS},
             "base_revision": observation["revision"], "sources": sources,
             "source_facts": [_fact(f) for f in observation.get("source_facts", [])],
             "existing_times": observation.get("time_metadata", observation),
@@ -150,10 +185,13 @@ def consolidate(facts: list[dict], fact_vectors: list[np.ndarray], existing: lis
     changed_ids = []
     decisions = []
     for fact, vector in zip(facts, fact_vectors):
+        partition = _partition(fact)
+        if fact["scope"] == "unresolved":
+            continue
         if not fact.get("content", "").strip() or not fact.get("sources"):
             raise ValueError("fact must have content and sources")
         vector = _unit(vector)
-        ranked = sorted(stages.values(), key=lambda stage: (
+        ranked = sorted((stage for stage in stages.values() if _partition(stage) == partition), key=lambda stage: (
             -max(float(vector @ candidate) for candidate in stage["vectors"]), stage["id"]))
         candidates = ranked[:5]
         criteria, choices = _criteria(candidates)
@@ -165,17 +203,22 @@ def consolidate(facts: list[dict], fact_vectors: list[np.ndarray], existing: lis
         if probabilities is not None:
             validate_choice_probabilities(result["choice"], probabilities, criteria)
         choice = result["choice"]
-        if choice in ("new", "uncertain"):
+        relation = choice
+        related_target_id = None
+        if choice not in ("new", "uncertain"):
+            related_target_id, relation = choices[choice]
+            fact["matter_id"] = stages[related_target_id]["matter_id"]
+        if choice in ("new", "uncertain") or relation == "same_matter":
             target_id = _new_id(request_id, fact["id"], choice)
-            relation = choice
             stages[target_id] = {
                 "id": target_id, "content": fact["content"], "base_revision": 0,
+                **{field: fact[field] for field in CONTEXT_FIELDS},
                 "sources": [], "source_facts": [], "existing_times": {},
                 "pending_facts": [], "relations": [], "vectors": [],
                 "status": "uncertain" if choice == "uncertain" else "active", "rewrite": False,
             }
         else:
-            target_id, relation = choices[choice]
+            target_id = related_target_id
         stage = stages[target_id]
         stage["sources"] = list(dict.fromkeys([*stage["sources"], fact["id"]]))
         stage["pending_facts"].append(_fact(fact))
@@ -187,11 +230,13 @@ def consolidate(facts: list[dict], fact_vectors: list[np.ndarray], existing: lis
         if target_id not in changed_ids:
             changed_ids.append(target_id)
         decisions.append({"fact_id": fact["id"], "target_id": target_id, "relation": relation,
+                          "related_target_id": related_target_id if relation == "same_matter" else None,
                           "choice": choice, "probabilities": dict(probabilities) if probabilities is not None else None,
                           "model": result.get("model")})
 
     jobs = [
         {"id": target_id, "previous_text": stages[target_id]["content"],
+         **{field: stages[target_id][field] for field in CONTEXT_FIELDS},
          "source_facts": stages[target_id]["source_facts"],
          "pending_facts": stages[target_id]["pending_facts"], "relations": stages[target_id]["relations"]}
         for target_id in changed_ids if stages[target_id]["rewrite"]
@@ -206,6 +251,7 @@ def consolidate(facts: list[dict], fact_vectors: list[np.ndarray], existing: lis
             stages[target_id]["content"] = content.strip()
     changed = [
         {"id": target_id, "content": stages[target_id]["content"],
+         **{field: stages[target_id][field] for field in CONTEXT_FIELDS},
          "revision": stages[target_id]["base_revision"] + 1, "sources": stages[target_id]["sources"],
          "status": stages[target_id]["status"], "time_metadata": _time_metadata(stages[target_id])}
         for target_id in changed_ids

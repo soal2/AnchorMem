@@ -15,9 +15,12 @@ class MemoryLLM:
         self.extractions = []
         self.rewrites = []
 
-    def extract(self, prompt, messages, chunks, temporal=False):
+    def extract(self, prompt, messages, chunks, temporal=False, project_id=None):
         self.extractions.append((messages, chunks, temporal))
         return [{"content": chunk["content"], "source_chunk_ids": [chunk["id"]],
+                 "source_quotes": [{"chunk_id": chunk["id"], "quote": chunk["content"], "occurrence": 0}],
+                 "topic": "preferences", "scope": "default", "parent_index": None,
+                 "event_status": None, "conditions": None, "verification": None,
                  **({"occurred_start": "2020-05-01", "occurred_end": "2020-05-31",
                      "occurred_precision": "month", "mentioned_at": "2022-01-01"} if temporal else {})}
                 for chunk in chunks]
@@ -165,8 +168,11 @@ def test_index_rejects_different_decision_model(memory):
 def test_distinct_event_times_do_not_collapse_identical_fact_text(memory):
     engine, llm, _, _ = memory
 
-    def extract(prompt, messages, chunks, temporal=False):
+    def extract(prompt, messages, chunks, temporal=False, project_id=None):
         return [{"content": "Alice visited Paris.", "source_chunk_ids": [chunks[0]["id"]],
+                 "source_quotes": [{"chunk_id": chunks[0]["id"], "quote": chunks[0]["content"], "occurrence": 0}],
+                 "topic": "events", "scope": "default", "parent_index": None,
+                 "event_status": "completed", "conditions": None, "verification": None,
                  "occurred_start": year, "occurred_end": year, "occurred_precision": "year",
                  "mentioned_at": None} for year in ("2020", "2021")]
 

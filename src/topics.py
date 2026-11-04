@@ -1,17 +1,12 @@
-"""Fixed, multi-label parent topics shared by writing and retrieval."""
-from .directory_selector import CRITERIA
-from .providers import validate_choice_probabilities
+"""Fixed information types shared by entry extraction and directory retrieval."""
 
 TOPICS = {
-    'education': 'Degrees, university studies, courses, graduation and educational history.',
-    'work': 'Employment, employers, job roles, career changes and workplace projects.',
-    'health': 'Health, allergies, dietary preferences, exercise and medical precautions.',
-    'travel': 'Trips, destinations, itineraries, travel bookings and journey plans.',
-    'finance': 'Budgets, savings, expenses, payments and financial plans.',
-    'family': 'Relationships, relatives, friends, family events and responsibilities.',
-    'hobbies': 'Music, food, gardening, photography and other leisure interests and preferences.',
-    'housing': 'Residences, moving home, rent, household items and home maintenance.',
-    'other': 'Personal information and topics not covered by the other eight branches.',
+    'profile': 'The user\'s identity, background and current personal state.',
+    'preferences': 'The user\'s global inclinations and preferred choices, rather than explicit requirements.',
+    'entities': 'Facts about other people, organizations, projects and objects.',
+    'events': 'Events, plans, commitments, changes, progress and outcomes grouped by the same matter.',
+    'requirements': 'Explicit conditions the user requires within a stated applicable scope.',
+    'methods': 'Reusable procedures, solutions and failure lessons, with applicable conditions and verification.',
 }
 
 
@@ -20,6 +15,9 @@ def candidates():
 
 
 def selected_topics(decisions, identities):
+    from .directory_selector import CRITERIA
+    from .providers import validate_choice_probabilities
+
     if (len(decisions) != len(identities) or {d['id'] for d in decisions} != set(identities)
             or any(d['choice'] not in CRITERIA for d in decisions)):
         raise ValueError('topic selection returned invalid candidate decisions')

@@ -15,11 +15,16 @@ class FactModel:
         self.calls = []
         self.fail = False
 
-    def extract(self, prompt, messages, chunks, temporal=False):
+    def extract(self, prompt, messages, chunks, temporal=False, project_id=None):
         self.calls.append((messages, chunks))
         if self.fail:
             raise RuntimeError("extraction unavailable")
-        return [{"content": "DERIVED FACT: " + chunk["content"], "source_chunk_ids": [chunk["id"]]}
+        return [{"content": "DERIVED FACT: " + chunk["content"], "source_chunk_ids": [chunk["id"]],
+                 "source_quotes": [{"chunk_id": chunk["id"], "quote": chunk["content"], "occurrence": 0}],
+                 "topic": "entities" if "UNRELATED" in chunk["content"] or "SECRET DISTRACTOR" in chunk["content"] else "preferences",
+                 "scope": "default", "parent_index": None, "event_status": None, "conditions": None,
+                 "verification": None, "occurred_start": None, "occurred_end": None,
+                 "occurred_precision": None, "mentioned_at": None}
                 for chunk in chunks]
 
     def rewrite(self, prompt, jobs):
@@ -58,12 +63,6 @@ class Selector:
         self.fail = False
         self.choose = lambda item: "relevant"
 
-    def classify(self, content, candidates):
-        topic = "housing" if "UNRELATED" in content or "SECRET DISTRACTOR" in content else "hobbies"
-        return [{"id": item["id"], "choice": "relevant" if item["id"] == topic else "irrelevant", "model": "fake",
-                 "probabilities": {"relevant": float(item["id"] == topic), "irrelevant": float(item["id"] != topic), "uncertain": 0}}
-                for item in candidates]
-
     def select(self, query, options, candidates):
         self.calls.append((query, options, candidates))
         if self.fail:
@@ -97,7 +96,7 @@ def counts(engine, user="u1"):
         return {table: db.execute(f"SELECT count(*) FROM {table}").fetchone()[0] for table in (
             "messages", "chunks", "facts", "fact_sources", "observations", "observation_revisions",
             "observation_sources", "consolidation_decisions", "embeddings", "requests",
-            "memory_directories", "memory_topics", "directory_topics", "message_sources", "chunks_fts")}
+            "memory_directories", "message_sources", "chunks_fts")}
 
 
 def source_files(engine):
@@ -127,15 +126,13 @@ def test_directory_sources_and_vectors_are_separate_and_search_returns_original(
     result = search(engine)
     assert [item.content for item in result.data] == [raw]
     assert all("DERIVED" not in item.content for item in result.data)
-    assert [t["id"] for t in selector.calls[0][2]] == ["hobbies"]
+    assert [t["id"] for t in selector.calls[0][2]] == ["preferences"]
 
 
-def test_directory_routing_requires_local_evidence_retrieval(memory, monkeypatch):
+def test_topic_routing_requires_local_evidence_retrieval(memory, monkeypatch):
     engine, _, _, _, _ = memory
     engine.add(request("r1", "I prefer jasmine tea."))
-    with engine.store.connect("u1") as db:
-        identity = db.execute("SELECT id FROM memory_directories").fetchone()[0]
-    monkeypatch.setattr(engine, "_vector_rank", lambda db, vector, kind, limit, *scope: [identity] if kind == "directory" else [])
+    monkeypatch.setattr(engine, "_vector_rank", lambda db, vector, kind, limit: [])
     monkeypatch.setattr(engine, "_bm25_rank", lambda *args: [])
     assert search(engine).data == []
 
@@ -147,12 +144,10 @@ def test_original_chunk_offsets_and_neighbor_windows_are_reconstructed(memory, m
     with engine.store.connect("u1") as db:
         rows = [dict(row) for row in db.execute("SELECT * FROM chunks ORDER BY chunk_seq")]
     assert len(rows) > 4
-    tokens = engine.tokenizer.encode(raw)
-    expected = "\n".join(engine.tokenizer.decode(tokens[row["token_start"]:row["token_end"]]) for row in rows[1:4])
-    with engine.store.connect("u1") as db:
-        directory_id = db.execute("SELECT id FROM memory_directories").fetchone()[0]
-    monkeypatch.setattr(engine, "_vector_rank", lambda db, vector, kind, limit, *scope:
-                        [directory_id] if kind == "directory" else [rows[2]["id"]] if kind == "chunk" else [])
+    expected = "\n".join(raw[max(row["char_start"], rows[index]["char_end"] if index else 0):row["char_end"]]
+                         for index, row in enumerate(rows[1:4]))
+    monkeypatch.setattr(engine, "_vector_rank", lambda db, vector, kind, limit:
+                        [rows[2]["id"]] if kind == "chunk" else [])
     monkeypatch.setattr(engine, "_bm25_rank", lambda *args: [])
     assert [item.content for item in search(engine).data] == [expected]
     assert expected != raw
@@ -192,11 +187,11 @@ def test_unsafe_user_and_session_ids_stay_inside_root_and_users_remain_isolated(
     assert search(engine, "missing").data == []
 
 
-def test_probability_routing_keeps_multiple_directories_even_if_label_is_irrelevant(memory):
+def test_probability_routing_keeps_uncertain_topic_and_excludes_irrelevant_topic(memory):
     engine, _, _, _, selector = memory
     engine.add(request("r1", "SECRET DISTRACTOR: the dishwasher is blue."))
     engine.add(request("r2", "I prefer tea."))
-    selector.choose = lambda item: "irrelevant" if item["id"] == "housing" else "uncertain"
+    selector.choose = lambda item: "irrelevant" if item["id"] == "entities" else "uncertain"
     response = search(engine)
     assert [item.content for item in response.data] == ["I prefer tea."]
     assert len(selector.calls[0][2]) == 2
@@ -221,7 +216,7 @@ def test_selector_failure_is_surfaced_without_unfiltered_fallback(memory):
     [{"id": "invented", "choice": "relevant"}],
     [],
 ])
-def test_unknown_or_missing_directory_decisions_are_rejected(memory, monkeypatch, result):
+def test_unknown_or_missing_topic_decisions_are_rejected(memory, monkeypatch, result):
     engine, _, _, _, selector = memory
     engine.add(request("r1", "I prefer tea."))
     monkeypatch.setattr(selector, "select", lambda *args: result)
@@ -229,7 +224,7 @@ def test_unknown_or_missing_directory_decisions_are_rejected(memory, monkeypatch
         search(engine)
 
 
-def test_unknown_directory_choice_is_rejected(memory):
+def test_unknown_topic_choice_is_rejected(memory):
     engine, _, _, _, selector = memory
     engine.add(request("r1", "I prefer tea."))
     selector.choose = lambda item: "invented"
@@ -329,7 +324,7 @@ def test_many_directories_require_only_one_parent_decision_request(memory):
     assert len(selector.calls) == 1
     query, options, directories = selector.calls[0]
     assert (query, options) == ("Preference", ["tea", "coffee"])
-    assert [item["id"] for item in directories] == ["hobbies"]
+    assert [item["id"] for item in directories] == ["preferences"]
     assert len(response.data) == 11
 
 
@@ -341,11 +336,11 @@ def test_jev_precedes_local_retrieval_and_rejected_vectors_are_never_loaded(memo
     engine.add(request("drop", "UNRELATED: car maintenance.", session="drop"))
     for i in range(3):
         engine.add(request(f"extra-{i}", f"Extra tea preference {i}.", session=f"extra-{i}"))
-    selector.choose = lambda item: "irrelevant" if item["id"] == "housing" else "relevant"
+    selector.choose = lambda item: "irrelevant" if item["id"] == "entities" else "relevant"
     with engine.store.connect("u1") as db:
         keep = db.execute("SELECT id FROM memory_directories WHERE overview NOT LIKE '%UNRELATED%'").fetchone()[0]
         drop = db.execute("SELECT id FROM memory_directories WHERE overview LIKE '%UNRELATED%'").fetchone()[0]
-        # A global vector load would fail to decode these bytes. Directory vectors remain valid.
+        # A global vector load would fail to decode these bytes.
         for kind in ("chunk", "fact", "observation"):
             if kind == "chunk":
                 ids = db.execute("SELECT c.id FROM chunks c JOIN message_sources s ON s.message_id=c.message_id WHERE s.directory_id=?", (drop,))
@@ -360,13 +355,15 @@ def test_jev_precedes_local_retrieval_and_rejected_vectors_are_never_loaded(memo
     calls = []
     original = engine._vector_rank
 
-    def checked(db, vector, kind, limit, directory_ids=None):
-        if kind != "directory":
-            assert len(selector.calls) == 1
-            assert keep in directory_ids and drop not in directory_ids
-            assert len(directory_ids) == 4
+    def checked(db, vector, kind, limit):
+        assert len(selector.calls) == 1
+        scoped = {row[0] for row in db.execute("""SELECT DISTINCT s.directory_id FROM search_facts q
+            JOIN fact_sources fs ON fs.fact_id=q.id JOIN chunks c ON c.id=fs.chunk_id
+            JOIN message_sources s ON s.message_id=c.message_id""")}
+        assert keep in scoped and drop not in scoped
+        assert len(scoped) == 4
         calls.append(kind)
-        return original(db, vector, kind, limit, directory_ids)
+        return original(db, vector, kind, limit)
 
     monkeypatch.setattr(engine, "_vector_rank", checked)
     assert "I prefer jasmine tea." in [item.content for item in search(engine).data]
@@ -376,12 +373,15 @@ def test_jev_precedes_local_retrieval_and_rejected_vectors_are_never_loaded(memo
 def test_bm25_scope_is_applied_before_candidate_limit(memory):
     engine, _, _, _, _ = memory
     engine.add(request("keep", "jasmine tea with breakfast", session="keep"))
-    engine.add(request("drop", "jasmine jasmine jasmine jasmine", session="drop"))
+    engine.add(request("drop", "UNRELATED jasmine jasmine jasmine jasmine", session="drop"))
     with engine.store.connect("u1") as db:
         directory = db.execute("SELECT id FROM memory_directories WHERE overview LIKE '%breakfast%'").fetchone()[0]
         chunk = db.execute("SELECT c.id FROM chunks c JOIN message_sources s ON s.message_id=c.message_id WHERE s.directory_id=?", (directory,)).fetchone()[0]
-        assert engine._bm25_rank(db, "jasmine", 1, [directory]) == [chunk]
-        assert engine._bm25_rank(db, "jasmine", 1, []) == []
+        engine._prepare_scope(db, SearchRequest(query="jasmine", user_id="u1", top_k=1))
+        db.execute("DELETE FROM search_facts WHERE id NOT IN (SELECT id FROM facts WHERE topic='preferences')")
+        assert engine._bm25_rank(db, "jasmine", 1) == [chunk]
+        db.execute("DELETE FROM search_facts")
+        assert engine._bm25_rank(db, "jasmine", 1) == []
 
 
 def test_rejected_gap_does_not_create_new_neighbors_or_merge_windows(memory, monkeypatch):
@@ -389,15 +389,14 @@ def test_rejected_gap_does_not_create_new_neighbors_or_merge_windows(memory, mon
     engine.add(request("first", "I prefer tea."))
     engine.add(request("gap", "UNRELATED message."))
     engine.add(request("last", "I also like coffee."))
-    selector.choose = lambda item: "irrelevant" if item["id"] == "housing" else "relevant"
+    selector.choose = lambda item: "irrelevant" if item["id"] == "entities" else "relevant"
     for i in range(2):
         engine.add(request(f"extra-{i}", f"Extra preference {i}.", session=f"extra-{i}"))
     engine.config.retrieval.seed_count = 1
-    original = engine._vector_rank
     with engine.store.connect("u1") as db:
         first = db.execute("SELECT id FROM chunks ORDER BY message_seq LIMIT 1").fetchone()[0]
-    def rank(db, vector, kind, limit, directory_ids=None):
-        return original(db, vector, kind, limit, directory_ids) if kind == "directory" else [first] if kind == "chunk" else []
+    def rank(db, vector, kind, limit):
+        return [first] if kind == "chunk" else []
     monkeypatch.setattr(engine, "_vector_rank", rank)
     monkeypatch.setattr(engine, "_bm25_rank", lambda *args: [])
     assert [item.content for item in search(engine).data] == ["I prefer tea."]
@@ -450,35 +449,46 @@ def test_evaluation_reuses_frozen_index_without_reextracting_or_counting_skips_a
         evaluation.evaluate(config, path, reuse_index_from=first)
 
 
-def test_classification_failure_rolls_back_everything(memory, monkeypatch):
-    engine, _, _, _, selector = memory
-    monkeypatch.setattr(selector, "classify", lambda *args: [])
-    with pytest.raises(ValueError, match="invalid candidate decisions"):
+def test_invalid_extracted_topic_rolls_back_everything(memory, monkeypatch):
+    engine, llm, _, _, selector = memory
+    original = llm.extract
+    def invalid_topic(*args, **kwargs):
+        entries = original(*args, **kwargs)
+        entries[0]["topic"] = "invented"
+        return entries
+    monkeypatch.setattr(llm, "extract", invalid_topic)
+    with pytest.raises(ValueError, match="invalid extracted entry metadata"):
         engine.add(request("r1", "Tea."))
     assert all(value == 0 for value in counts(engine).values())
     assert source_files(engine) == {}
+    assert selector.calls == []
 
 
-def test_topic_membership_multilabel_and_idempotence(memory, monkeypatch):
-    engine, _, _, _, selector = memory
-    calls = []
-    original = selector.classify
-    def classify(*args):
-        calls.append(args)
-        decisions = original(*args)
-        for d in decisions:
-            if d["id"] == "health":
-                d.update(choice="relevant", probabilities={"relevant": 1, "irrelevant": 0, "uncertain": 0})
-        return decisions
-    monkeypatch.setattr(selector, "classify", classify)
+def test_entry_topics_and_auxiliary_linkage_need_no_separate_classification_call(memory, monkeypatch):
+    engine, llm, _, _, selector = memory
+    original = llm.extract
+    def extract_with_auxiliary(*args, **kwargs):
+        entries = original(*args, **kwargs)
+        entries.append({**entries[0], "content": "Use tea during this exercise.",
+                        "topic": "requirements", "parent_index": 0})
+        return entries
+    monkeypatch.setattr(llm, "extract", extract_with_auxiliary)
     req = request("r1", "Tea helps me relax.")
     engine.add(req)
     engine.add(req)
-    assert len(calls) == 1
+    assert len(llm.calls) == 1 and selector.calls == []
+    assert not hasattr(selector, "classify")
     with engine.store.connect("u1") as db:
-        assert {r[0] for r in db.execute("SELECT topic_id FROM directory_topics WHERE selected=1")} == {"health", "hobbies"}
-        assert db.execute("SELECT count(*) FROM directory_topics").fetchone()[0] == 9
-    assert len(search(engine).data) == 1
+        entries = [dict(row) for row in db.execute("SELECT id,topic,parent_fact_id FROM facts")]
+        assert {entry["topic"] for entry in entries} == {"preferences", "requirements"}
+        primary = next(entry for entry in entries if entry["topic"] == "preferences")
+        auxiliary = next(entry for entry in entries if entry["topic"] == "requirements")
+        assert primary["parent_fact_id"] is None and auxiliary["parent_fact_id"] == primary["id"]
+    selector.choose = lambda item: "relevant" if item["id"] == "requirements" else "irrelevant"
+    result = search(engine)
+    assert len(result.data) == 1 and result.data[0].topic == "requirements"
+    assert result.data[0].entry_ids == [auxiliary["id"]]
+    assert result.data[0].content == req.messages[0].content
 
 
 @pytest.mark.parametrize("threshold,expect_routing", [(2, True), (3, False), (4, False)])
@@ -487,6 +497,7 @@ def test_vector_threshold_boundary(memory, threshold, expect_routing):
     engine.add(request("r1", "I prefer tea."))
     engine.config.retrieval.directory_routing_threshold = threshold
     with engine.store.connect("u1") as db:
+        engine._prepare_scope(db, SearchRequest(query="tea", user_id="u1", top_k=1))
         assert engine._retrieval_vector_count(db) == 3
     assert [item.content for item in search(engine).data] == ["I prefer tea."]
     assert bool(selector.calls) == expect_routing
@@ -508,6 +519,7 @@ def test_threshold_counts_only_current_user_enabled_vector_routes(memory):
     engine.config.retrieval.fact_vector_weight = 0
     engine.config.retrieval.directory_routing_threshold = 2
     with engine.store.connect("u1") as db:
+        engine._prepare_scope(db, SearchRequest(query="tea", user_id="u1", top_k=1))
         assert engine._retrieval_vector_count(db) == 2
     assert [item.content for item in search(engine).data] == ["I prefer tea."]
     assert not selector.calls

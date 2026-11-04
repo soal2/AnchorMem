@@ -1,7 +1,7 @@
-version: vikingjev-1
+version: vikingjev-generic-topics-2
 competition_mode: false
-database_dir: ../../data/vikingjev-topics-clbench-smoke
-snapshot_dir: ../../artifacts/vikingjev/benchmark-smoke/clbench-service
+database_dir: ../../data/vikingjev-generic-topics-v5-clbench-smoke
+snapshot_dir: ../../artifacts/vikingjev-generic-topics/clbench-service-v2
 host: 0.0.0.0
 port: 8000
 workers: 1

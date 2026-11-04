@@ -13,19 +13,18 @@ import tiktoken
 from .config import ServiceConfig, index_fingerprint, resolved_path
 from .contracts import AddRequest, AddResponse, Evidence, SearchRequest, SearchResponse
 from .directory_memory import DirectoryMemory
-from .topics import candidates as topic_candidates, selected_topics
+from .topics import TOPICS, candidates as topic_candidates, selected_topics
 from .providers import Embedder, LLM, OpenAIDecision
 from .storage import Store
+from .temporal import event_overlaps, validate_temporal
 
 
 def stable_id(*parts: object) -> str:
-    # 所有消息、chunk、事实和证据窗口都使用确定性 ID，保证同一输入重启后仍能定位到同一条记录。
     data = json.dumps(parts, ensure_ascii=False, separators=(",", ":"))
     return "mem_" + hashlib.sha256(data.encode()).hexdigest()[:32]
 
 
 def normalized(vector: list[float], dimension: int) -> np.ndarray:
-    # 归一化后，两个向量的点积就是 cosine similarity；后面的向量检索只需要做矩阵乘法。
     result = np.asarray(vector, dtype=np.float32)
     if result.shape != (dimension,) or not np.all(np.isfinite(result)):
         raise ValueError("invalid embedding dimension or value")
@@ -36,20 +35,16 @@ def normalized(vector: list[float], dimension: int) -> np.ndarray:
 
 
 class MemoryEngine:
-    """记忆系统的核心：负责写入记忆、建立索引和返回可追溯的原文证据。"""
+    """Synchronously store scoped entries and return their original source excerpts."""
 
-    def __init__(self, config: ServiceConfig, config_path: Path, llm: LLM, embedder: Embedder, decision_model=None, directory_selector=None):
-        self.config = config
-        self.llm = llm
-        self.embedder = embedder
-        self.decision_model = decision_model
-        self.directory_selector = directory_selector
+    def __init__(self, config: ServiceConfig, config_path: Path, llm: LLM, embedder: Embedder,
+                 decision_model=None, directory_selector=None):
+        self.config, self.llm, self.embedder = config, llm, embedder
+        self.decision_model, self.directory_selector = decision_model, directory_selector
         self.tokenizer = tiktoken.get_encoding(config.chunk.tokenizer)
-        # 事实提炼的规则来自外部 prompt；prompt、分块配置和 embedding 配置会参与索引指纹。
         self.prompt = resolved_path(config_path, config.facts.prompt_path).read_text(encoding="utf-8")
         self.consolidation_prompt = ""
         decision_rules = ""
-        temporal_rules = hashlib.sha256(Path(__file__).with_name("temporal.py").read_bytes()).hexdigest() if config.facts.temporal else ""
         if config.consolidation.mode != "off":
             if decision_model is None:
                 raise ValueError("enabled consolidation requires a decision model")
@@ -57,390 +52,380 @@ class MemoryEngine:
             decision_rules = hashlib.sha256(Path(__file__).with_name("consolidation.py").read_bytes()
                                             + Path(__file__).with_name("providers.py").read_bytes()
                                             + OpenAIDecision.INSTRUCTIONS.encode()).hexdigest()
-        directory_rules = ""
-        if config.directory_selector is not None:
-            if directory_selector is None:
-                raise ValueError("directory memory requires a directory selector")
-            directory_rules = hashlib.sha256(Path(__file__).with_name("directory_memory.py").read_bytes()
-                                             + Path(__file__).with_name("directory_selector.py").read_bytes()
-                                             + Path(__file__).with_name("topics.py").read_bytes()).hexdigest()
-        self.store = Store(resolved_path(config_path, config.database_dir),
-                           index_fingerprint(config, self.prompt, self.consolidation_prompt, decision_rules,
-                                             temporal_rules, directory_rules))
+        if config.directory_selector is not None and directory_selector is None:
+            raise ValueError("directory memory requires a directory selector")
+        temporal_rules = hashlib.sha256(Path(__file__).with_name("temporal.py").read_bytes()).hexdigest()
+        directory_rules = hashlib.sha256(b"".join(Path(__file__).with_name(name).read_bytes() for name in
+            ("engine.py", "contracts.py", "topics.py", "directory_memory.py", "directory_selector.py", "source_spans.py"))).hexdigest()
+        self.store = Store(resolved_path(config_path, config.database_dir), index_fingerprint(
+            config, self.prompt, self.consolidation_prompt, decision_rules, temporal_rules, directory_rules))
         self.directories = DirectoryMemory(self.store.root, self.tokenizer) if config.directory_selector else None
         self._locks_guard = threading.Lock()
         self._locks: dict[str, threading.Lock] = {}
 
     def _lock(self, user_id: str) -> threading.Lock:
-        # 每个 user 串行写入，避免同一用户的 seq 分配和 SQLite 事务互相覆盖。
         with self._locks_guard:
             return self._locks.setdefault(user_id, threading.Lock())
 
     def _chunks(self, request: AddRequest, first_seq: int) -> tuple[list[dict], list[dict]]:
-        """把消息切成带来源位置的重叠 token chunk，并保留 session 顺序。"""
+        """Token-sized extraction windows retain exact Unicode character boundaries."""
         messages, chunks = [], []
         step = self.config.chunk.max_tokens - self.config.chunk.overlap_tokens
         for offset, message in enumerate(request.messages):
             seq = first_seq + offset
             message_id = stable_id(request.user_id, request.session_id, seq, message.role, message.content)
-            messages.append({"id": message_id, "session_id": request.session_id, "seq": seq, "role": message.role, "content": message.content, "timestamp": message.timestamp})
+            messages.append({"id": message_id, "session_id": request.session_id, "seq": seq,
+                             "role": message.role, "content": message.content, "timestamp": message.timestamp})
             tokens = self.tokenizer.encode(message.content)
+            _, offsets = self.tokenizer.decode_with_offsets(tokens)
             for chunk_seq, start in enumerate(range(0, len(tokens), step)):
-                # 例如 max_tokens=512、overlap_tokens=64 时，窗口每次前进 448 token。
                 end = min(start + self.config.chunk.max_tokens, len(tokens))
-                content = self.tokenizer.decode(tokens[start:end])
-                chunks.append({"id": stable_id(request.user_id, request.session_id, seq, chunk_seq, content), "message_id": message_id,
-                               "session_id": request.session_id, "message_seq": seq, "chunk_seq": chunk_seq,
-                               "token_start": start, "token_end": end, "content": content, "timestamp": message.timestamp})
+                char_start, char_end = offsets[start], offsets[end] if end < len(tokens) else len(message.content)
+                if char_end > char_start:
+                    content = message.content[char_start:char_end]
+                    chunks.append({"id": stable_id(message_id, chunk_seq, content), "message_id": message_id,
+                                   "session_id": request.session_id, "message_seq": seq, "chunk_seq": chunk_seq,
+                                   "char_start": char_start, "char_end": char_end, "content": content,
+                                   "timestamp": message.timestamp, "role": message.role, "source_order": len(chunks)})
                 if end == len(tokens):
                     break
         return messages, chunks
 
-    def add(self, request: AddRequest) -> AddResponse:
-        """写入一批新消息，并同时建立原文索引、事实索引和向量索引。
+    def _entries(self, request, raw_facts, extraction_chunks):
+        """Resolve exact quotes to excerpts; model-produced project IDs are never used."""
+        if not isinstance(raw_facts, list):
+            raise ValueError("extraction must return a facts list")
+        by_id = {chunk["id"]: chunk for chunk in extraction_chunks}
+        facts, chunks, identities = [], {}, []
+        metadata_fields = ("topic", "scope", "parent_index", "event_status", "conditions", "verification")
+        for index, raw in enumerate(raw_facts):
+            if (not isinstance(raw, dict) or not isinstance(raw.get("content"), str) or not raw["content"].strip()
+                    or any(key not in raw for key in metadata_fields) or not isinstance(raw["topic"], str)
+                    or raw["topic"] not in TOPICS
+                    or raw["scope"] not in ("default", "global", "project")):
+                raise ValueError("invalid extracted entry metadata")
+            parent = raw["parent_index"]
+            if parent is not None and (type(parent) is not int or parent < 0 or parent >= len(raw_facts) or parent == index):
+                raise ValueError("invalid parent entry reference")
+            if raw["event_status"] not in (None, "planned", "in_progress", "completed", "cancelled", "unknown"):
+                raise ValueError("invalid event status")
+            if any(raw[key] is not None and (not isinstance(raw[key], str) or not raw[key].strip())
+                   for key in ("conditions", "verification")):
+                raise ValueError("invalid method conditions or verification")
+            topic = raw["topic"]
+            scope = "global" if topic in ("profile", "preferences") or raw["scope"] == "global" else (
+                "project" if request.project_id is not None else "unresolved" if raw["scope"] == "project" else "global")
+            project_id = request.project_id if scope == "project" else None
+            quotes = raw.get("source_quotes")
+            sources = raw.get("source_chunk_ids")
+            if (not isinstance(quotes, list) or not quotes or not isinstance(sources, list) or not sources
+                    or any(not isinstance(source, str) or source not in by_id for source in sources)):
+                raise ValueError("entry must cite at least one new chunk with exact quotes")
+            excerpt_ids, original_ids = [], set()
+            for quote in quotes:
+                if (not isinstance(quote, dict) or set(quote) != {"chunk_id", "quote", "occurrence"}
+                        or not isinstance(quote["chunk_id"], str) or quote["chunk_id"] not in by_id
+                        or not isinstance(quote["quote"], str)
+                        or not quote["quote"].strip() or type(quote["occurrence"]) is not int or quote["occurrence"] < 0):
+                    raise ValueError("invalid source quote")
+                original = by_id[quote["chunk_id"]]
+                position = -1
+                for _ in range(quote["occurrence"] + 1):
+                    position = original["content"].find(quote["quote"], 0 if position < 0 else position + len(quote["quote"]))
+                    if position < 0:
+                        raise ValueError("source quote is not present in cited chunk")
+                begin = original["char_start"] + position
+                finish = begin + len(quote["quote"])
+                excerpt_id = stable_id(original["message_id"], begin, finish, topic, scope, project_id)
+                chunks[excerpt_id] = {**original, "id": excerpt_id, "char_start": begin, "char_end": finish,
+                                      "content": quote["quote"], "topic": topic, "scope": scope, "project_id": project_id}
+                excerpt_ids.append(excerpt_id)
+                original_ids.add(original["id"])
+            if original_ids != set(sources):
+                raise ValueError("source quote references do not match cited chunks")
+            temporal = validate_temporal(raw) if self.config.facts.temporal else {
+                "occurred_start": None, "occurred_end": None, "occurred_precision": None, "mentioned_at": None}
+            if self.config.facts.temporal and all(by_id[source]["timestamp"] is not None for source in sources):
+                temporal["mentioned_at"] = datetime.fromtimestamp(max(by_id[s]["timestamp"] for s in sources) / 1000,
+                                                                  timezone.utc).isoformat().replace("+00:00", "Z")
+            metadata = {"topic": topic, "scope": scope, "project_id": project_id,
+                        "event_status": (raw["event_status"] or "unknown") if topic == "events" else None,
+                        "conditions": raw["conditions"] if topic == "methods" else None,
+                        "verification": raw["verification"] if topic == "methods" else None}
+            identity = stable_id(request.request_id, raw["content"], sorted(set(excerpt_ids)), temporal, metadata, parent)
+            identities.append(identity)
+            facts.append({"id": identity, "content": raw["content"], "sources": sorted(set(excerpt_ids)),
+                          "parent_index": parent, "matter_id": stable_id("matter", identity) if topic == "events" else None,
+                          **metadata, **temporal})
+        for fact in facts:
+            parent = fact.pop("parent_index")
+            if parent is not None and raw_facts[parent]["parent_index"] is not None:
+                raise ValueError("auxiliary entries must reference a primary entry; cycles are forbidden")
+            fact["parent_fact_id"] = identities[parent] if parent is not None else None
+        unique_facts = list({fact["id"]: fact for fact in facts}.values())
+        unique_facts.sort(key=lambda fact: (min((chunks[source]["message_seq"], chunks[source]["char_start"])
+                                               for source in fact["sources"]), fact["id"]))
+        ordered_chunks = sorted(chunks.values(), key=lambda c: (c["message_seq"], c["char_start"], c["char_end"], c["id"]))
+        counts = defaultdict(int)
+        for chunk in ordered_chunks:
+            chunk["chunk_seq"] = counts[chunk["message_id"]]
+            counts[chunk["message_id"]] += 1
+        return unique_facts, ordered_chunks
 
-        写入顺序是：历史上下文 -> 新消息分块 -> LLM 提炼事实 -> embedding -> SQLite 原子事务。
-        LLM 或 embedding 任一步失败时，事务尚未提交，因此不会留下半成品记忆。
-        """
+    def add(self, request: AddRequest) -> AddResponse:
         payload_hash = hashlib.sha256(request.model_dump_json(exclude_none=False).encode()).hexdigest()
         with self._lock(request.user_id), self.store.connect(request.user_id) as db:
-            # request_id + payload_hash 实现幂等：同请求直接返回旧响应；同 ID 不同内容则报错。
             previous = self.store.existing_request(db, request.request_id, payload_hash)
             if previous is not None:
                 return AddResponse.model_validate(previous)
-            first_seq = self.store.next_seq(db, request.session_id)
-
-            # 只把当前 session 最近的历史消息交给事实模型，用于解析“他/那里/之前”等指代。
-            # 历史消息不会被当成本次新增事实的来源，事实仍必须引用本次新 chunk。
-            prior = self.store.prior_messages(db, request.session_id)
+            prior = self.store.prior_messages(db, request.session_id, request.project_id)
             if self.directories:
-                identities = [row[0] for row in db.execute(
-                    "SELECT id FROM messages WHERE session_id=? ORDER BY seq", (request.session_id,))]
-                sources = self.directories.messages(db, request.user_id, identities)
-                prior = [{key: sources[identity][key] for key in ("role", "content", "timestamp")}
-                         for identity in identities]
-            used = 0
-            context = []
+                prior = self.directories.hydrate_chunks(db, request.user_id, prior)
+            context, used = [], 0
             for item in reversed(prior):
                 size = len(self.tokenizer.encode(item["content"]))
                 if used + size > self.config.facts.prior_context_tokens:
                     break
+                context.append({key: item[key] for key in ("role", "content", "timestamp")})
                 used += size
-                context.append(item if self.config.facts.temporal else {key: item[key] for key in ("role", "content")})
             context.reverse()
-            messages, chunks = self._chunks(request, first_seq)
-
-            # Provider 将模型引用的整数索引映射为 source_chunk_ids，交给这里校验。
-            if self.config.facts.temporal:
-                from .temporal import validate_temporal
-
-                roles = {message["id"]: message["role"] for message in messages}
-                inputs = [{"id": c["id"], "content": c["content"], "role": roles[c["message_id"]],
-                           "timestamp": c["timestamp"], "source_order": i} for i, c in enumerate(chunks)]
-                raw_facts = self.llm.extract(self.prompt, context, inputs, temporal=True)
-            else:
-                raw_facts = self.llm.extract(self.prompt, context, [{"id": c["id"], "content": c["content"]} for c in chunks])
-            chunk_ids = {c["id"] for c in chunks}
-            chunk_order = {c["id"]: i for i, c in enumerate(chunks)}
-            chunk_timestamps = {c["id"]: c["timestamp"] for c in chunks}
-            facts = []
-            fact_ids = set()
-            for fact in raw_facts:
-                # 拒绝无内容、无来源或引用旧 chunk 的事实，避免事实索引脱离原文证据。
-                if not isinstance(fact, dict) or not isinstance(fact.get("content"), str) or not fact["content"].strip():
-                    raise ValueError("invalid extracted fact")
-                sources = fact.get("source_chunk_ids")
-                if not isinstance(sources, list) or not sources or any(not isinstance(s, str) or s not in chunk_ids for s in sources):
-                    raise ValueError("fact must cite at least one new chunk")
-                temporal = validate_temporal(fact) if self.config.facts.temporal else {
-                    "occurred_start": None, "occurred_end": None, "occurred_precision": None, "mentioned_at": None}
-                if self.config.facts.temporal and all(chunk_timestamps[s] is not None for s in sources):
-                    temporal["mentioned_at"] = datetime.fromtimestamp(max(chunk_timestamps[s] for s in sources) / 1000,
-                                                                     timezone.utc).isoformat().replace("+00:00", "Z")
-                identity_parts = [request.request_id, fact["content"], sorted(set(sources))]
-                if self.config.facts.temporal:
-                    identity_parts.append(temporal)
-                fact_id = stable_id(*identity_parts)
-                if fact_id not in fact_ids:
-                    facts.append({"id": fact_id, "content": fact["content"], "sources": sorted(set(sources)), **temporal})
-                    fact_ids.add(fact_id)
-            if self.config.facts.temporal:
-                facts.sort(key=lambda fact: min(chunk_order[source] for source in fact["sources"]))
-
-            # 原文 chunk 和提炼 fact 共用一次 embedding 调用，但在数据库中用 owner_type 区分。
-            texts = [c["content"] for c in chunks] + [f["content"] for f in facts]
-            directory = self.directories.build(request, messages, facts) if self.directories else None
-            if directory:
-                directory["topic_decisions"] = self.directory_selector.classify(
-                    json.dumps([{"role": m["role"], "content": m["content"]} for m in messages], ensure_ascii=False),
-                    topic_candidates())
-                directory["topics"] = selected_topics(directory["topic_decisions"], [t["id"] for t in topic_candidates()])
-                if not directory["topics"]:
-                    raise ValueError("directory classification must select at least one topic")
-            vectors = [normalized(v, self.config.embedding.dimensions) for v in self.embedder.embed(texts)]
-            if len(vectors) != len(texts):
+            messages, extraction_chunks = self._chunks(request, self.store.next_seq(db, request.session_id))
+            raw_facts = self.llm.extract(self.prompt, context, extraction_chunks,
+                                         temporal=self.config.facts.temporal, project_id=request.project_id)
+            facts, chunks = self._entries(request, raw_facts, extraction_chunks)
+            active_chunks = [c for c in chunks if c["scope"] != "unresolved"]
+            active_facts = [f for f in facts if f["scope"] != "unresolved"]
+            owners = [("chunk", c) for c in active_chunks] + [("fact", f) for f in active_facts]
+            vectors = [normalized(v, self.config.embedding.dimensions) for v in
+                       self.embedder.embed([item["content"] for _, item in owners])] if owners else []
+            if len(vectors) != len(owners):
                 raise ValueError("embedding count does not match text count")
             observations, decisions, observation_vectors = [], [], []
-            if self.config.consolidation.mode != "off" and facts:
+            if self.config.consolidation.mode != "off" and active_facts:
                 from .consolidation import consolidate
-
-                existing = self.store.current_observations(db)
+                partitions = {(f["topic"], f["scope"], f["project_id"]) for f in active_facts}
+                existing = self.store.current_observations(db, partitions)
                 for observation in existing:
                     observation["vector"] = np.frombuffer(observation["vector"], dtype=np.float32)
-                observations, decisions = consolidate(facts, vectors[len(chunks):len(chunks) + len(facts)], existing, self.decision_model,
-                                                     self.llm, self.consolidation_prompt, request.request_id)
-                observation_vectors = [normalized(v, self.config.embedding.dimensions)
-                                       for v in self.embedder.embed([item["content"] for item in observations])]
+                observations, decisions = consolidate(active_facts, vectors[len(active_chunks):], existing,
+                    self.decision_model, self.llm, self.consolidation_prompt, request.request_id)
+                observation_vectors = [normalized(v, self.config.embedding.dimensions) for v in
+                    self.embedder.embed([item["content"] for item in observations])] if observations else []
                 if len(observation_vectors) != len(observations):
                     raise ValueError("observation embedding count mismatch")
+            for fact in facts:
+                scope_path = "global" if fact["scope"] == "global" else "unresolved" if fact["scope"] == "unresolved" else (
+                    "projects/" + hashlib.sha256(fact["project_id"].encode()).hexdigest())
+                fact["logical_path"] = scope_path + "/" + fact["topic"] + ("/" + fact["matter_id"] if fact["matter_id"] else "")
+            unresolved = sum(f["scope"] == "unresolved" for f in facts)
+            response = AddResponse(request_id=request.request_id, user_id=request.user_id, session_id=request.session_id,
+                unresolved_entry_count=unresolved, warnings=["Project-specific entries were saved with unresolved scope and are excluded from retrieval."] if unresolved else [])
+            directory = self.directories.build(request, messages, facts) if self.directories else None
             recorded_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-            response = AddResponse(request_id=request.request_id, user_id=request.user_id, session_id=request.session_id)
             with self.directories.publish(directory, db) if directory else nullcontext():
-                self._commit_add(db, request, response, payload_hash, messages, chunks, facts, vectors,
+                self._commit_add(db, request, response, payload_hash, messages, chunks, facts, owners, vectors,
                                  observations, decisions, observation_vectors, recorded_at, directory)
             return response
 
-    def _commit_add(self, db, request, response, payload_hash, messages, chunks, facts, vectors,
+    def _commit_add(self, db, request, response, payload_hash, messages, chunks, facts, owners, vectors,
                     observations, decisions, observation_vectors, recorded_at, directory):
         try:
-            # 只有所有外部模型调用成功后才开始事务；下面的表必须整体提交。
             db.execute("BEGIN IMMEDIATE")
             db.executemany("INSERT INTO messages VALUES (:id,:session_id,:seq,:role,:content,:timestamp)",
-                           [{**message, "content": ""} for message in messages] if directory else messages)
-            db.executemany("INSERT INTO chunks VALUES (:id,:message_id,:session_id,:message_seq,:chunk_seq,:token_start,:token_end,:content,:timestamp)",
-                           [{**chunk, "content": ""} for chunk in chunks] if directory else chunks)
-            db.executemany("INSERT INTO chunks_fts(content,chunk_id) VALUES (?,?)", [(c["content"], c["id"]) for c in chunks])
-            db.executemany("INSERT INTO facts VALUES (?,?,?,?,?,?,?,?)",
-                [(f["id"], f["content"], self.config.llm.name, f["occurred_start"], f["occurred_end"],
-                  f["occurred_precision"], f["mentioned_at"], recorded_at) for f in facts])
+                           [{**m, "content": ""} for m in messages] if directory else messages)
+            db.executemany("""INSERT INTO chunks VALUES (:id,:message_id,:session_id,:message_seq,:chunk_seq,
+                :char_start,:char_end,:content,:timestamp,:topic,:scope,:project_id)""",
+                [{**c, "content": ""} for c in chunks] if directory else chunks)
+            db.executemany("INSERT INTO chunks_fts(content,chunk_id) VALUES (?,?)",
+                           [(c["content"], c["id"]) for c in chunks if c["scope"] != "unresolved"])
+            columns = ("id", "content", "extraction_version", "occurred_start", "occurred_end", "occurred_precision",
+                       "mentioned_at", "recorded_at", "topic", "scope", "project_id", "parent_fact_id", "matter_id",
+                       "event_status", "conditions", "verification", "logical_path")
+            db.executemany("INSERT INTO facts VALUES (" + ",".join(":" + key for key in columns) + ")",
+                           [{**f, "extraction_version": self.config.llm.name, "recorded_at": recorded_at} for f in facts])
             db.executemany("INSERT INTO fact_sources VALUES (?,?)", [(f["id"], s) for f in facts for s in f["sources"]])
             db.executemany("INSERT INTO embeddings VALUES (?,?,?,?,?)", [
-                # vectors 的前 len(chunks) 个属于原文，剩余部分属于事实。
-                ("chunk" if i < len(chunks) else "fact", (chunks + facts)[i]["id"], self.config.embedding.name,
-                 self.config.embedding.dimensions, vectors[i].tobytes()) for i in range(len(chunks) + len(facts))
-            ])
+                (kind, item["id"], self.config.embedding.name, self.config.embedding.dimensions, vector.tobytes())
+                for (kind, item), vector in zip(owners, vectors)])
             self.store.save_observations(db, observations, decisions, request.request_id, recorded_at)
             db.executemany("""INSERT INTO embeddings VALUES ('observation',?,?,?,?)
                 ON CONFLICT(owner_type,owner_id) DO UPDATE SET
                 model=excluded.model,dimension=excluded.dimension,vector=excluded.vector""",
-                [(observation["id"], self.config.embedding.name, self.config.embedding.dimensions, vector.tobytes())
-                 for observation, vector in zip(observations, observation_vectors)])
+                [(o["id"], self.config.embedding.name, self.config.embedding.dimensions, v.tobytes())
+                 for o, v in zip(observations, observation_vectors)])
             if directory:
-                db.execute("""INSERT INTO memory_directories VALUES
-                    (:id,:path,:parent_path,:abstract,:overview,:source_sha256)""", directory)
-                db.executemany("INSERT INTO message_sources VALUES (?,?)",
-                               [(message["id"], directory["id"]) for message in messages])
-                db.executemany("INSERT OR IGNORE INTO memory_topics VALUES (:id,:path,:abstract,:overview)", topic_candidates())
-                db.executemany("INSERT INTO directory_topics VALUES (?,?,?,?)", [
-                    (directory["id"], decision["id"], int(decision["id"] in directory["topics"]),
-                     json.dumps(decision, ensure_ascii=False)) for decision in directory["topic_decisions"]])
+                db.execute("INSERT INTO memory_directories VALUES (:id,:path,:parent_path,:abstract,:overview,:source_sha256)", directory)
+                db.executemany("INSERT INTO message_sources VALUES (?,?)", [(m["id"], directory["id"]) for m in messages])
             db.execute("INSERT INTO requests VALUES (?,?,?)", (request.request_id, payload_hash, response.model_dump_json()))
             db.commit()
         except BaseException:
             db.rollback()
             raise
 
-    def _select_directories(self, db, request):
-        topics = [dict(row) for row in db.execute("""SELECT * FROM memory_topics
-            WHERE id IN (SELECT topic_id FROM directory_topics WHERE selected=1) ORDER BY id""")]
-        if not topics:
-            raise ValueError("directory memory has no classified topics")
-        decisions = self.directory_selector.select(request.query, request.options, topics)
-        selected = selected_topics(decisions, [t["id"] for t in topics])
-        if not selected:
-            return []
-        return [row[0] for row in db.execute("SELECT DISTINCT directory_id FROM directory_topics "
-            "WHERE selected=1 AND topic_id IN (" + ",".join("?" for _ in selected) + ") ORDER BY directory_id", selected)]
+    def _prepare_scope(self, db, request):
+        # A temporary relation avoids SQLite parameter limits for large corpora.
+        db.execute("CREATE TEMP TABLE IF NOT EXISTS search_facts (id TEXT PRIMARY KEY)")
+        db.execute("DELETE FROM search_facts")
+        rows = db.execute("SELECT * FROM facts WHERE scope='global' OR (scope='project' AND project_id=?)",
+                          (request.project_id,)).fetchall()
+        identities = [(f["id"],) for f in rows if event_overlaps(f, request.event_time_range)]
+        db.executemany("INSERT INTO search_facts VALUES (?)", identities)
 
     @staticmethod
-    def _directory_chunks(directory_ids):
-        return ("SELECT c.id FROM chunks c JOIN message_sources s ON s.message_id=c.message_id "
-                "WHERE s.directory_id IN (" + ",".join("?" for _ in directory_ids) + ")")
+    def _scoped_owners(owner_type):
+        if owner_type == "chunk":
+            return "SELECT fs.chunk_id FROM fact_sources fs JOIN search_facts s ON s.id=fs.fact_id"
+        if owner_type == "fact":
+            return "SELECT id FROM search_facts"
+        if owner_type == "observation":
+            return """SELECT os.observation_id FROM observation_sources os JOIN observations o
+                ON o.id=os.observation_id AND o.current_revision=os.revision
+                JOIN search_facts s ON s.id=os.fact_id"""
+        raise ValueError("unsupported vector owner")
 
-    def _vector_rank(self, db, query_vector: np.ndarray, owner_type: str, limit: int, directory_ids=None) -> list[str]:
-        """按 cosine similarity 对 chunk 或 fact 做向量召回，只返回排名后的 ID。"""
-        sql = "SELECT owner_id,vector FROM embeddings WHERE owner_type=?"
-        parameters = [owner_type]
-        if directory_ids is not None:
-            if not directory_ids:
-                return []
-            chunks = self._directory_chunks(directory_ids)
-            owners = {
-                "chunk": chunks,
-                "fact": "SELECT fact_id FROM fact_sources WHERE chunk_id IN (" + chunks + ")",
-                "observation": """SELECT os.observation_id FROM observation_sources os
-                    JOIN observations o ON o.id=os.observation_id AND o.current_revision=os.revision
-                    JOIN fact_sources fs ON fs.fact_id=os.fact_id WHERE fs.chunk_id IN (""" + chunks + ")",
-            }
-            sql += " AND owner_id IN (" + owners[owner_type] + ")"
-            parameters.extend(directory_ids)
-        rows = db.execute(sql, parameters).fetchall()
+    def _vector_rank(self, db, query_vector, owner_type, limit):
+        rows = db.execute("SELECT owner_id,vector FROM embeddings WHERE owner_type=? AND owner_id IN (" +
+                          self._scoped_owners(owner_type) + ") ORDER BY owner_id", (owner_type,)).fetchall()
         if not rows:
             return []
-        matrix = np.frombuffer(b"".join(row["vector"] for row in rows), dtype=np.float32).reshape(len(rows), self.config.embedding.dimensions)
-        scores = matrix @ query_vector
-        positions = np.argsort(-scores, kind="stable")[:limit]
+        matrix = np.frombuffer(b"".join(row["vector"] for row in rows), dtype=np.float32).reshape(
+            len(rows), self.config.embedding.dimensions)
+        positions = np.argsort(-(matrix @ query_vector), kind="stable")[:limit]
         return [rows[int(i)]["owner_id"] for i in positions]
 
-    def _bm25_rank(self, db, query: str, limit: int, directory_ids=None) -> list[str]:
-        """使用 SQLite FTS5 对原始 chunk 做 lexical/BM25 召回。"""
+    def _bm25_rank(self, db, query, limit):
         words = re.findall(r"\w+", query, flags=re.UNICODE)
         if not words:
             return []
         expression = " OR ".join('"' + word.replace('"', '') + '"' for word in words)
-        sql = "SELECT chunk_id FROM chunks_fts WHERE chunks_fts MATCH ?"
-        parameters = [expression]
-        if directory_ids is not None:
-            if not directory_ids:
-                return []
-            sql += " AND chunk_id IN (" + self._directory_chunks(directory_ids) + ")"
-            parameters.extend(directory_ids)
-        rows = db.execute(sql + " ORDER BY bm25(chunks_fts) LIMIT ?", [*parameters, limit]).fetchall()
-        return [row[0] for row in rows]
+        return [row[0] for row in db.execute("SELECT chunk_id FROM chunks_fts WHERE chunks_fts MATCH ? "
+            "AND chunk_id IN (" + self._scoped_owners("chunk") + ") ORDER BY bm25(chunks_fts) LIMIT ?", (expression, limit))]
 
     def _retrieval_vector_count(self, db):
-        retrieval = self.config.retrieval
-        kinds = []
-        if retrieval.chunk_vector_weight:
-            kinds.append("chunk")
-        if retrieval.fact_vector_weight:
-            kinds.append("fact")
+        config = self.config.retrieval
+        kinds = (["chunk"] if config.chunk_vector_weight else []) + (["fact"] if config.fact_vector_weight else [])
         if self.config.consolidation.mode != "off":
             kinds.append("observation")
-        if not kinds:
-            return 0
-        return db.execute("SELECT COUNT(*) FROM embeddings WHERE owner_type IN (" +
-                          ",".join("?" for _ in kinds) + ")", kinds).fetchone()[0]
+        return sum(db.execute("SELECT COUNT(*) FROM embeddings WHERE owner_type=? AND owner_id IN (" +
+            self._scoped_owners(kind) + ")", (kind,)).fetchone()[0] for kind in kinds)
+
+    def _select_topics(self, db, request):
+        available = {row[0] for row in db.execute("SELECT DISTINCT f.topic FROM facts f JOIN search_facts s ON s.id=f.id")}
+        topics = [item for item in topic_candidates() if item["id"] in available]
+        decisions = self.directory_selector.select(request.query, request.options, topics)
+        selected = selected_topics(decisions, [t["id"] for t in topics])
+        if not selected:
+            db.execute("DELETE FROM search_facts")
+        else:
+            db.execute("DELETE FROM search_facts WHERE id NOT IN (SELECT id FROM facts WHERE topic IN (" +
+                       ",".join("?" for _ in selected) + "))", selected)
 
     def search(self, request: SearchRequest) -> SearchResponse:
-        """混合检索并返回原文证据，而不是直接返回 LLM 提炼的事实。
-
-        具体流程：多路召回 -> 加权 RRF 融合 -> 选 seed -> 恢复 session 邻居 ->
-        合并连续窗口 -> 按 token 预算截断。
-        """
-        if request.top_k < 1:
-            return SearchResponse(data=[])
         with self.store.connect(request.user_id, create=False) as db:
             if db is None:
                 return SearchResponse(data=[])
-            # 搜索使用 SQLite 读事务，保证一次 search 看到一致的索引快照。
             db.execute("BEGIN")
             try:
-                if db.execute("SELECT 1 FROM chunks LIMIT 1").fetchone() is None:
+                self._prepare_scope(db, request)
+                if db.execute("SELECT 1 FROM search_facts LIMIT 1").fetchone() is None:
                     return SearchResponse(data=[])
                 retrieval = self.config.retrieval
-
-                # 基础 query 必须参与；如果请求带 options，则把“问题+选项”作为第二个检索视角。
-                query_specs = [(request.query, retrieval.question_weight)]
-                if request.options and retrieval.options_weight > 0:
-                    query_specs.append((request.query + "\n" + "\n".join(request.options), retrieval.options_weight))
-                query_vectors = [normalized(v, self.config.embedding.dimensions) for v in self.embedder.embed([q for q, _ in query_specs])]
-                if len(query_vectors) != len(query_specs):
-                    raise ValueError("query embedding count mismatch")
-                directory_ids = None
-                scoped_rows = None
-                if (self.directories and self._retrieval_vector_count(db)
-                        > retrieval.directory_routing_threshold):
-                    directory_ids = self._select_directories(db, request)
-                    if not directory_ids:
+                if self.directory_selector and self._retrieval_vector_count(db) > retrieval.directory_routing_threshold:
+                    self._select_topics(db, request)
+                    if db.execute("SELECT 1 FROM search_facts LIMIT 1").fetchone() is None:
                         return SearchResponse(data=[])
-                    scoped_rows = db.execute("SELECT * FROM chunks WHERE id IN (" +
-                        self._directory_chunks(directory_ids) + ") ORDER BY session_id,message_seq,chunk_seq",
-                        directory_ids).fetchall()
-                allowed = {row["id"] for row in scoped_rows} if scoped_rows is not None else None
-                scope = (directory_ids,) if directory_ids is not None else ()
-                scores: dict[str, float] = defaultdict(float)
-                for (query, query_weight), vector in zip(query_specs, query_vectors):
+                query_specs = [(request.query, retrieval.question_weight)]
+                if request.options and retrieval.options_weight:
+                    query_specs.append((request.query + "\n" + "\n".join(request.options), retrieval.options_weight))
+                vectors = [normalized(v, self.config.embedding.dimensions) for v in
+                           self.embedder.embed([q for q, _ in query_specs])]
+                if len(vectors) != len(query_specs):
+                    raise ValueError("query embedding count mismatch")
+                allowed = {row[0] for row in db.execute(self._scoped_owners("chunk"))}
+                scores = defaultdict(float)
+                for (query, weight), vector in zip(query_specs, vectors):
                     routes = []
-                    # 每条 route 各自返回一个排名列表；route 的原始分数不会跨算法直接相加。
                     if retrieval.bm25_weight:
-                        routes.append((list(enumerate(self._bm25_rank(db, query, retrieval.bm25_candidates, *scope), 1)), retrieval.bm25_weight))
+                        routes.append((list(enumerate(self._bm25_rank(db, query, retrieval.bm25_candidates), 1)), retrieval.bm25_weight))
                     if retrieval.chunk_vector_weight:
-                        routes.append((list(enumerate(self._vector_rank(db, vector, "chunk", retrieval.chunk_vector_candidates, *scope), 1)), retrieval.chunk_vector_weight))
+                        routes.append((list(enumerate(self._vector_rank(db, vector, "chunk", retrieval.chunk_vector_candidates), 1)), retrieval.chunk_vector_weight))
                     if retrieval.fact_vector_weight:
-                        # fact 只用于找到相关内容，随后通过 fact_sources 映射回可追溯的原文 chunk。
-                        fact_ids = self._vector_rank(db, vector, "fact", retrieval.fact_vector_candidates, *scope)
                         mapped = []
-                        for rank, fact_id in enumerate(fact_ids, 1):
-                            mapped.extend((rank, row[0]) for row in db.execute("SELECT chunk_id FROM fact_sources WHERE fact_id=? ORDER BY chunk_id", (fact_id,)))
+                        for rank, identity in enumerate(self._vector_rank(db, vector, "fact", retrieval.fact_vector_candidates), 1):
+                            mapped.extend((rank, row[0]) for row in db.execute(
+                                "SELECT chunk_id FROM fact_sources WHERE fact_id=? ORDER BY chunk_id", (identity,)))
                         routes.append((mapped, retrieval.fact_vector_weight))
                     if self.config.consolidation.mode != "off":
-                        observation_ids = self._vector_rank(db, vector, "observation", 50, *scope)
                         mapped = []
-                        for rank, observation_id in enumerate(observation_ids, 1):
-                            rows = db.execute("""SELECT DISTINCT fs.chunk_id FROM observations o
-                                JOIN observation_sources os ON os.observation_id=o.id AND os.revision=o.current_revision
-                                JOIN fact_sources fs ON fs.fact_id=os.fact_id
-                                WHERE o.id=? ORDER BY fs.chunk_id""", (observation_id,))
-                            mapped.extend((rank, row[0]) for row in rows)
+                        for rank, identity in enumerate(self._vector_rank(db, vector, "observation", 50), 1):
+                            mapped.extend((rank, row[0]) for row in db.execute("""SELECT DISTINCT fs.chunk_id
+                                FROM observations o JOIN observation_sources os ON os.observation_id=o.id
+                                AND os.revision=o.current_revision JOIN fact_sources fs ON fs.fact_id=os.fact_id
+                                JOIN search_facts s ON s.id=os.fact_id WHERE o.id=? ORDER BY fs.chunk_id""", (identity,)))
                         routes.append((mapped, 1.0))
-                    for ranked_ids, route_weight in routes:
+                    for ranked, route_weight in routes:
                         seen = set()
-                        for rank, chunk_id in ranked_ids:
-                            if chunk_id not in seen and (allowed is None or chunk_id in allowed):
-                                # 加权 Reciprocal Rank Fusion：排名越靠前，贡献越大；seen 防止同一路重复计分。
-                                scores[chunk_id] += query_weight * route_weight / (retrieval.rrf_k + rank)
-                                seen.add(chunk_id)
+                        for rank, identity in ranked:
+                            if identity in allowed and identity not in seen:
+                                scores[identity] += weight * route_weight / (retrieval.rrf_k + rank)
+                                seen.add(identity)
                 if not scores:
                     return SearchResponse(data=[])
-
-                # 先选少量高分 seed，再以 seed 为中心恢复上下文，避免每个召回 chunk 都单独返回。
-                ranked = sorted(scores, key=lambda key: (-scores[key], key))
-                seeds = [key for key in ranked if allowed is None or key in allowed][:retrieval.seed_count]
-                if not seeds:
-                    return SearchResponse(data=[])
-                all_rows = scoped_rows if scoped_rows is not None else db.execute(
-                    "SELECT * FROM chunks ORDER BY session_id,message_seq,chunk_seq").fetchall()
-                by_id = {row["id"]: row for row in all_rows}
-                sessions: dict[str, list] = defaultdict(list)
-                for row in all_rows:
-                    sessions[row["session_id"]].append(row)
-                selected: dict[str, set[int]] = defaultdict(set)
+                seeds = sorted(scores, key=lambda key: (-scores[key], key))[:retrieval.seed_count]
+                sessions = defaultdict(list)
+                locations = {}
+                for row in db.execute("SELECT * FROM chunks ORDER BY session_id,message_seq,chunk_seq"):
+                    locations[row["id"]] = (row["session_id"], len(sessions[row["session_id"]]))
+                    sessions[row["session_id"]].append(dict(row))
+                selected = defaultdict(set)
                 for seed in seeds:
-                    row = by_id[seed]
-                    session = sessions[row["session_id"]]
-                    position = next(i for i, item in enumerate(session) if item["id"] == seed)
-                    # neighbor_count=1 时，同时取 seed 前后各一个 chunk；B0/B1 为 0，B2/B3 为 1。
-                    selected[row["session_id"]].update(
-                        i for i in range(max(0, position - retrieval.neighbor_count), min(len(session), position + retrieval.neighbor_count + 1))
-                        if (allowed is None or session[i]["id"] in allowed)
-                        and abs(session[i]["message_seq"] - row["message_seq"]) <= retrieval.neighbor_count)
-                hydrated = {}
-                if self.directories:
-                    rows = [sessions[session_id][i] for session_id, positions in selected.items() for i in positions]
-                    hydrated = {row["id"]: row for row in self.directories.hydrate_chunks(db, request.user_id, rows)}
+                    session_id, position = locations[seed]
+                    session, origin = sessions[session_id], sessions[session_id][position]
+                    for i in range(max(0, position - retrieval.neighbor_count), min(len(session), position + retrieval.neighbor_count + 1)):
+                        row = session[i]
+                        if (row["id"] in allowed and abs(row["message_seq"] - origin["message_seq"]) <= retrieval.neighbor_count
+                                and (row["topic"], row["scope"], row["project_id"]) == (origin["topic"], origin["scope"], origin["project_id"])):
+                            selected[session_id].add(i)
+                entries = defaultdict(list)
+                for row in db.execute("SELECT fs.chunk_id,fs.fact_id FROM fact_sources fs JOIN search_facts s ON s.id=fs.fact_id ORDER BY fs.fact_id"):
+                    entries[row["chunk_id"]].append(row["fact_id"])
                 windows = []
                 for session_id, positions in selected.items():
-                    session = sessions[session_id]
-                    ordered = sorted(positions)
                     groups = []
-                    for position in ordered:
-                        # 相邻位置合并为一个窗口；不连续的位置拆成多个证据窗口。
-                        previous = session[groups[-1][-1]] if groups else None
-                        current = session[position]
-                        adjacent = previous is not None and (
-                            (current["message_seq"] == previous["message_seq"] and current["chunk_seq"] == previous["chunk_seq"] + 1)
+                    for position in sorted(positions):
+                        current = sessions[session_id][position]
+                        previous = sessions[session_id][groups[-1][-1]] if groups else None
+                        adjacent = previous is not None and position == groups[-1][-1] + 1 and (
+                            (current["message_id"] == previous["message_id"] and current["char_start"] <= previous["char_end"])
                             or current["message_seq"] == previous["message_seq"] + 1)
-                        if not groups or position > groups[-1][-1] + 1 or not adjacent:
+                        same_scope = previous is not None and all(current[k] == previous[k] for k in ("topic", "scope", "project_id"))
+                        if not adjacent or not same_scope:
                             groups.append([])
                         groups[-1].append(position)
                     for group in groups:
-                        rows = [hydrated.get(sessions[session_id][i]["id"], sessions[session_id][i]) for i in group]
-                        content = "\n".join(row["content"] for row in rows)
-                        score = max(scores.get(row["id"], 0) for row in rows)
-                        timestamp = next((row["timestamp"] for row in rows if row["timestamp"] is not None), None)
-                        created_at = datetime.fromtimestamp(timestamp / 1000, timezone.utc).isoformat().replace("+00:00", "Z") if timestamp is not None else None
-                        windows.append(Evidence(id=stable_id(*[row["id"] for row in rows]), content=content, score=score, created_at=created_at))
-                windows.sort(key=lambda item: (-item.score, item.id))
-
-                # 最终返回原始 chunk 拼成的 evidence，并同时受 token 预算和 top_k/max_results 限制。
+                        rows = [sessions[session_id][i] for i in group]
+                        if self.directories:
+                            rows = self.directories.hydrate_chunks(db, request.user_id, rows)
+                        contents = []
+                        previous = None
+                        for row in rows:
+                            start = max(0, previous["char_end"] - row["char_start"]) if previous and previous["message_id"] == row["message_id"] else 0
+                            contents.append(row["content"][start:])
+                            previous = row
+                        timestamp = next((r["timestamp"] for r in rows if r["timestamp"] is not None), None)
+                        origin = rows[0]
+                        windows.append(Evidence(id=stable_id(*[r["id"] for r in rows]), content="\n".join(c for c in contents if c),
+                            score=max(scores.get(r["id"], 0) for r in rows),
+                            created_at=datetime.fromtimestamp(timestamp / 1000, timezone.utc).isoformat().replace("+00:00", "Z") if timestamp is not None else None,
+                            entry_ids=sorted({identity for r in rows for identity in entries[r["id"]]}), topic=origin["topic"],
+                            scope=origin["scope"], project_id=origin["project_id"],
+                            requirement_priority=(2 if origin["scope"] == "project" else 1) if origin["topic"] == "requirements" else None))
                 result, used = [], 0
-                for item in windows:
+                for item in sorted(windows, key=lambda item: (-item.score, item.id)):
                     size = len(self.tokenizer.encode(item.content))
-                    if used + size > retrieval.evidence_budget_tokens:
-                        continue
-                    result.append(item)
-                    used += size
+                    if used + size <= retrieval.evidence_budget_tokens:
+                        result.append(item)
+                        used += size
                     if len(result) >= min(request.top_k, retrieval.max_results):
                         break
                 return SearchResponse(data=result)

@@ -14,10 +14,13 @@ from src.storage import user_db_path
 class FakeLLM:
     fail = False
 
-    def extract(self, prompt, messages, chunks):
+    def extract(self, prompt, messages, chunks, temporal=False, project_id=None):
         if self.fail:
             raise RuntimeError("model unavailable")
-        return [{"content": chunk["content"], "source_chunk_ids": [chunk["id"]]} for chunk in chunks]
+        return [{"content": chunk["content"], "source_chunk_ids": [chunk["id"]],
+                 "source_quotes": [{"chunk_id": chunk["id"], "quote": chunk["content"], "occurrence": 0}],
+                 "topic": "entities", "scope": "default", "parent_index": None,
+                 "event_status": None, "conditions": None, "verification": None} for chunk in chunks]
 
 
 class FakeEmbedder:
@@ -93,7 +96,8 @@ def test_api_contract_and_auth(setup, monkeypatch):
     assert client.post("/add", json=payload).status_code == 401
     response = client.post("/add", json=payload, headers={"Authorization": "Bearer secret"})
     assert response.status_code == 200
-    assert response.json() == {"success": True, "request_id": "r1", "user_id": "u1", "session_id": "s1"}
+    assert response.json() == {"success": True, "request_id": "r1", "user_id": "u1", "session_id": "s1",
+                               "unresolved_entry_count": 0, "warnings": []}
     found = client.post("/search", json={"query": "Paris", "user_id": "u1", "top_k": 1}, headers={"X-Api-Key": "secret"})
     assert found.status_code == 200 and len(found.json()["data"]) == 1
     payload["messages"][0]["content"] = "changed"

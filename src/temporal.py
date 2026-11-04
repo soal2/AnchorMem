@@ -10,6 +10,7 @@ _DATE = re.compile(
     r"^\d{4}(?:-\d{2}(?:-\d{2}(?:T(?P<hour>\d{2})(?::(?P<minute>\d{2})"
     r"(?::(?P<second>\d{2})(?:\.(?P<fraction>\d+))?)?)?(?:Z|[+-]\d{2}:\d{2})?)?)?)?$"
 )
+ISO_TIME_PATTERN = re.sub(r"\(\?P<[^>]+>", "(?:", _DATE.pattern)
 
 
 def _parse(value: str) -> datetime:
@@ -67,3 +68,21 @@ def validate_temporal(fact: dict) -> dict:
         if (start_lower.utcoffset() is None) == (end_upper.utcoffset() is None) and end_upper < start_lower:
             raise ValueError("occurred_end precedes occurred_start")
     return result
+
+
+def event_overlaps(fact, time_range) -> bool:
+    """Match source event intervals against a half-open query without adding zones."""
+    if time_range is None:
+        return True
+    start, end = fact["occurred_start"], fact["occurred_end"]
+    if start is None and end is None:
+        return False
+    lower = time_bounds(start)[0] if start is not None else None
+    upper = time_bounds(end)[1] if end is not None else None
+    query_start = time_bounds(time_range.start)[0] if time_range.start else None
+    query_end = time_bounds(time_range.end)[0] if time_range.end else None
+    known = [value for value in (lower, upper, query_start, query_end) if value is not None]
+    if len({value.utcoffset() is not None for value in known}) > 1:
+        return False
+    return ((query_end is None or lower is None or lower < query_end)
+            and (query_start is None or upper is None or upper >= query_start))

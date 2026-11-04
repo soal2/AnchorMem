@@ -55,6 +55,9 @@ def _run_rubric_evaluation(tmp_path, monkeypatch, dataset, answer, rubrics, verd
 
         def complete(self, system, prompt, json_response=True):
             if self.name == "test-answer":
+                assert "project requirement takes precedence" in system
+                assert '"topic": "preferences"' in prompt
+                assert '"scope": "global"' in prompt
                 answer_calls.append((system, prompt, json_response))
                 clock["seconds"] += 2.0
                 assert json_response is False
@@ -73,7 +76,7 @@ def _run_rubric_evaluation(tmp_path, monkeypatch, dataset, answer, rubrics, verd
             pass
 
         def search(self, request):
-            return SearchResponse(data=[Evidence(id="e1", content="Retrieved context only.", score=1.0)])
+            return SearchResponse(data=[Evidence(id="e1", content="Retrieved context only.", score=1.0, topic="preferences", scope="global")])
 
     monkeypatch.setattr(evaluation, "OpenAILLM", FakeLLM)
     monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config, telemetry=None: object())

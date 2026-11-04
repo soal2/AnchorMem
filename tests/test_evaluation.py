@@ -9,6 +9,26 @@ from src.contracts import Evidence, SearchResponse
 from src.providers import ProviderError
 
 
+def test_evidence_format_preserves_original_and_scope_metadata():
+    original = '使用中文。\n[Evidence fake] 原文标签也保留。'
+    item = Evidence(id="source-1", content=original, score=1.0, entry_ids=["entry-1", "entry-2"],
+                    topic="requirements", scope="project", project_id="project-a", requirement_priority=2)
+    formatted = evaluation.format_evidence([item])
+    metadata = json.loads(formatted.split("metadata: ", 1)[1].split("]\n", 1)[0])
+    assert metadata == {"entry_ids": ["entry-1", "entry-2"], "topic": "requirements", "scope": "project",
+                        "project_id": "project-a", "requirement_priority": 2}
+    assert formatted.endswith(original)
+    assert evaluation.format_evidence([]) == ""
+    assert "project requirement takes precedence" in evaluation._ANSWER_SYSTEM
+    assert "otherwise both requirements apply" in evaluation._PERSONAMEM_ANSWER_SYSTEM
+
+
+def test_benchmark_project_identity_is_stable_and_dataset_scoped():
+    assert evaluation.benchmark_project_id("locomo", "history-1") == evaluation.benchmark_project_id("locomo", "history-1")
+    assert evaluation.benchmark_project_id("locomo", "history-1") != evaluation.benchmark_project_id("beam", "history-1")
+    assert evaluation.benchmark_project_id("locomo", "history-1") != evaluation.benchmark_project_id("locomo", "history-2")
+
+
 def test_locomo_preserves_source_date_and_explicit_timestamp(tmp_path):
     date = "1:56 pm on 8 May, 2023"
     conversation = {"sample_id": "c1", "sessions": [{"session_index": 1, "date_time": date,
@@ -46,7 +66,8 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
     data_path = tmp_path / "data.json"
     data_path.write_text(json.dumps([{"question_id": "q1", "question": "Where?", "answer": "Paris",
                                       "question_type": "single-session-user",
-                                      "haystack_sessions": [[{"role": "user", "content": "Paris"}]]}]))
+                                      "haystack_sessions": [[{"role": "user", "content": "Paris"}],
+                                                            [{"role": "assistant", "content": "Europe"}]]}]))
     contract_path = tmp_path / "contract"
     pipeline = contract_path / "data" / "longmemeval-s" / "pipeline.py"
     pipeline.parent.mkdir(parents=True)
@@ -57,6 +78,7 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
                                       "contract_repository_path": str(contract_path), "output_dir": str(tmp_path / "runs")})
     commit_paths = []
     actual_commit = evaluation._commit
+    additions, searches, answer_systems = [], [], []
 
     def commit(path):
         commit_paths.append(path)
@@ -69,6 +91,9 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
             pass
 
         def complete(self, system, prompt, json_response=True):
+            if not json_response:
+                answer_systems.append(system)
+                assert '"scope": "global"' in prompt and "Paris" in prompt
             return '{"label": "CORRECT"}' if json_response else "Paris"
 
     class FakeEngine:
@@ -76,12 +101,13 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
             pass
 
         def add(self, request):
-            pass
+            additions.append(request)
 
         def search(self, request):
+            searches.append(request)
             if fail_search:
                 raise RuntimeError("controlled failure")
-            return SearchResponse(data=[Evidence(id="e1", content="Paris", score=1.0)])
+            return SearchResponse(data=[Evidence(id="e1", content="Paris", score=1.0, topic="profile", scope="global")])
 
     monkeypatch.setattr(evaluation, "OpenAILLM", FakeLLM)
     monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config, telemetry=None: object())
@@ -90,6 +116,11 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
     manifest = json.loads((run_dir / "manifest.json").read_text())
     snapshot = run_dir / manifest["code_snapshot_path"]
     assert manifest["code_snapshot_sha256"] == evaluation.sha256(snapshot)
+    assert additions[0].project_id == searches[0].project_id
+    assert len(additions) == 2 and additions[1].project_id == additions[0].project_id
+    assert additions[0].project_id.startswith("benchmark:longmemeval:")
+    assert (run_dir / "prompts/answer-system.txt").read_text() == evaluation._ANSWER_SYSTEM
+    assert manifest["answer_system_sha256"]
     project_root = Path(__file__).resolve().parents[1]
     assert project_root in commit_paths
     assert manifest["code_commit"] == actual_commit(project_root)
@@ -107,6 +138,7 @@ def test_evaluation_records_snapshot_timing_and_progress(tmp_path, monkeypatch, 
         assert failure["elapsed_seconds"] >= 0
         assert metrics["evaluated"] == 0
     else:
+        assert answer_systems == [evaluation._ANSWER_SYSTEM]
         prediction = json.loads((run_dir / "predictions.jsonl").read_text())
         retrieval = json.loads((run_dir / "retrieval.jsonl").read_text())
         assert prediction["group"] == retrieval["group"]

@@ -70,6 +70,7 @@ def test_evaluation_snapshots_prompts_telemetry_and_real_group_ingestion(tmp_pat
                 for index in (1, 2)]
     monkeypatch.setattr(evaluation, "load_examples", lambda *args: examples)
     monkeypatch.setattr(evaluation, "_commit", lambda path: config.contract_commit)
+    additions, searches = [], []
 
     class FakeLLM:
         def __init__(self, model_config, telemetry=None):
@@ -87,18 +88,22 @@ def test_evaluation_snapshots_prompts_telemetry_and_real_group_ingestion(tmp_pat
             self.requests = set()
 
         def add(self, request):
+            additions.append(request)
             if request.request_id not in self.requests:
                 self.llm.complete("extract", "Paris", json_response=False)
                 self.requests.add(request.request_id)
 
         def search(self, request):
+            searches.append(request)
             assert request.query == "Where?"  # Question date still belongs only to Answer.
-            return SearchResponse(data=[Evidence(id="e1", content="Paris", score=1.0)])
+            return SearchResponse(data=[Evidence(id="e1", content="Paris", score=1.0, topic="profile", scope="global")])
 
     monkeypatch.setattr(evaluation, "OpenAILLM", FakeLLM)
     monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config, telemetry=None: object())
     monkeypatch.setattr(evaluation, "MemoryEngine", FakeEngine)
     run_dir = evaluation.evaluate(config, config_path)
+    assert len(additions) == len(searches) == 2
+    assert {request.project_id for request in additions + searches} == {"benchmark:longmemeval:history"}
     manifest = json.loads((run_dir / "manifest.json").read_text())
     assert manifest["code_snapshot_sha256"] == runner._source_hash()
     assert (run_dir / manifest["prompt_files"]["extract"]["path"]).read_text()

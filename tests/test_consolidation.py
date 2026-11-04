@@ -43,12 +43,14 @@ class Writer:
 
 def fact(identifier="f1", content="Alice works at Google", **times):
     return {"id": identifier, "content": content, "sources": [f"chunk-{identifier}"],
+            "topic": "entities", "scope": "global", "project_id": None, "matter_id": None,
             "occurred_start": None, "occurred_end": None, "occurred_precision": None,
             "mentioned_at": "2026-09-01T12:00:00+00:00", **times}
 
 
 def observation(identifier="o1", content="Alice works at Google", vector=None, **times):
     return {"id": identifier, "content": content, "revision": 4, "sources": [f"old-{identifier}"],
+            **{key: fact(**times)[key] for key in ("topic", "scope", "project_id", "matter_id")},
             "vector": np.array([1.0, 0.0]) if vector is None else np.array(vector),
             "source_facts": [fact(f"old-{identifier}", content, **times)], "status": "active"}
 

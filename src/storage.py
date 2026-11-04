@@ -20,15 +20,6 @@ CREATE TABLE IF NOT EXISTS memory_directories (
   id TEXT PRIMARY KEY, path TEXT NOT NULL UNIQUE, parent_path TEXT NOT NULL,
   abstract TEXT NOT NULL, overview TEXT NOT NULL, source_sha256 TEXT NOT NULL
 );
-CREATE TABLE IF NOT EXISTS memory_topics (
-  id TEXT PRIMARY KEY, path TEXT NOT NULL, abstract TEXT NOT NULL, overview TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS directory_topics (
-  directory_id TEXT NOT NULL REFERENCES memory_directories(id),
-  topic_id TEXT NOT NULL REFERENCES memory_topics(id), selected INTEGER NOT NULL CHECK(selected IN (0,1)),
-  decision_json TEXT NOT NULL, PRIMARY KEY(directory_id,topic_id)
-);
-CREATE INDEX IF NOT EXISTS directory_topics_selected ON directory_topics(topic_id,selected,directory_id);
 CREATE TABLE IF NOT EXISTS message_sources (
   message_id TEXT PRIMARY KEY REFERENCES messages(id),
   directory_id TEXT NOT NULL REFERENCES memory_directories(id)
@@ -37,22 +28,32 @@ CREATE INDEX IF NOT EXISTS message_sources_directory ON message_sources(director
 CREATE TABLE IF NOT EXISTS chunks (
   id TEXT PRIMARY KEY, message_id TEXT NOT NULL REFERENCES messages(id),
   session_id TEXT NOT NULL, message_seq INTEGER NOT NULL, chunk_seq INTEGER NOT NULL,
-  token_start INTEGER NOT NULL, token_end INTEGER NOT NULL, content TEXT NOT NULL,
-  timestamp INTEGER, UNIQUE(message_id, chunk_seq)
+  char_start INTEGER NOT NULL, char_end INTEGER NOT NULL, content TEXT NOT NULL,
+  timestamp INTEGER, topic TEXT NOT NULL, scope TEXT NOT NULL, project_id TEXT,
+  CHECK(char_start >= 0 AND char_end > char_start),
+  UNIQUE(message_id, chunk_seq)
 );
 CREATE INDEX IF NOT EXISTS chunks_order ON chunks(session_id, message_seq, chunk_seq);
 CREATE TABLE IF NOT EXISTS facts (
   id TEXT PRIMARY KEY, content TEXT NOT NULL, extraction_version TEXT NOT NULL,
   occurred_start TEXT, occurred_end TEXT, occurred_precision TEXT, mentioned_at TEXT,
-  recorded_at TEXT NOT NULL
+  recorded_at TEXT NOT NULL,
+  topic TEXT NOT NULL CHECK(topic IN ('profile','preferences','entities','events','requirements','methods')),
+  scope TEXT NOT NULL CHECK(scope IN ('global','project','unresolved')), project_id TEXT,
+  parent_fact_id TEXT REFERENCES facts(id) DEFERRABLE INITIALLY DEFERRED,
+  matter_id TEXT, event_status TEXT, conditions TEXT, verification TEXT, logical_path TEXT NOT NULL,
+  CHECK((scope='project' AND project_id IS NOT NULL) OR (scope!='project' AND project_id IS NULL))
 );
+CREATE INDEX IF NOT EXISTS facts_scope_topic ON facts(scope,project_id,topic);
+CREATE INDEX IF NOT EXISTS facts_matter ON facts(matter_id);
 CREATE TABLE IF NOT EXISTS fact_sources (
   fact_id TEXT NOT NULL REFERENCES facts(id), chunk_id TEXT NOT NULL REFERENCES chunks(id),
   PRIMARY KEY(fact_id, chunk_id)
 );
 CREATE INDEX IF NOT EXISTS fact_sources_chunk ON fact_sources(chunk_id);
 CREATE TABLE IF NOT EXISTS observations (
-  id TEXT PRIMARY KEY, current_revision INTEGER NOT NULL CHECK(current_revision >= 1)
+  id TEXT PRIMARY KEY, current_revision INTEGER NOT NULL CHECK(current_revision >= 1),
+  topic TEXT NOT NULL, scope TEXT NOT NULL, project_id TEXT, matter_id TEXT
 );
 CREATE TABLE IF NOT EXISTS observation_revisions (
   observation_id TEXT NOT NULL REFERENCES observations(id), revision INTEGER NOT NULL,
@@ -112,13 +113,13 @@ class Store:
             connection.execute("PRAGMA journal_mode=WAL")
             if new_database:
                 connection.executescript(SCHEMA)
-                connection.execute("INSERT OR IGNORE INTO metadata VALUES ('schema_version','4')")
+                connection.execute("INSERT OR IGNORE INTO metadata VALUES ('schema_version','5')")
                 connection.execute("INSERT OR IGNORE INTO metadata VALUES ('index_fingerprint',?)", (self.fingerprint,))
             stored = connection.execute("SELECT value FROM metadata WHERE key='index_fingerprint'").fetchone()
             if stored is None or stored[0] != self.fingerprint:
                 raise ValueError("index configuration changed; use a new database directory")
             schema = connection.execute("SELECT value FROM metadata WHERE key='schema_version'").fetchone()
-            if schema is None or schema[0] != "4":
+            if schema is None or schema[0] != "5":
                 raise ValueError("database schema version is unsupported; use a new database directory")
             yield connection
         finally:
@@ -138,19 +139,27 @@ class Store:
         return connection.execute("SELECT COALESCE(MAX(seq),0)+1 FROM messages WHERE session_id=?", (session_id,)).fetchone()[0]
 
     @staticmethod
-    def prior_messages(connection: sqlite3.Connection, session_id: str) -> list[dict]:
-        rows = connection.execute("SELECT role,content,timestamp FROM messages WHERE session_id=? ORDER BY seq", (session_id,)).fetchall()
+    def prior_messages(connection: sqlite3.Connection, session_id: str, project_id: str | None) -> list[dict]:
+        rows = connection.execute("""SELECT c.*,m.role FROM chunks c JOIN messages m ON m.id=c.message_id
+            WHERE c.session_id=? AND (c.scope='global' OR (c.scope='project' AND c.project_id=?))
+            ORDER BY c.message_seq,c.chunk_seq""", (session_id, project_id)).fetchall()
         return [dict(row) for row in rows]
 
     @staticmethod
-    def current_observations(connection: sqlite3.Connection) -> list[dict]:
+    def current_observations(connection: sqlite3.Connection, partitions: set[tuple] | None = None) -> list[dict]:
+        predicate, parameters = "", []
+        if partitions is not None:
+            if not partitions:
+                return []
+            predicate = " WHERE " + " OR ".join("(o.topic=? AND o.scope=? AND o.project_id IS ?)" for _ in partitions)
+            parameters = [value for partition in sorted(partitions, key=str) for value in partition]
         rows = connection.execute("""
-            SELECT o.id, o.current_revision AS revision, r.content, r.temporal_json, r.status, e.vector
+            SELECT o.id, o.current_revision AS revision, o.topic,o.scope,o.project_id,o.matter_id,
+                   r.content, r.temporal_json, r.status, e.vector
             FROM observations o JOIN observation_revisions r
               ON r.observation_id=o.id AND r.revision=o.current_revision
             JOIN embeddings e ON e.owner_type='observation' AND e.owner_id=o.id
-            ORDER BY o.id
-        """).fetchall()
+        """ + predicate + " ORDER BY o.id", parameters).fetchall()
         observations = {row["id"]: {**dict(row), "time_metadata": json.loads(row["temporal_json"]),
                                     "sources": [], "source_facts": []} for row in rows}
         for row in connection.execute("""
@@ -158,19 +167,23 @@ class Store:
             JOIN observations o ON o.id=s.observation_id AND o.current_revision=s.revision
             JOIN facts f ON f.id=s.fact_id ORDER BY s.observation_id,f.id
         """):
+            if row["observation_id"] not in observations:
+                continue
             observation = observations[row["observation_id"]]
             observation["sources"].append(row["id"])
             observation["source_facts"].append({key: row[key] for key in
-                ("id", "content", "occurred_start", "occurred_end", "occurred_precision", "mentioned_at")})
+                ("id", "content", "occurred_start", "occurred_end", "occurred_precision", "mentioned_at",
+                 "topic", "scope", "project_id", "matter_id", "event_status", "conditions", "verification")})
         return list(observations.values())
 
     @staticmethod
     def save_observations(connection: sqlite3.Connection, observations: list[dict],
                           decisions: list[dict], request_id: str, created_at: str):
         for observation in observations:
-            connection.execute("""INSERT INTO observations VALUES (?,?)
+            connection.execute("""INSERT INTO observations VALUES (?,?,?,?,?,?)
                 ON CONFLICT(id) DO UPDATE SET current_revision=excluded.current_revision""",
-                (observation["id"], observation["revision"]))
+                (observation["id"], observation["revision"], observation["topic"], observation["scope"],
+                 observation["project_id"], observation["matter_id"]))
             temporal = observation["time_metadata"]
             connection.execute("INSERT INTO observation_revisions VALUES (?,?,?,?,?,?,?)",
                 (observation["id"], observation["revision"], observation["content"],

@@ -1,0 +1,986 @@
+{
+  "schema": 1,
+  "recorded_at_utc": "2026-11-01T04:27:37.346094+00:00",
+  "scope": "Version and sampling provenance for valid same-question VikingJev/Mem0/MemoryBank comparisons only",
+  "original_run_mutations": 0,
+  "api_calls": 0,
+  "process_queries": 0,
+  "ledger_reads": 0,
+  "new_scoring_calls": 0,
+  "cost_attribution": null,
+  "cost_attribution_reason": "Assigned to a separate record; this task did not read the ledger.",
+  "privacy": "No question text, answers, source messages, raw model outputs, or credentials copied.",
+  "primary_comparison_methods": [
+    "ours",
+    "mem0",
+    "memorybank"
+  ],
+  "display_names": {
+    "ours": "VikingJev",
+    "mem0": "Mem0-OSS",
+    "memorybank": "MemoryBank"
+  },
+  "comparison_rows": [
+    {
+      "benchmark": "LoCoMo",
+      "questions": [
+        {
+          "question_id": "conv-41#q0036",
+          "history_id": "conv-41",
+          "category": 1
+        },
+        {
+          "question_id": "conv-41#q0007",
+          "history_id": "conv-41",
+          "category": 1
+        },
+        {
+          "question_id": "conv-41#q0000",
+          "history_id": "conv-41",
+          "category": 2
+        },
+        {
+          "question_id": "conv-41#q0059",
+          "history_id": "conv-41",
+          "category": 2
+        },
+        {
+          "question_id": "conv-41#q0041",
+          "history_id": "conv-41",
+          "category": 3
+        },
+        {
+          "question_id": "conv-41#q0014",
+          "history_id": "conv-41",
+          "category": 3
+        },
+        {
+          "question_id": "conv-41#q0094",
+          "history_id": "conv-41",
+          "category": 4
+        },
+        {
+          "question_id": "conv-41#q0082",
+          "history_id": "conv-41",
+          "category": 4
+        },
+        {
+          "question_id": "conv-41#q0029",
+          "history_id": "conv-41",
+          "category": 1
+        },
+        {
+          "question_id": "conv-41#q0147",
+          "history_id": "conv-41",
+          "category": 4
+        },
+        {
+          "question_id": "conv-26#q0015",
+          "history_id": "conv-26",
+          "category": 1
+        },
+        {
+          "question_id": "conv-26#q0070",
+          "history_id": "conv-26",
+          "category": 1
+        },
+        {
+          "question_id": "conv-26#q0005",
+          "history_id": "conv-26",
+          "category": 2
+        },
+        {
+          "question_id": "conv-26#q0001",
+          "history_id": "conv-26",
+          "category": 2
+        },
+        {
+          "question_id": "conv-26#q0014",
+          "history_id": "conv-26",
+          "category": 3
+        },
+        {
+          "question_id": "conv-26#q0027",
+          "history_id": "conv-26",
+          "category": 3
+        },
+        {
+          "question_id": "conv-26#q0111",
+          "history_id": "conv-26",
+          "category": 4
+        },
+        {
+          "question_id": "conv-26#q0146",
+          "history_id": "conv-26",
+          "category": 4
+        },
+        {
+          "question_id": "conv-26#q0008",
+          "history_id": "conv-26",
+          "category": 2
+        },
+        {
+          "question_id": "conv-26#q0151",
+          "history_id": "conv-26",
+          "category": 4
+        }
+      ],
+      "count": 20,
+      "ours_run_id": "20261030T133627612820Z",
+      "ours_version": "vikingjev-repair-v3",
+      "baseline_run_id": "20261030T133627612820Z",
+      "baseline_lineage": "Inherited saved baseline results from original run; not rerun in LoCoMo20 continuation.",
+      "evidence": [
+        "original_selection",
+        "locomo20_launch_plan",
+        "locomo20_saved_result_validation"
+      ]
+    },
+    {
+      "benchmark": "LongMemEval-S (cleaned)",
+      "questions": [
+        {
+          "question_id": "95bcc1c8",
+          "history_id": "0242c1e2897a8b455c9c",
+          "category": "single-session-user"
+        }
+      ],
+      "count": 1,
+      "ours_run_id": "20261030T133627612820Z",
+      "ours_version": "vikingjev-repair-v3",
+      "baseline_run_id": "20261030T133627612820Z",
+      "evidence": [
+        "lme3_preselection",
+        "lme3_saved_result_validation"
+      ]
+    },
+    {
+      "benchmark": "LongMemEval-S (cleaned)",
+      "questions": [
+        {
+          "question_id": "099778bb",
+          "history_id": "1f156602f91ce45f20ef",
+          "category": "multi-session"
+        }
+      ],
+      "count": 1,
+      "ours_run_id": "20261101T014305123616Z",
+      "ours_version": "vikingjev-source-ids-v1",
+      "baseline_run_id": "20261030T133627612820Z",
+      "evidence": [
+        "source_ids_v1_child_plan",
+        "source_ids_v1_saved_result_validation"
+      ]
+    },
+    {
+      "benchmark": "LongMemEval-S (cleaned)",
+      "questions": [
+        {
+          "question_id": "505af2f5",
+          "history_id": "e5e5b5926c68c0c6e357",
+          "category": "single-session-preference"
+        }
+      ],
+      "count": 1,
+      "ours_run_id": "20261101T040328737375Z",
+      "ours_version": "vikingjev-optional-fact-text-v4",
+      "protocol_sha256": "59aead8e32d405b84da28de18987d95d48d4e201c7b62ff654063501f87804ea",
+      "baseline_origin_run_ids": [
+        "20261016T011008129863Z"
+      ],
+      "baseline_lineage": "Existing valid same-question saved scores; no baseline rerun.",
+      "comparison_ids": [
+        "663358a54d1183f94193e4044a7e3f345ee8e93f603251d303b73fc9470a4294"
+      ],
+      "evidence": [
+        "source_id_set_v3_manifest",
+        "source_id_set_v3_stage_plan",
+        "source_id_set_v3_maintenance_plan",
+        "source_id_set_v3_maintenance_receipt",
+        "source_id_set_v3_startup_receipt",
+        "source_id_set_v3_independent_review",
+        "optional_fact_text_v4_manifest",
+        "optional_fact_text_v4_stage_plan",
+        "optional_fact_text_v4_maintenance_plan",
+        "optional_fact_text_v4_maintenance_receipt",
+        "optional_fact_text_v4_independent_review"
+      ]
+    }
+  ],
+  "versions": [
+    {
+      "record_id": "original",
+      "run_id": "20261016T011008129863Z",
+      "parent_run_id": null,
+      "protocol_label": "independent-history-question-checkpoints-v1",
+      "protocol_sha256": "b49888a9908626da28620cd80b373bbb0ed01d2d389d4561f9bfe71156c43bd6",
+      "selection_sha256_recorded": "f87197293993ef41943ce70a45f93a12a6249599710d0039d4f7b5c920346191",
+      "manifest_evidence": "original_manifest",
+      "source_files": {
+        "src/week1_gateway.py": {
+          "evidence": "original_source_week1_gateway_py",
+          "manifest_sha256": "fe3ae2d0beb6e5d8e79f11f6dde9b744a6f8a68a0d5328b717d8bb4d5fe50109",
+          "matches_frozen_manifest": true
+        },
+        "src/providers.py": {
+          "evidence": "original_source_providers_py",
+          "manifest_sha256": "eb4c9f030a8634e495a2523ff86fe003c88a53fbc5b3b15476be4b74c1a67fdd",
+          "matches_frozen_manifest": true
+        },
+        "src/config.py": {
+          "evidence": "original_source_config_py",
+          "manifest_sha256": "76553ba0ccf2eded5bfad02217c50fb3dee4e137fdfc32a22ad10d25b9a499ce",
+          "matches_frozen_manifest": true
+        },
+        "prompts/extract-temporal-facts.txt": {
+          "evidence": "original_prompts_extract-temporal-facts_txt",
+          "manifest_sha256": "64f0af332652950765808a9a35de0f7880d8afa8b68b7e9299fa3c8805899741",
+          "matches_frozen_manifest": true
+        }
+      },
+      "extraction_model": "openai/gpt-4o-mini",
+      "default_llm_output_tokens": 4096,
+      "extraction_only_output_tokens": null,
+      "extraction_source_format": null,
+      "current_process_status": null,
+      "current_process_status_reason": "Not queried; provenance-only task.",
+      "planned_task_grid": {
+        "histories_per_method": 14,
+        "questions_per_method": 32,
+        "methods": [
+          "rag",
+          "mem0",
+          "memorybank",
+          "ours"
+        ],
+        "build_tasks": 56,
+        "qa_tasks": 128
+      },
+      "change_summary": [
+        "Original frozen source-unit-range extraction protocol.",
+        "Local conservative Jev UTF-8 byte gate: per-question-with-state 32000 and request min(context,64000)."
+      ]
+    },
+    {
+      "record_id": "repair_v3",
+      "run_id": "20261030T133627612820Z",
+      "parent_run_id": "20261016T011008129863Z",
+      "protocol_label": "vikingjev-repair-v3",
+      "protocol_sha256": "22bf22f1d517b6bceba0d0c283696c7fb9321ad185da37311718dd40cd0dd1cc",
+      "selection_sha256_recorded": "f87197293993ef41943ce70a45f93a12a6249599710d0039d4f7b5c920346191",
+      "manifest_evidence": "repair_v3_manifest",
+      "source_files": {
+        "src/week1_gateway.py": {
+          "evidence": "repair_v3_source_week1_gateway_py",
+          "manifest_sha256": "28d0c6c18a9479f470e6210fb221b7d32152c8e672997d81df8f6998f0b801b6",
+          "matches_frozen_manifest": true
+        },
+        "src/providers.py": {
+          "evidence": "repair_v3_source_providers_py",
+          "manifest_sha256": "612daec1c5527148b020a99985ed062361de7b4f28e5c670f2445ad69af5e04e",
+          "matches_frozen_manifest": true
+        },
+        "src/config.py": {
+          "evidence": "repair_v3_source_config_py",
+          "manifest_sha256": "76553ba0ccf2eded5bfad02217c50fb3dee4e137fdfc32a22ad10d25b9a499ce",
+          "matches_frozen_manifest": true
+        },
+        "prompts/extract-temporal-facts.txt": {
+          "evidence": "repair_v3_prompts_extract-temporal-facts_txt",
+          "manifest_sha256": "64f0af332652950765808a9a35de0f7880d8afa8b68b7e9299fa3c8805899741",
+          "matches_frozen_manifest": true
+        }
+      },
+      "extraction_model": "openai/gpt-4o-mini",
+      "default_llm_output_tokens": 4096,
+      "extraction_only_output_tokens": null,
+      "extraction_source_format": null,
+      "current_process_status": null,
+      "current_process_status_reason": "Not queried; provenance-only task.",
+      "change_summary": [
+        "Versioned policy removes the local Jev byte gates, preserving true provider limits and automatic long context.",
+        "Invalid outputs may regenerate at most three additional times with unchanged prompt/model and strict evidence validation.",
+        "Compatible existing successful stages/indexes are inherited; not a from-scratch rerun."
+      ]
+    },
+    {
+      "record_id": "source_ids_v1",
+      "run_id": "20261101T014305123616Z",
+      "parent_run_id": "20261030T133627612820Z",
+      "protocol_label": "vikingjev-source-ids-v1",
+      "protocol_sha256": "f4c8eed449f40b24fff231b0489baf61fddf78ba547ea6155cd64f2c4a003edf",
+      "selection_sha256_recorded": "f87197293993ef41943ce70a45f93a12a6249599710d0039d4f7b5c920346191",
+      "manifest_evidence": "source_ids_v1_manifest",
+      "source_files": {
+        "src/week1_gateway.py": {
+          "evidence": "source_ids_v1_source_week1_gateway_py",
+          "manifest_sha256": "486abb7eb40bf706da0a340178161a31c6faf6982f6350b494b3aeb84b0dc973",
+          "matches_frozen_manifest": true
+        },
+        "src/providers.py": {
+          "evidence": "source_ids_v1_source_providers_py",
+          "manifest_sha256": "51efd1124e7a3b5185b55658a773aa41f5977e76e14e71ee92b22c0732ca4d72",
+          "matches_frozen_manifest": true
+        },
+        "src/config.py": {
+          "evidence": "source_ids_v1_source_config_py",
+          "manifest_sha256": "76553ba0ccf2eded5bfad02217c50fb3dee4e137fdfc32a22ad10d25b9a499ce",
+          "matches_frozen_manifest": true
+        },
+        "prompts/extract-temporal-facts.txt": {
+          "evidence": "source_ids_v1_prompts_extract-temporal-facts_txt",
+          "manifest_sha256": "33a0711f53f46a49b3dd460bd594a0eed81d8a2fb45b484fc2ec9d97b510fedf",
+          "matches_frozen_manifest": true
+        }
+      },
+      "extraction_model": "openai/gpt-4o-mini",
+      "default_llm_output_tokens": 4096,
+      "extraction_only_output_tokens": null,
+      "extraction_source_format": "source-unit-ids-v1",
+      "current_process_status": null,
+      "current_process_status_reason": "Not queried; provenance-only task.",
+      "change_summary": [
+        "Extract explicit source_unit_ids instead of numeric interval endpoints; word/punctuation unit granularity and exact source validation preserved.",
+        "Extraction prompt/schema representation changed; separate protocol hash and child run."
+      ],
+      "inheritance": {
+        "total_committed_units": 67,
+        "committed_units_by_question": {
+          "099778bb": 46,
+          "505af2f5": 21
+        },
+        "successful_cache_slots": 10,
+        "successful_cache_slots_by_question": {
+          "099778bb": 7,
+          "505af2f5": 3
+        },
+        "canonical_legacy_parse_verified": true,
+        "evidence": "source_ids_v1_child_plan"
+      }
+    },
+    {
+      "record_id": "source_ids_output_v2",
+      "run_id": "20261101T021307599847Z",
+      "parent_run_id": "20261101T014305123616Z",
+      "protocol_label": "vikingjev-source-ids-output-v2",
+      "protocol_sha256": "87b9b643813514e0eed081d8bd9e3fda4a011069fec48edf408d9be4b805c0f1",
+      "selection_sha256_recorded": "f87197293993ef41943ce70a45f93a12a6249599710d0039d4f7b5c920346191",
+      "manifest_evidence": "source_ids_output_v2_manifest",
+      "source_files": {
+        "src/week1_gateway.py": {
+          "evidence": "source_ids_output_v2_source_week1_gateway_py",
+          "manifest_sha256": "dd76a0a5513e082538571aebf3e0c96582dfb622c6202afcc5707fa044847e21",
+          "matches_frozen_manifest": true
+        },
+        "src/providers.py": {
+          "evidence": "source_ids_output_v2_source_providers_py",
+          "manifest_sha256": "c2cc6a852285560ae6d7ecef258e9f4e97e6fdeee35208d54815bb045b866d2d",
+          "matches_frozen_manifest": true
+        },
+        "src/config.py": {
+          "evidence": "source_ids_output_v2_source_config_py",
+          "manifest_sha256": "4bc54b27cd4aa017e0331324dc4ddcf1546e199fcadb1aca48c1b25feaf34af7",
+          "matches_frozen_manifest": true
+        },
+        "prompts/extract-temporal-facts.txt": {
+          "evidence": "source_ids_output_v2_prompts_extract-temporal-facts_txt",
+          "manifest_sha256": "33a0711f53f46a49b3dd460bd594a0eed81d8a2fb45b484fc2ec9d97b510fedf",
+          "matches_frozen_manifest": true
+        }
+      },
+      "extraction_model": "openai/gpt-4o-mini",
+      "default_llm_output_tokens": 4096,
+      "extraction_only_output_tokens": 16384,
+      "extraction_source_format": "source-unit-ids-bounded-v2",
+      "current_process_status": null,
+      "current_process_status_reason": "Not queried; provenance-only task.",
+      "included_in_user_comparison": false,
+      "comparison_note": "Background lineage only; no 505 row is added to the comparable data in this provenance record.",
+      "change_summary": [
+        "Only the 505 history: explicit IDs schema adds maxItems=N to existing minItems=1; duplicate IDs remain rejected.",
+        "Extraction-only output cap16384; complete/rewrite remain4096, original prompts and source mapper unchanged.",
+        "Old successful source-ID request replays exact old schema/4096 via cache-only proof; no response relabelled as a new request."
+      ],
+      "inheritance": {
+        "committed_units": 24,
+        "successful_cache_slots": 1,
+        "original_successful_cache_output_tokens": 4096,
+        "evidence": "source_ids_output_v2_child_plan"
+      }
+    },
+    {
+      "record_id": "optional_fact_text_v4",
+      "run_id": "20261101T040328737375Z",
+      "parent_run_id": "20261101T032604772938Z",
+      "protocol_label": "vikingjev-optional-fact-text-v4",
+      "protocol_sha256": "59aead8e32d405b84da28de18987d95d48d4e201c7b62ff654063501f87804ea",
+      "manifest_evidence": "optional_fact_text_v4_manifest",
+      "included_in_user_comparison": true,
+      "manifest_frozen_sha256_recorded": "206cb8201b6e79c4c1060c8ddf26ebdef5eebb692a2a2775182d8e03edd7b417",
+      "manifest_runtime_fields_excluded_from_frozen_comparison": [
+        "status",
+        "resumed_at",
+        "budget",
+        "task_counts",
+        "error"
+      ],
+      "selection_sha256_recorded": "f87197293993ef41943ce70a45f93a12a6249599710d0039d4f7b5c920346191",
+      "frozen_files": {
+        "prompts/consolidate.txt": "aff5e71f2417f1ce36e86df825de3bc84b54dbebb38aa2f23011648aa1e83bd6",
+        "prompts/extract-facts.txt": "13086d2e149ba64fa8ccef45e44e5e1746d6e75480f7875e1704a84d308f79d0",
+        "prompts/extract-temporal-facts.txt": "33a0711f53f46a49b3dd460bd594a0eed81d8a2fb45b484fc2ec9d97b510fedf",
+        "pyproject.toml": "13a992483ad411994c156e632a1d835e53bd23adacb4f16d9edb8aa70675039e",
+        "src/__init__.py": "91447944015cec709e8aa7655f7e9d64e1e4508e7023a57fe3746911c0fc6fed",
+        "src/cli.py": "b1959b0a7f3649f97da8d5c042fa90c2c9a18060f732492121a1316a1e17590f",
+        "src/config.py": "4bc54b27cd4aa017e0331324dc4ddcf1546e199fcadb1aca48c1b25feaf34af7",
+        "src/consolidation.py": "ca1af0e828d9efb88bf25c5889a6ed4ddfd4a26b750d7aa5d364db8650fb9b82",
+        "src/contracts.py": "d84c411a9cd9e699454070b242cac51419b88cb0122853f99b4b5231c467ded6",
+        "src/directory_memory.py": "9bbb4b558d9bfcc31ec95a18b27ba2eef9c735afaad9cce819b92670a8c4bf36",
+        "src/directory_selector.py": "3b7079318ef9fef3cb868ecaad053b154794ebb1fdc6b2ed8934c66113d3b9f2",
+        "src/engine.py": "abf01464cb5905bfb57c60f480b28640682b9da7b48dfb72ddae66ada6e9ca70",
+        "src/evaluation.py": "b5bc5fd1a5fe14a8ad67c0bb7af359836b8d41f1eb7c7f509e5af05a364a1d37",
+        "src/providers.py": "3bb0eb99833560d1aad064b329cd8b008ed0c146ec0dc564b6bd06981bc19132",
+        "src/service.py": "a9bb5ca04f1041c377961fc8c7e08d1817f740d1de666e7662fbde87d770bf52",
+        "src/source_spans.py": "0cd4e4a4dfed4b8dc36dd582a33b7034ef24405ef0e0d0999ba16d35a5768afc",
+        "src/storage.py": "40b4d2c80bfb4f8ee08fc999d9c00da0e95fe3af1654ce41babce6a792f9a9df",
+        "src/temporal.py": "cc10d2dcebf03e5b15c5d0cf61309833ebe9431e4dedd4463aaaec0f1e102a40",
+        "src/topics.py": "b9cd24d8228ed7360fb41b104e1713e5b5aa98937f67c91fa9de664a7d53c34b",
+        "src/week1_baseline_worker.py": "04eb6e5f4531884c001b955716beb940a4bb9208d7e4b4f85b772e504591e67a",
+        "src/week1_data.py": "352d188e3aebc3dfa32010bac5ad996e2d4623ba4698e1cb6f432846ace4a746",
+        "src/week1_gateway.py": "9df6b5265063d903ea7a24ff5e2bca96a794e2d7047fba89f050b2c28efa97cd",
+        "src/week1_lineage.py": "aeca86e950f1956f9d107d382d82b0e6d3209c1ea62b17d1d11057997fd89584",
+        "src/week1_memorybank.py": "0a71abf7830b0261da4d956c9399c7823d1b57cd8511981e904c2583003db320",
+        "src/week1_repair_migration.py": "32a377a382f4a1444e1b66cc67b564afa65e1f22c63e123598716eff0c00a04c",
+        "src/week1_repair_runtime.py": "2941ee851f91827c965b5fa00447c8a4e1e18b2101c81e46cfd5ba30a9854610",
+        "src/week1_runner.py": "4848f1b023f5cda22f05beeec51195bf0ad87c3b329c8497610631f34ab3f53d",
+        "src/week1_source_id_migration.py": "d98e6720208e4066c481ead91baf49c5bfb3aef295ef4869b250b806cb3ffc22",
+        "src/week1_source_id_runtime.py": "ad3be0a76e055f312a5b7861d10e7bc73f8337babcb47d99ba7ab680c5b4b9c6",
+        "src/week1_tasks.py": "7d5f2696478a8deeb9bc809ef24d2b48566773490b038e946d1f32a0e864877f",
+        "uv.lock": "f3144eb08df9f7e158ceb44367e2b28ee46df4fb6f834858b0e94eb067b775d3"
+      },
+      "extraction_model": "openai/gpt-4o-mini",
+      "default_llm_output_tokens": 4096,
+      "extraction_only_output_tokens": 16384,
+      "extraction_source_format": "source-unit-id-set-nullable-v4",
+      "inheritance": {
+        "committed_units": 44,
+        "total_units": 53,
+        "successful_cache_slots": 8,
+        "mixed_provenance": true,
+        "independent_repetition": false
+      },
+      "selected_paid_response": {
+        "ordinal": 7,
+        "call_id": "1f3fd77acf7048cfab53a156e047a363",
+        "parent_attempt_no": 0,
+        "candidate_order": [
+          0,
+          1,
+          2,
+          3
+        ],
+        "selection": "earliest complete selected-source-supported candidate",
+        "source_review_fact_count": 4,
+        "blank_optional_text_values_normalized": 8,
+        "selection_uses_qa_answer_or_score": false,
+        "prior_additional_attempts_retained": 3
+      },
+      "ancestor_source_id_set_review": {
+        "version": "vikingjev-source-id-set-v3",
+        "run_id": "20261101T032604772938Z",
+        "protocol_sha256": "493d140fa5eb41f02c00909e935d9c269009d6284dcf609c8318482acf5e9981",
+        "prior_inherited_units": 32,
+        "prior_cached_slots": 12,
+        "ordinal": 11,
+        "parent_attempt_no": 1,
+        "call_id": "0fb84af7da8b4139b2fcd5fcbeec343a",
+        "source_review_fact_count": 7,
+        "stable_duplicate_id_removals": 4,
+        "selection_uses_qa_answer_or_score": false,
+        "included_as_scored_comparison": false
+      },
+      "optional_text_normalization": {
+        "fields": [
+          "conditions",
+          "verification"
+        ],
+        "blank_string_to": null,
+        "nonblank_and_other_fields_unchanged": true,
+        "null_semantics": "No substantive structured text was provided; no assertion that real conditions are absent or verification occurred.",
+        "new_wire_pattern": "\\S",
+        "legacy_wire_exact_cache_only_replay": true
+      },
+      "change_summary": [
+        "Only blank optional conditions/verification strings become null; nonblank text, content, source IDs, timestamps and hierarchy remain unchanged.",
+        "Mixed inherited prefix/cache and resumed construction under a new protocol; not an original-protocol or first-pass reproduction.",
+        "New requests add a nonblank pattern to the two nullable metadata fields; paid legacy responses retain their exact original wire identity.",
+        "Source-ID set normalization and ancestor manual selected-source review remain part of the inherited method; prompts, models, full inputs and extraction cap16384 are unchanged."
+      ],
+      "evidence": [
+        "source_id_set_v3_manifest",
+        "source_id_set_v3_stage_plan",
+        "source_id_set_v3_maintenance_plan",
+        "source_id_set_v3_maintenance_receipt",
+        "source_id_set_v3_startup_receipt",
+        "source_id_set_v3_independent_review",
+        "optional_fact_text_v4_manifest",
+        "optional_fact_text_v4_stage_plan",
+        "optional_fact_text_v4_maintenance_plan",
+        "optional_fact_text_v4_maintenance_receipt",
+        "optional_fact_text_v4_independent_review"
+      ]
+    }
+  ],
+  "sampling": {
+    "original_pilot": {
+      "seed": 42,
+      "policy": "type stratification and seeded source-index sampling; no answer/performance selection",
+      "development_exposure": true,
+      "questions": 32,
+      "dataset_counts": {
+        "locomo": 20,
+        "longmemeval": 12
+      },
+      "histories": 14,
+      "complete_benchmark": false,
+      "evidence": [
+        "original_selection",
+        "original_data_manifest"
+      ]
+    },
+    "locomo20": {
+      "selection": "All20 already fixed original-pilot LoCoMo questions from conv-41/conv-26; all three saved baselines available; only ours resumed.",
+      "answer_or_score_value_used_for_selection": false,
+      "bias": "Two conversations, development exposure, retained resumable prefixes and successful baseline coverage; exploratory subset.",
+      "evidence": [
+        "original_selection",
+        "ours_scope_dryrun",
+        "locomo20_launch_plan"
+      ]
+    },
+    "lme3_preselected_stage": {
+      "planned_question_count": 3,
+      "candidate_intersection_count": 5,
+      "selection_rule": "Sort ascending remaining ingestion units, remaining source tokens, full history source tokens, then stable ID; take three. This also covers all three observed categories. No answers or model scores enter the algorithm.",
+      "selection_bias": "Already-completed baseline intersection and cheaper/resumable histories; exploratory convenience subset, not representative or sufficient for significance/general superiority.",
+      "answers_or_model_scores_enter_algorithm": false,
+      "selection_recorded_at": "2026-10-31T04:52:34.900205+00:00",
+      "included_valid_question_ids": [
+        "95bcc1c8",
+        "099778bb"
+      ],
+      "included_questions_use_different_protocol_versions": true,
+      "evidence": [
+        "lme3_preselection",
+        "lme3_selection_note"
+      ]
+    },
+    "recovery_conditioning": {
+      "source_ids_v1_selected_after_prior_build_errors": true,
+      "same_questions_retained_without_score_based_replacement": true,
+      "bias": "Failure-selected repair histories; reporting only valid same-question intersections also conditions on successful completion.",
+      "evidence": [
+        "source_ids_v1_saved_result_validation",
+        "source_ids_v1_child_plan"
+      ]
+    },
+    "optional_fact_text_v4_recovery": {
+      "question_ids": [
+        "505af2f5"
+      ],
+      "selection_uses_qa_answer_or_score": false,
+      "conditioning": "Recovery-conditioned single question with inherited source-ID set/optional-text normalization and manual selected-source review of chosen paid extraction responses, independent of QA answers/scores.",
+      "independent_repetition": false,
+      "whole_protocol_reproduction": false
+    }
+  },
+  "dataset_and_scoring_sources": {
+    "locomo": {
+      "path": "datasets/locomo10.json",
+      "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+      "url": "https://raw.githubusercontent.com/snap-research/LoCoMo/3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376/data/locomo10.json",
+      "sha256": "79fa87e90f04081343b8c8debecb80a9a6842b76a7aa537dc9fdf651ea698ff4",
+      "bytes": 2805274
+    },
+    "longmemeval": {
+      "path": "datasets/longmemeval_s_cleaned.json",
+      "revision": "98d7416c24c778c2fee6e6f3006e7a073259d48f",
+      "url": "https://huggingface.co/datasets/xiaowu0162/longmemeval-cleaned/resolve/98d7416c24c778c2fee6e6f3006e7a073259d48f/longmemeval_s_cleaned.json",
+      "download_url": "https://hf-mirror.com/datasets/xiaowu0162/longmemeval-cleaned/resolve/98d7416c24c778c2fee6e6f3006e7a073259d48f/longmemeval_s_cleaned.json",
+      "sha256": "d6f21ea9d60a0d56f34a05b609c79c88a451d2ae03597821ea3d5a9678c3a442",
+      "bytes": 277383467
+    },
+    "locomo_scorer": {
+      "path": "scorers/locomo_evaluation.py",
+      "revision": "3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376",
+      "url": "https://raw.githubusercontent.com/snap-research/LoCoMo/3eb6f2c585f5e1699204e3c3bdf7adc5c28cb376/task_eval/evaluation.py",
+      "sha256": "8e3be5d57ff2ff9ec5cd05939592f468c5f3f1fd95d13e431932bdf6bf0fd6fd",
+      "bytes": 9441
+    },
+    "longmemeval_scorer": {
+      "path": "scorers/longmemeval_evaluate_qa.py",
+      "revision": "9e0b455f4ef0e2ab8f2e582289761153549043fc",
+      "url": "https://raw.githubusercontent.com/xiaowu0162/LongMemEval/9e0b455f4ef0e2ab8f2e582289761153549043fc/src/evaluation/evaluate_qa.py",
+      "sha256": "ecce9c4c79dc89d99534ac17b383a5cbb5b9f0c69ee98adaf0684742e3d95251",
+      "bytes": 7436
+    }
+  },
+  "scoring_protocols": {
+    "locomo": "Official AST functions normalize_answer, f1_score, f1; PorterStemmer; category 3 semicolon prefix",
+    "longmemeval": "Official get_anscheck_prompt; exact yes/no validation; no substring acceptance"
+  },
+  "interpretation": [
+    "The record includes 23 valid same-question comparisons; benchmarks, metrics and VikingJev versions are reported separately.",
+    "LME95bcc1c8 and099778bb use different repaired protocols; their aggregate is mixed-version exploratory evidence, not a clean single-version benchmark replication.",
+    "Historical inherited prefixes/caches do not constitute new independent repeated trials.",
+    "Do not infer general memory-update, consistency, significance, or cost-efficiency superiority from these question-answering subsets.",
+    "No incomplete or invalid result rows are exported to the user comparison; original experiment evidence is preserved."
+  ],
+  "unknowns": {
+    "random_replicates": null,
+    "confidence_intervals": null,
+    "full_benchmark_generalization": null,
+    "exact_per_protocol_fact_share_in_final_index": null,
+    "reason": "Not established by the selected metadata and receipts; no new analysis or evaluation performed."
+  },
+  "evidence_files": {
+    "original_manifest": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/manifest.json",
+      "sha256": "c89bf7cbeed6f2617ed3bca2691edb887fc1c9c48e198ee788d1de81b1375e65",
+      "bytes": 64419,
+      "kind": "metadata"
+    },
+    "original_source_week1_gateway_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/source/week1_gateway.py",
+      "sha256": "fe3ae2d0beb6e5d8e79f11f6dde9b744a6f8a68a0d5328b717d8bb4d5fe50109",
+      "bytes": 33065,
+      "kind": "frozen_source"
+    },
+    "original_source_providers_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/source/providers.py",
+      "sha256": "eb4c9f030a8634e495a2523ff86fe003c88a53fbc5b3b15476be4b74c1a67fdd",
+      "bytes": 25475,
+      "kind": "frozen_source"
+    },
+    "original_source_config_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/source/config.py",
+      "sha256": "76553ba0ccf2eded5bfad02217c50fb3dee4e137fdfc32a22ad10d25b9a499ce",
+      "bytes": 7085,
+      "kind": "frozen_source"
+    },
+    "original_prompts_extract-temporal-facts_txt": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/prompts/extract-temporal-facts.txt",
+      "sha256": "64f0af332652950765808a9a35de0f7880d8afa8b68b7e9299fa3c8805899741",
+      "bytes": 8615,
+      "kind": "frozen_source"
+    },
+    "repair_v3_manifest": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261030T133627612820Z/manifest.json",
+      "sha256": "1824dbbf56737e6b2fd5e3af1ddc5f1f09196d1b6f10527371178bdb4a85a67f",
+      "bytes": 64954,
+      "kind": "metadata"
+    },
+    "repair_v3_source_week1_gateway_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261030T133627612820Z/source/week1_gateway.py",
+      "sha256": "28d0c6c18a9479f470e6210fb221b7d32152c8e672997d81df8f6998f0b801b6",
+      "bytes": 49373,
+      "kind": "frozen_source"
+    },
+    "repair_v3_source_providers_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261030T133627612820Z/source/providers.py",
+      "sha256": "612daec1c5527148b020a99985ed062361de7b4f28e5c670f2445ad69af5e04e",
+      "bytes": 29951,
+      "kind": "frozen_source"
+    },
+    "repair_v3_source_config_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261030T133627612820Z/source/config.py",
+      "sha256": "76553ba0ccf2eded5bfad02217c50fb3dee4e137fdfc32a22ad10d25b9a499ce",
+      "bytes": 7085,
+      "kind": "frozen_source"
+    },
+    "repair_v3_prompts_extract-temporal-facts_txt": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261030T133627612820Z/prompts/extract-temporal-facts.txt",
+      "sha256": "64f0af332652950765808a9a35de0f7880d8afa8b68b7e9299fa3c8805899741",
+      "bytes": 8615,
+      "kind": "frozen_source"
+    },
+    "source_ids_v1_manifest": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T014305123616Z/manifest.json",
+      "sha256": "40ef032d00af402e9b571a6eb9ea29b489e8513044970b6920394b42ab7b7597",
+      "bytes": 65101,
+      "kind": "metadata"
+    },
+    "source_ids_v1_source_week1_gateway_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T014305123616Z/source/week1_gateway.py",
+      "sha256": "486abb7eb40bf706da0a340178161a31c6faf6982f6350b494b3aeb84b0dc973",
+      "bytes": 51643,
+      "kind": "frozen_source"
+    },
+    "source_ids_v1_source_providers_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T014305123616Z/source/providers.py",
+      "sha256": "51efd1124e7a3b5185b55658a773aa41f5977e76e14e71ee92b22c0732ca4d72",
+      "bytes": 34899,
+      "kind": "frozen_source"
+    },
+    "source_ids_v1_source_config_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T014305123616Z/source/config.py",
+      "sha256": "76553ba0ccf2eded5bfad02217c50fb3dee4e137fdfc32a22ad10d25b9a499ce",
+      "bytes": 7085,
+      "kind": "frozen_source"
+    },
+    "source_ids_v1_prompts_extract-temporal-facts_txt": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T014305123616Z/prompts/extract-temporal-facts.txt",
+      "sha256": "33a0711f53f46a49b3dd460bd594a0eed81d8a2fb45b484fc2ec9d97b510fedf",
+      "bytes": 8231,
+      "kind": "frozen_source"
+    },
+    "source_ids_output_v2_manifest": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T021307599847Z/manifest.json",
+      "sha256": "cf8151846c964ace8a71bcb60fec38231daf2aee8d59e281038ba385abd63a26",
+      "bytes": 64315,
+      "kind": "metadata"
+    },
+    "source_ids_output_v2_source_week1_gateway_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T021307599847Z/source/week1_gateway.py",
+      "sha256": "dd76a0a5513e082538571aebf3e0c96582dfb622c6202afcc5707fa044847e21",
+      "bytes": 56485,
+      "kind": "frozen_source"
+    },
+    "source_ids_output_v2_source_providers_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T021307599847Z/source/providers.py",
+      "sha256": "c2cc6a852285560ae6d7ecef258e9f4e97e6fdeee35208d54815bb045b866d2d",
+      "bytes": 36155,
+      "kind": "frozen_source"
+    },
+    "source_ids_output_v2_source_config_py": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T021307599847Z/source/config.py",
+      "sha256": "4bc54b27cd4aa017e0331324dc4ddcf1546e199fcadb1aca48c1b25feaf34af7",
+      "bytes": 7319,
+      "kind": "frozen_source"
+    },
+    "source_ids_output_v2_prompts_extract-temporal-facts_txt": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T021307599847Z/prompts/extract-temporal-facts.txt",
+      "sha256": "33a0711f53f46a49b3dd460bd594a0eed81d8a2fb45b484fc2ec9d97b510fedf",
+      "bytes": 8231,
+      "kind": "frozen_source"
+    },
+    "original_selection": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/selection.json",
+      "sha256": "f87197293993ef41943ce70a45f93a12a6249599710d0039d4f7b5c920346191",
+      "bytes": 10679,
+      "kind": "metadata"
+    },
+    "original_data_manifest": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/data-manifest.json",
+      "sha256": "e560c79f059560d7256af0ad03cde143830f5bfe8a79de2d110c648c5a216d85",
+      "bytes": 4163,
+      "kind": "metadata"
+    },
+    "source_ids_v1_child_plan": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-repair-20261101/child-plan.json",
+      "sha256": "db3e1445c0aa3a16fe5a714fe7ec9242b1efa6071ee95ea5357cee9643256082",
+      "bytes": 78116,
+      "kind": "metadata"
+    },
+    "source_ids_output_v2_child_plan": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-output-limit-20261101/child-plan.json",
+      "sha256": "5987e009d901827cd3b612e621b2513fc8fa4bb32147550c7509ee580f22e97f",
+      "bytes": 84329,
+      "kind": "metadata"
+    },
+    "repair_v3_inheritance": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261030T133627612820Z/inheritance.json",
+      "sha256": "b1020ab89a558e7006441c81d294fcd9a8be8a54a5ce8b3f8e4555d07798a8ea",
+      "bytes": 25932363,
+      "kind": "metadata"
+    },
+    "repair_v3_inheritance_status": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261030T133627612820Z/inheritance-status.json",
+      "sha256": "c14f4576a8c56365e5ee3957f174e3f33024255613948f62205c376a78b9bf54",
+      "bytes": 153,
+      "kind": "metadata"
+    },
+    "source_ids_v1_inheritance": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T014305123616Z/inheritance.json",
+      "sha256": "061335f44b81206f891b4fc9d60086d7cb5602d33710e780413a0c973d4a808e",
+      "bytes": 141065,
+      "kind": "metadata"
+    },
+    "source_ids_v1_inheritance_status": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T014305123616Z/inheritance-status.json",
+      "sha256": "d8ec8f95fd7bf6dcb5eec12fbb2bbaf48751fcb193105726085acfed333f28df",
+      "bytes": 153,
+      "kind": "metadata"
+    },
+    "source_ids_output_v2_inheritance": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T021307599847Z/inheritance.json",
+      "sha256": "5013684ed434dcb183b64d96683f0ef4bfc567cba83943db30c8d8c22366602d",
+      "bytes": 65705,
+      "kind": "metadata"
+    },
+    "source_ids_output_v2_inheritance_status": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T021307599847Z/inheritance-status.json",
+      "sha256": "a88761b4de82d2bf79ae3b4533651e2029081a0aebf208070bcdd0d5a17df43d",
+      "bytes": 153,
+      "kind": "metadata"
+    },
+    "lme3_selection_note": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/lme-expansion-20261031/SELECTION-BUDGET.md",
+      "sha256": "973949bccece9465eb9612a1d7e2b03f76c7210de76845b9154fe9dc6b120852",
+      "bytes": 4127,
+      "kind": "metadata"
+    },
+    "lme3_preselection": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/lme-expansion-20261031/scope-budget.json",
+      "sha256": "76aa9e5ebbca0f656ad16ae85bb60a5870be6b1367a862d6bfdef2c261bd2d90",
+      "bytes": 12865,
+      "kind": "metadata"
+    },
+    "ours_scope_dryrun": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/ours-budget-20261030/readonly-selection.json",
+      "sha256": "3fff6400e1b6dd70a28e4cbfafa9acae07547b5972748c8a743ba8e67937c025",
+      "bytes": 106639,
+      "kind": "metadata"
+    },
+    "locomo20_launch_plan": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/ours-resume-20261031/launch-plan.json",
+      "sha256": "79c809cfb09e45e1aea2c25b2a270716611a671b12c1af1fd7fd13f68019742f",
+      "bytes": 833,
+      "kind": "metadata"
+    },
+    "locomo20_saved_result_validation": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/ours-resume-20261031/FINAL-RESULTS.md",
+      "sha256": "6706a836a0d65355cabb44d472a63ed8f474844a8adcc6c2f51174c6c1404dbc",
+      "bytes": 2661,
+      "kind": "metadata"
+    },
+    "lme3_saved_result_validation": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/lme-expansion-20261031/FINAL-RESULTS.md",
+      "sha256": "80f34374a7dc4cb73b9420e56cc2ec7cc2374470c9747221ec8a404897d36ef9",
+      "bytes": 4041,
+      "kind": "metadata"
+    },
+    "source_ids_v1_saved_result_validation": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-repair-20261101/FINAL-RESULTS.md",
+      "sha256": "2b6714a697ad5777b8d701a779401ac4307e31bcf17aed4c48682c56fc26d7c0",
+      "bytes": 3674,
+      "kind": "metadata"
+    },
+    "output_v2_launch_plan": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-output-limit-20261101/launch-plan.json",
+      "sha256": "c56591941cceac2cc3f218f326962ff8e0e90ad5337d051bade7994f5266b84e",
+      "bytes": 1024,
+      "kind": "metadata"
+    },
+    "source_id_set_v3_manifest": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T032604772938Z/manifest.json",
+      "sha256": "155c4b93687c0d6f411938622859bbeb2631d16f7e706a24e387e367ac9d833c",
+      "bytes": 65300,
+      "kind": "metadata"
+    },
+    "source_id_set_v3_stage_plan": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-set-20261101/stage-plan.json",
+      "sha256": "7eb012820bd0caac5413e50bcd07d8bc0cba7019e6ab01401e3de566a8f2ea02",
+      "bytes": 1594,
+      "kind": "metadata"
+    },
+    "source_id_set_v3_maintenance_plan": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-set-20261101/maintenance/plan.json",
+      "sha256": "3805ff28f13495fdf24a7be9de2cf5e528963e8988c6732f4672c890ec18311f",
+      "bytes": 131743,
+      "kind": "metadata"
+    },
+    "source_id_set_v3_maintenance_receipt": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-set-20261101/maintenance/receipt.json",
+      "sha256": "fea1ff390ab454b14af6c6c57dcbc1aa9f004cdeaab21d4b85e079c49f798ad6",
+      "bytes": 1730,
+      "kind": "metadata"
+    },
+    "source_id_set_v3_startup_receipt": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-set-20261101/startup-response-receipt.json",
+      "sha256": "034255191e70d677a376973b97bfa917e9771e969508970883a935a6e9826f77",
+      "bytes": 1539,
+      "kind": "metadata"
+    },
+    "source_id_set_v3_independent_review": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-set-20261101/independent-narrow-review.json",
+      "sha256": "2d95520a64c3ebae7687bd1b1deefccece0833a4c0096ec0df34e5ef22772cf1",
+      "bytes": 2543,
+      "kind": "metadata"
+    },
+    "optional_fact_text_v4_manifest": {
+      "path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T040328737375Z/manifest.json",
+      "sha256": "93213555cd41d42123daab7878c5b0dc86c39f00be87ba686d056c053763f401",
+      "bytes": 65425,
+      "kind": "metadata"
+    },
+    "optional_fact_text_v4_stage_plan": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-fact-fields-20261101/stage-plan.json",
+      "sha256": "51dacba3ebb6420bcaa8213273a8b21695a3ce873c4c073cfe71396ccb5044e0",
+      "bytes": 1599,
+      "kind": "metadata"
+    },
+    "optional_fact_text_v4_maintenance_plan": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-fact-fields-20261101/maintenance/plan.json",
+      "sha256": "754c37da338bf0f32c20303b20831cefba8aa4c9a2f307dc1f48da6896ac5a47",
+      "bytes": 113023,
+      "kind": "metadata"
+    },
+    "optional_fact_text_v4_maintenance_receipt": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-fact-fields-20261101/maintenance/receipt.json",
+      "sha256": "7b64543f7bd7ec23155f2b1925957fc3d02e36b4752530e776a6186312356904",
+      "bytes": 1729,
+      "kind": "metadata"
+    },
+    "optional_fact_text_v4_independent_review": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/source-id-fact-fields-20261101/independent-v4-review.json",
+      "sha256": "5a8907a98c7d0a6f59271ebf02871ee5b2004eb1a1c77830bcc46d05cbb2f9ab",
+      "bytes": 2859,
+      "kind": "metadata"
+    }
+  },
+  "baseline_implementation_provenance": {
+    "mem0": {
+      "repo": "mem0ai/mem0",
+      "commit": "07ddd7cb4bd67962cf9a988d7b5c3f3920fad2d4",
+      "archive_url": "https://api.github.com/repos/mem0ai/mem0/tarball/07ddd7cb4bd67962cf9a988d7b5c3f3920fad2d4",
+      "archive_sha256": "90688805131f4b811eba20d968556d9a1c88535361f0a9c3001600d8388d2183",
+      "python_version": "Python 3.12.2",
+      "dependency_lock_sha256": "fa0e51b5accd288d70a0a666d6670d930e5b516c64ff4c382a10911e6f8a0a25"
+    },
+    "memorybank": {
+      "repo": "zhongwanjun/MemoryBank-SiliconFriend",
+      "commit": "cf61c4196e4cfdb0f2b7a0316249fa40312dc3a9",
+      "archive_url": "https://api.github.com/repos/zhongwanjun/MemoryBank-SiliconFriend/tarball/cf61c4196e4cfdb0f2b7a0316249fa40312dc3a9",
+      "python_version": "Python 3.11.16",
+      "dependency_lock_sha256": "c0948552d72b6351c2e5e74ecb8fe7ece0b14b67955ebc20aa64ea7358ed913d",
+      "archive_sha256": null
+    },
+    "evidence": "original_manifest"
+  },
+  "answer_and_judge_models": {
+    "answer": "openai/gpt-4o-mini",
+    "judge": "openai/gpt-4o-2024-08-06",
+    "evidence": "original_manifest"
+  },
+  "catalog_inputs": {
+    "previous_catalog": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/experiment-records/vikingjev-comparisons/records/20261101T023948118392Z/version-provenance.json",
+      "sha256": "00b34a9198d1871244bfe1e18ec183418ead9a41fd40ffa7c1f6e949a6ca7473",
+      "bytes": 32130,
+      "kind": "metadata"
+    },
+    "previous_saved_scores": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/experiment-records/vikingjev-comparisons/records/20261101T023948118392Z/comparable-scores.json",
+      "sha256": "bd47ecd58126210e88677f31687bce0156ded34832cd35d6acd5513f06349708",
+      "bytes": 838002,
+      "kind": "metadata"
+    },
+    "current_saved_scores": {
+      "path": "/Users/eversse/Documents/Codex/2026-10-18/task/experiment-records/vikingjev-comparisons/records/20261101T042649023385Z/comparable-scores.json",
+      "sha256": "da3271d520105738183a599aef74b5c1c8d6acd3ba023edd7a8d127c0155126e",
+      "bytes": 881774,
+      "kind": "metadata"
+    }
+  }
+}

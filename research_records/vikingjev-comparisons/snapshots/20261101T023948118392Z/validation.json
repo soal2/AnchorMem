@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "at": "2026-11-01T02:41:58.936860+00:00",
+  "status": "verified",
+  "snapshot_id": "20261101T023948118392Z",
+  "validated_comparable_scores_sha256": "bd47ecd58126210e88677f31687bce0156ded34832cd35d6acd5513f06349708",
+  "counts": {
+    "questions": 22,
+    "comparisons": 22,
+    "score_rows": 88,
+    "primary_rows": 66,
+    "secondary_rag_rows": 22,
+    "version_dataset_groups": 3,
+    "saved_api_proofs": 90,
+    "saved_answer_proofs": 84,
+    "saved_judge_proofs": 6
+  },
+  "verification_scope": "Final snapshot repeats the independently verified 88 score records byte-equivalently as parsed objects, with refreshed terminal costs and regenerated summaries. Root checked the derived CSV, wide table, group arithmetic and ledger fields; independent evidence checks are reused unchanged.",
+  "prior_independent_review": {
+    "path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/comparison-record-audit-20261101/independent-comparison-validation-023021.json",
+    "sha256": "9918de9bc9ae79e83a1951a5e2a070439d311dff10a15e7c51f37036bcd21331",
+    "reviewed_scores_sha256": "e0d9aa9e3cc46c35c12a907244eb141e4804da3dc3d66db8b8b36d4211f3ae07"
+  },
+  "checks": {
+    "scores_and_comparisons_equal_prior_independent_review": true,
+    "unique_keys": true,
+    "csv_all_fields_equal_json": true,
+    "wide_same_question_values_equal": true,
+    "group_mean_and_n_correct": true,
+    "no_unscored_question_exported": true,
+    "version_catalog_unchanged": true,
+    "historical_reservations_preserved": true,
+    "new_inflight_count_zero": true
+  },
+  "files_sha256": {
+    "paired-comparisons.csv": "b71c047a52d16ad55df355af82cc19b599bc2c4fd3d9355cddf030cf80e78069",
+    "summary.json": "240e65b5275aeab75af78c03afcfa947afd5d38ce3aad5c703f225344f2d3a78",
+    "comparable-scores.csv": "ab7db4084da59f66db3b589db88e1247e159a2fb6c1b97b8a3ffe2762c538ffc",
+    "summary.md": "d39ec0395735337c295aa2bffdc949b3002d85704825a559a783e938c36d600c",
+    "campaign-stages.csv": "efe524c659cc9cf9b2789ea9785998b2a22e53e554c3c7575fc13d20e4f1d93d",
+    "README.md": "ccba223f018dce304b9a972a893e0f32a234cea57862172f715da3a5715b0d02",
+    "VERSION-PROVENANCE.md": "b80b26d603f07818ba0006ea0557d2617ddf51271ce8a95227d52222f565637f",
+    "comparable-scores.json": "bd47ecd58126210e88677f31687bce0156ded34832cd35d6acd5513f06349708",
+    "by-stage.csv": "de0602012a5f990762fa555c4abcae51e48983c159cb7b182b4e6e630f4e1c31",
+    "by-run.csv": "b8fc785b50553899ba9eefaca3f80059b3719a0861066e91be3011a9aaa3a3be",
+    "version-provenance.json": "00b34a9198d1871244bfe1e18ec183418ead9a41fd40ffa7c1f6e949a6ca7473",
+    "costs.json": "bb1bc321ce6e04371c6919554a44ccb1baa466574070fa335a76b97a60a2f128"
+  },
+  "remaining_blockers": [],
+  "model_calls": 0,
+  "evaluation_calls": 0,
+  "original_artifact_writes": 0
+}

@@ -1,0 +1,421 @@
+{
+  "schema": 1,
+  "at": "2026-11-01T04:32:10.746381+00:00",
+  "status": "verified",
+  "snapshot_id": "20261101T042649023385Z",
+  "snapshot_path": "/Users/eversse/Documents/Codex/2026-10-18/task/experiment-records/vikingjev-comparisons/records/20261101T042649023385Z",
+  "validated_comparable_scores_sha256": "da3271d520105738183a599aef74b5c1c8d6acd3ba023edd7a8d127c0155126e",
+  "counts": {
+    "questions": 23,
+    "comparisons": 23,
+    "score_rows": 92,
+    "primary_rows": 69,
+    "secondary_rag_rows": 23,
+    "version_dataset_groups": 4,
+    "zero_score_rows": 50,
+    "saved_api_proofs": 98,
+    "saved_answer_proofs": 88,
+    "saved_judge_proofs": 10,
+    "unchanged_prior_score_objects": 88,
+    "unchanged_prior_comparison_objects": 22,
+    "new_score_objects": 4,
+    "new_saved_api_proofs_checked": 8
+  },
+  "checks": {
+    "old_published_validation_bound": true,
+    "old_88_score_objects_exactly_unchanged": true,
+    "old_22_comparison_objects_exactly_unchanged": true,
+    "only_four_new_505_rows": true,
+    "four_new_scores_1_1_0_0": true,
+    "92_unique_canonical_score_ids": true,
+    "unique_comparison_method_keys": true,
+    "23_unique_question_intersections": true,
+    "nested_and_flat_scores_identical": true,
+    "all_scores_finite_and_zeros_retained": true,
+    "same_question_complete_methods_041af4ef1b": true,
+    "same_question_complete_methods_31bb97ecd4": true,
+    "same_question_complete_methods_7785f2f45b": true,
+    "same_question_complete_methods_a497873884": true,
+    "same_question_complete_methods_f03ca229aa": true,
+    "same_question_complete_methods_df116954e1": true,
+    "same_question_complete_methods_d4881e663b": true,
+    "same_question_complete_methods_3ea6cb9527": true,
+    "same_question_complete_methods_0701be6a46": true,
+    "same_question_complete_methods_91236c15f7": true,
+    "same_question_complete_methods_81ef54d775": true,
+    "same_question_complete_methods_b7e5c97478": true,
+    "same_question_complete_methods_0c23114353": true,
+    "same_question_complete_methods_0cae00d132": true,
+    "same_question_complete_methods_9fa34f4bd1": true,
+    "same_question_complete_methods_65d5165b99": true,
+    "same_question_complete_methods_655e8f44b8": true,
+    "same_question_complete_methods_7c1d756fed": true,
+    "same_question_complete_methods_4c97433f0b": true,
+    "same_question_complete_methods_59d7840793": true,
+    "same_question_complete_methods_dfa3be67e1": true,
+    "same_question_complete_methods_663358a54d": true,
+    "same_question_complete_methods_caa0d34142": true,
+    "all_eligible_saved_intersections_exported_without_score_filter": true,
+    "long_csv_92_same_order": true,
+    "long_csv_json_every_field_exact": true,
+    "four_dataset_protocol_groups": true,
+    "all_group_counts_means_pairs_metadata_and_rag_arithmetic_correct": true,
+    "separate_version_group_sizes_20_1_1_1": true,
+    "summary_question_counts_23": true,
+    "wide_23_unique_paired_rows": true,
+    "wide_scores_versions_origins_config_pins_exact": true,
+    "summary_pin_comparable-scores.json": true,
+    "summary_pin_costs.json": true,
+    "summary_pin_version-provenance.json": true,
+    "summary_sampling_and_metric_provenance_exact": true,
+    "cost_totals_reconcile": true,
+    "final_cost_amounts_pinned": true,
+    "run_cost_aggregates_reconcile": true,
+    "stage_cost_aggregates_reconcile": true,
+    "stage_global_caps_not_reset": true,
+    "stage_cost_deltas_reconcile": true,
+    "147_historical_reservations_retained_no_new_inflight_unknown": true,
+    "inherited_caches_not_rebilled": true,
+    "captured_cost_small_source_metadata_hashes_match": true,
+    "all_cost_csv_tables_equal_cost_json": true,
+    "campaign_window_cost_deltas_reconcile": true,
+    "summary_cost_background_totals_exact": true,
+    "summary_stage_budget_background_exact": true,
+    "prior_version_baseline_scoring_sampling_records_unchanged": true,
+    "v4_version_frozen_files_protocol_model_pins_exact": true,
+    "v4_mixed_inheritance_and_no_independent_repetition_explicit": true,
+    "version_catalog_input_hashes_exact": true,
+    "new_v3_v4_catalog_evidence_hashes_exact": true,
+    "v4_actual_frozen_source_and_prompt_files_match_manifest": true,
+    "v4_terminal_manifest_only_permitted_runtime_fields_changed": true,
+    "scientific_answer_judge_models_prompts_selection_budget_unchanged": true,
+    "summary_markdown_counts_group_means_separation_and_budget_scope_exact": true,
+    "exactly_12_generated_deliverable_files": true,
+    "four_new_original_score_and_prediction_objects_match_successful_sqlite_stages": true,
+    "four_new_completed_answer_judge_binary_labels_match_scores": true,
+    "new_complete_history_sources_501_messages_111587_tokens_equal_all_methods": true,
+    "new_v4_full_53_of_53_units_and_valid_qa_receipt": true,
+    "four_new_canonical_origin_config_protocol_payload_and_history_hashes_verified": true,
+    "new_baseline_transfer_task_sha_and_answer_judge_score_lineage_verified": true,
+    "eight_new_api_point_queries_scope_request_response_content_accounting_exact": true,
+    "all_12_final_file_hashes_stable_during_review": true
+  },
+  "files_sha256": {
+    "README.md": "efda8ec0e5e4f60a9eb5f87dcd91e8b56e9f4766242237e070c2013d4cb283db",
+    "VERSION-PROVENANCE.md": "3223f6abf7e2c14fc5f6d1fde5788628568dc5c43776a4849e97f0b639fc4fc9",
+    "by-run.csv": "43f9b92d064f2e0d352f81f1da92b7724df896e9e898a966617f4328d4249819",
+    "by-stage.csv": "b6952d22ec598d46cd39f87d7de54b45f78b89987dacfc1bc02fd1defde2d83a",
+    "campaign-stages.csv": "aaebcc136f45878569293897c9a7a3e23183d80b935f6d07d4e81f5c817c9f2e",
+    "comparable-scores.csv": "21ed9a905f0f287c24e9ed9ad1c10a374603e337a27f9b34480c2e497f108f5f",
+    "comparable-scores.json": "da3271d520105738183a599aef74b5c1c8d6acd3ba023edd7a8d127c0155126e",
+    "costs.json": "0d713f8fa77e548f2e42c5c6bddeb0be00b305deef79fb0fce10aeec7c2abeb8",
+    "paired-comparisons.csv": "c236f7904fa8e12ed8b1ff969589ea908517ca9b6fd8074e86235f63278f34a3",
+    "summary.json": "d965e3e6d53f37361c757644074b8eacbd2e326eec80bf7cef1834c18155a207",
+    "summary.md": "fbc8796483f9fec52d7f5be9bcca63a2fa951bf519b532fef0787c6fdc35e12d",
+    "version-provenance.json": "63b32f8f0de23c0369d5f9fb77c7b4c8143731586e3c64dcc03a1401e07e0da8"
+  },
+  "prior_verification_reused": {
+    "published_snapshot": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/research_records/vikingjev-comparisons/snapshots/20261101T023948118392Z",
+    "validation_path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/research_records/vikingjev-comparisons/snapshots/20261101T023948118392Z/validation.json",
+    "validation_sha256": "14f7bbcef7b101cc08ef2dee528209dfdcfd91f84eedaba0e99c4fad1ae16989",
+    "validated_comparable_scores_sha256": "bd47ecd58126210e88677f31687bce0156ded34832cd35d6acd5513f06349708",
+    "earlier_independent_review_path": "/Users/eversse/Documents/Codex/2026-10-18/task/monitoring/comparison-record-audit-20261101/independent-comparison-validation-023021.json",
+    "earlier_independent_review_sha256": "9918de9bc9ae79e83a1951a5e2a070439d311dff10a15e7c51f37036bcd21331",
+    "scope": "Old22 comparisons and88 complete score/proof objects are exactly unchanged; their prior full artifact/API validation is reused without rescanning ancestor caches."
+  },
+  "new_505_scores": {
+    "ours": 1,
+    "mem0": 1,
+    "memorybank": 0,
+    "rag": 0
+  },
+  "new_score_evidence": [
+    {
+      "canonical_score_id": "9eebf6ddec0afb9abc2770fb67d93754f8cdb527003bd6140ca9665ee753444e",
+      "question_id": "505af2f5",
+      "method": "ours",
+      "value": 1.0,
+      "effective_version": "vikingjev-optional-fact-text-v4",
+      "canonical_origin_run_id": "20261101T040328737375Z",
+      "source_protocol_sha256": "59aead8e32d405b84da28de18987d95d48d4e201c7b62ff654063501f87804ea",
+      "effective_config_sha256": "a4a1b0d9ca983633b915c01ae97fa5c94c5c6fb7a768bfeb7c76902f4e8c84d1",
+      "checkpoint_task_id": "qa:ours:eddf4ad8fdc21a6e82f53e4f2b1ab4ab51ced27f58b5183ead45e257fa78dff4",
+      "validated_checkpoint_run_id": "20261101T040328737375Z",
+      "score_stage_id": "20261101T040328737375Z:qa:ours:eddf4ad8fdc21a6e82f53e4f2b1ab4ab51ced27f58b5183ead45e257fa78dff4:score",
+      "answer_call_ids": [
+        "72c4cecaae9c4658b6bd747ff14fe051"
+      ],
+      "judge_call_ids": [
+        "4474ff9655a14dab813f25fd1b2f95b6"
+      ],
+      "api_calls": {
+        "answer": [
+          {
+            "call_id": "72c4cecaae9c4658b6bd747ff14fe051",
+            "request_sha256": "ea0e3e78cc6697a8d6c30fd0d394b6ade463d6dbd430d2a75c777403135c03c7",
+            "response_sha256": "23b659e73c69f7ba9c26623c220907b8a0a743e326bd7c05e1da501803ef1fd8",
+            "scope_run_id": "20261101T040328737375Z",
+            "response_id": "gen-1793507090-q4KXmjmndcWwoL07e8Ye",
+            "checkpoint_path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T040328737375Z/api-call-checkpoints.sqlite3"
+          }
+        ],
+        "judge": [
+          {
+            "call_id": "4474ff9655a14dab813f25fd1b2f95b6",
+            "request_sha256": "1b0ca496f9891537bcd3e6a92657fab1444fd35d95ec267b000f77bb26d4f6c8",
+            "response_sha256": "9016729b075f844758a3ee2372ef24306bda0db29bd20472b6c81d237f89b670",
+            "scope_run_id": "20261101T040328737375Z",
+            "response_id": "gen-1793507097-mTnHZT21k41nsW4BjykS",
+            "checkpoint_path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T040328737375Z/api-call-checkpoints.sqlite3"
+          }
+        ]
+      },
+      "proof": {
+        "history_sha256": "b99704759a46e58c9c0affe9508b86bbe4d683e4340f3b335ddb2355e28b9320",
+        "completed_history_units": 53,
+        "full_history_receipt_sha256": "0ea8c360297cd0ec0a264ad36149c655132ca58418267e6230fe134affa0afe4",
+        "score_payload_sha256": "1289578473dd449fee404fd5be4141d83b429955e4161db2f63ef830e61a5cdc",
+        "answer_payload_sha256": "ddc690ccd8a9f7c020b449c0c90d01580f91cdf6010e23192ed2ef8a03f3b714",
+        "judge_payload_sha256": "78102c8a564e5e324a76ac12e42ce5452646c2570a0236a4533240827a0793a6",
+        "canonical_origin_prediction_sha256": "1289578473dd449fee404fd5be4141d83b429955e4161db2f63ef830e61a5cdc",
+        "prediction_export_sha256": "a383186ac60024848e0590b36afe84bcd3f5b2de77c6f3215689d0e6d1681047",
+        "logical_checkpoint_sha256": "ceb17aa1a6b2e6c50506da6738bfe0fa1e0d09b863b37a77a760373c130b014f",
+        "prediction_equals_score_stage": true,
+        "full_history_verified": true,
+        "answer_complete": true,
+        "judge_complete": true
+      },
+      "source_paths": {
+        "manifest": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T040328737375Z/manifest.json",
+        "canonical_predictions": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T040328737375Z/predictions.jsonl",
+        "validated_tasks": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T040328737375Z/tasks.sqlite3",
+        "validated_predictions": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261101T040328737375Z/predictions.jsonl"
+      }
+    },
+    {
+      "canonical_score_id": "bcf83c5905e534c2db3c4d90efb826bd508543ac7766bfd7b503323319901120",
+      "question_id": "505af2f5",
+      "method": "mem0",
+      "value": 1.0,
+      "effective_version": "mem0:07ddd7cb4bd67962cf9a988d7b5c3f3920fad2d4",
+      "canonical_origin_run_id": "20261016T011008129863Z",
+      "source_protocol_sha256": "b49888a9908626da28620cd80b373bbb0ed01d2d389d4561f9bfe71156c43bd6",
+      "effective_config_sha256": "d32a963cca1958f4543f56753e1097423595b79f09c79282f585aa8f979f1c60",
+      "checkpoint_task_id": "qa:mem0:eddf4ad8fdc21a6e82f53e4f2b1ab4ab51ced27f58b5183ead45e257fa78dff4",
+      "validated_checkpoint_run_id": "20261016T011008129863Z",
+      "score_stage_id": "20261016T011008129863Z:qa:mem0:eddf4ad8fdc21a6e82f53e4f2b1ab4ab51ced27f58b5183ead45e257fa78dff4:score",
+      "answer_call_ids": [
+        "a562fc7a51fe4c8ea8558e24b723991d"
+      ],
+      "judge_call_ids": [
+        "a617fbc5f98b4938a89f8015b9916253"
+      ],
+      "api_calls": {
+        "answer": [
+          {
+            "call_id": "a562fc7a51fe4c8ea8558e24b723991d",
+            "request_sha256": "0309279fb10fb8d0e469902521ebde9a3be4f7e9fa06c912bf149840d85675f4",
+            "response_sha256": "c5ad56de00dcbc2fd16ec740ce6f93f138173b711b87fb61b2413876a931e1f0",
+            "scope_run_id": "20261016T011008129863Z",
+            "response_id": "gen-1793320688-OC0Ku10B1QhaRUAPohkh",
+            "checkpoint_path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/api-call-checkpoints.sqlite3"
+          }
+        ],
+        "judge": [
+          {
+            "call_id": "a617fbc5f98b4938a89f8015b9916253",
+            "request_sha256": "7a43c1589d4ad9493efbb3855fb39391ad70d6720d10e1e2f9af57e1b38cf794",
+            "response_sha256": "4318360865e2467b3906e52c776f630dc8de0cbaa19de6a5bdbbb7da5bbae4d5",
+            "scope_run_id": "20261016T011008129863Z",
+            "response_id": "gen-1793320690-rGbpQNb1Gn7j0dKTj2wF",
+            "checkpoint_path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/api-call-checkpoints.sqlite3"
+          }
+        ]
+      },
+      "proof": {
+        "history_sha256": "b99704759a46e58c9c0affe9508b86bbe4d683e4340f3b335ddb2355e28b9320",
+        "completed_history_units": 53,
+        "full_history_receipt_sha256": "53fb4007af2b712cc2220f0ac17d3deb9d46d4a4716312ef4c2882ccbe83822f",
+        "score_payload_sha256": "635780bb59ac742c141208330168bec11f193629cf1daee011a6ec6f1e49bba2",
+        "answer_payload_sha256": "55e4824ac67ec378e1f0568d6c5d7791d15d5a7a09f95fae78cee0ad3220298d",
+        "judge_payload_sha256": "741d682f534691a9eff7ab05957ce4d3f2de3d81af545e1d07eb662415ea878a",
+        "canonical_origin_prediction_sha256": "635780bb59ac742c141208330168bec11f193629cf1daee011a6ec6f1e49bba2",
+        "prediction_export_sha256": "1342e8011a4e07819ff1d81704d838093ea872bc08bca3bc66bf8bbe38188c0d",
+        "logical_checkpoint_sha256": "efa56fe209024a5ec68377b207f9a45f9eaf1fa08441f97ba2b1a18f037c496a",
+        "prediction_equals_score_stage": true,
+        "full_history_verified": true,
+        "answer_complete": true,
+        "judge_complete": true
+      },
+      "source_paths": {
+        "manifest": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/manifest.json",
+        "canonical_predictions": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/predictions.jsonl",
+        "validated_tasks": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/tasks.sqlite3",
+        "validated_predictions": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/predictions.jsonl"
+      }
+    },
+    {
+      "canonical_score_id": "d000ae85acd512a3640a73702053e400c4a0c972ba91e739f3d5ed95a5ec77e1",
+      "question_id": "505af2f5",
+      "method": "memorybank",
+      "value": 0.0,
+      "effective_version": "memorybank:cf61c4196e4cfdb0f2b7a0316249fa40312dc3a9",
+      "canonical_origin_run_id": "20261016T011008129863Z",
+      "source_protocol_sha256": "b49888a9908626da28620cd80b373bbb0ed01d2d389d4561f9bfe71156c43bd6",
+      "effective_config_sha256": "11b1e4e81fb6fcec8a520b8ea1a516c093d6741c0dfd2ba7445f78b88699a98a",
+      "checkpoint_task_id": "qa:memorybank:eddf4ad8fdc21a6e82f53e4f2b1ab4ab51ced27f58b5183ead45e257fa78dff4",
+      "validated_checkpoint_run_id": "20261016T011008129863Z",
+      "score_stage_id": "20261016T011008129863Z:qa:memorybank:eddf4ad8fdc21a6e82f53e4f2b1ab4ab51ced27f58b5183ead45e257fa78dff4:score",
+      "answer_call_ids": [
+        "1b3d382d436d4d4eae5988dd0bb718c5"
+      ],
+      "judge_call_ids": [
+        "04c749f458fd4e20a21f0c6d4af649df"
+      ],
+      "api_calls": {
+        "answer": [
+          {
+            "call_id": "1b3d382d436d4d4eae5988dd0bb718c5",
+            "request_sha256": "7172dfe6fd0cee69e95f97bd45a575bfa2e53632b9aa8acd7a50da3621a59220",
+            "response_sha256": "bc1c26cece1901d0915ca75dcf8a8a6f5a95ae5f63f673b8fb64dcd74dc4ccdb",
+            "scope_run_id": "20261016T011008129863Z",
+            "response_id": "gen-1793321266-XHQfHvTlD8O55fM4wdBI",
+            "checkpoint_path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/api-call-checkpoints.sqlite3"
+          }
+        ],
+        "judge": [
+          {
+            "call_id": "04c749f458fd4e20a21f0c6d4af649df",
+            "request_sha256": "d942c2285f2254c82d4b3fc7852f147b045cd695832dc2d527a2341e513f8673",
+            "response_sha256": "85aabfb39400ec0adc850ba37d1f4df6f13440beef58e83d7bce544ccb6952a8",
+            "scope_run_id": "20261016T011008129863Z",
+            "response_id": "gen-1793321268-ntkwEN7ICq4NkhdJfrpd",
+            "checkpoint_path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/api-call-checkpoints.sqlite3"
+          }
+        ]
+      },
+      "proof": {
+        "history_sha256": "b99704759a46e58c9c0affe9508b86bbe4d683e4340f3b335ddb2355e28b9320",
+        "completed_history_units": 1,
+        "full_history_receipt_sha256": "9c82be2ff40f58b954f3261e6361cfeaa1f204e79a402e680504c414e7081ef1",
+        "score_payload_sha256": "1d35e04a0900074982e6c9a02efe9e7c0fa28d31de462b9668fc23c32b9d649c",
+        "answer_payload_sha256": "c12baf6a139a64c330aaf28b1393cdea29701795f1bf2761e6688152699c9d82",
+        "judge_payload_sha256": "ce882acc044fa5f1f348c41429c89f3736bf9fe97f178ddf9b414f1c66bac18b",
+        "canonical_origin_prediction_sha256": "1d35e04a0900074982e6c9a02efe9e7c0fa28d31de462b9668fc23c32b9d649c",
+        "prediction_export_sha256": "1342e8011a4e07819ff1d81704d838093ea872bc08bca3bc66bf8bbe38188c0d",
+        "logical_checkpoint_sha256": "efa56fe209024a5ec68377b207f9a45f9eaf1fa08441f97ba2b1a18f037c496a",
+        "prediction_equals_score_stage": true,
+        "full_history_verified": true,
+        "answer_complete": true,
+        "judge_complete": true
+      },
+      "source_paths": {
+        "manifest": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/manifest.json",
+        "canonical_predictions": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/predictions.jsonl",
+        "validated_tasks": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/tasks.sqlite3",
+        "validated_predictions": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/predictions.jsonl"
+      }
+    },
+    {
+      "canonical_score_id": "9883bfb86f2abddcf8d14527606e0673df359b52f91433d3d0822ee77e3b7403",
+      "question_id": "505af2f5",
+      "method": "rag",
+      "value": 0.0,
+      "effective_version": "rag:ec1d7a45d3d0a11894a16cd7d05d6ba0257141f6",
+      "canonical_origin_run_id": "20261016T011008129863Z",
+      "source_protocol_sha256": "b49888a9908626da28620cd80b373bbb0ed01d2d389d4561f9bfe71156c43bd6",
+      "effective_config_sha256": "4b28533d8dab9f2473073b5b36aba42456f5374605638a386e888f795e6041d5",
+      "checkpoint_task_id": "qa:rag:eddf4ad8fdc21a6e82f53e4f2b1ab4ab51ced27f58b5183ead45e257fa78dff4",
+      "validated_checkpoint_run_id": "20261016T011008129863Z",
+      "score_stage_id": "20261016T011008129863Z:qa:rag:eddf4ad8fdc21a6e82f53e4f2b1ab4ab51ced27f58b5183ead45e257fa78dff4:score",
+      "answer_call_ids": [
+        "584b059fbba841318a15d67677b19bfb"
+      ],
+      "judge_call_ids": [
+        "807bc54328df4f0291a911bb19c7c228"
+      ],
+      "api_calls": {
+        "answer": [
+          {
+            "call_id": "584b059fbba841318a15d67677b19bfb",
+            "request_sha256": "60172bafaeb3eef3e4afca802b468e8814244cc6681314d9fdcab42a05becefc",
+            "response_sha256": "09a8ad03935fbd03675645af34b47e6055862bd64b5498318dd74bc4a1482e0b",
+            "scope_run_id": "20261016T011008129863Z",
+            "response_id": "gen-1793319882-TEKL2AC9n4zOYYPNq33P",
+            "checkpoint_path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/api-call-checkpoints.sqlite3"
+          }
+        ],
+        "judge": [
+          {
+            "call_id": "807bc54328df4f0291a911bb19c7c228",
+            "request_sha256": "d942c2285f2254c82d4b3fc7852f147b045cd695832dc2d527a2341e513f8673",
+            "response_sha256": "4c7413ee981858b90734da364eeef472a61acde1db69d7d184b27e47c33dcb47",
+            "scope_run_id": "20261016T011008129863Z",
+            "response_id": "gen-1793319885-qYfFtxBXnihoEWknhOAZ",
+            "checkpoint_path": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/api-call-checkpoints.sqlite3"
+          }
+        ]
+      },
+      "proof": {
+        "history_sha256": "b99704759a46e58c9c0affe9508b86bbe4d683e4340f3b335ddb2355e28b9320",
+        "completed_history_units": 1,
+        "full_history_receipt_sha256": "0c277dd711f93218e17ce1069cf3c242d8421f99ca6750a36786b04bf1aae186",
+        "score_payload_sha256": "6e9ef4761cc1ce99530df961d1fc85f2bdeda6b94a936fe963ef262ae5e90e47",
+        "answer_payload_sha256": "a9396c25e25cb660ec18e1f45e0eeb5db72af4ab349d76c657dc300b5a49cd26",
+        "judge_payload_sha256": "45a5da145a531fd36eab07a4d1c869de47747d88aee5107c1552cfd2961e9c28",
+        "canonical_origin_prediction_sha256": "6e9ef4761cc1ce99530df961d1fc85f2bdeda6b94a936fe963ef262ae5e90e47",
+        "prediction_export_sha256": "1342e8011a4e07819ff1d81704d838093ea872bc08bca3bc66bf8bbe38188c0d",
+        "logical_checkpoint_sha256": "efa56fe209024a5ec68377b207f9a45f9eaf1fa08441f97ba2b1a18f037c496a",
+        "prediction_equals_score_stage": true,
+        "full_history_verified": true,
+        "answer_complete": true,
+        "judge_complete": true
+      },
+      "source_paths": {
+        "manifest": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/manifest.json",
+        "canonical_predictions": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/predictions.jsonl",
+        "validated_tasks": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/tasks.sqlite3",
+        "validated_predictions": "/Users/eversse/Documents/科研/llm_mem/AnchorMem/artifacts/week1/20261016T011008129863Z/predictions.jsonl"
+      }
+    }
+  ],
+  "new_raw_score_review": {
+    "status": "verified",
+    "reviewer": "new_four_scores_audit",
+    "score_rows_checked": 4,
+    "saved_api_response_proofs_checked": 8,
+    "history_source_messages_per_method": 501,
+    "history_source_tokens_per_method": 111587,
+    "v4_completed_units": 53,
+    "v4_total_units": 53,
+    "ledger_scans": 0,
+    "ancestor_api_cache_scans": 0,
+    "remaining_blockers": []
+  },
+  "cost_bound": {
+    "confirmed_usd": "7.854672962",
+    "historical_unresolved_reserved_usd": "5.432318464",
+    "occupied_upper_usd": "13.286991426",
+    "original_source_id_baseline_upper_usd": "12.679101782",
+    "source_id_stage_absolute_cap_usd": "15.679101782",
+    "global_cap_usd": "20",
+    "historical_unresolved_reservations_retained": 147,
+    "new_inflight_count": 0,
+    "new_unknown_count": 0,
+    "ledger_review_method": "Reused the once-collected fixed-prefix cost snapshot; independently reconciled all aggregate CSV/JSON totals, stage bounds, source receipts and cache non-rebilling metadata; no second ledger read."
+  },
+  "verification_scope": "23 valid same-question intersections; distinct effective VikingJev protocols remain separated into4 dataset/version groups.50 saved zero scores are retained. No absent or failed score is exported or imputed.",
+  "limits": [
+    "No new scoring or model calls; saved scores and exact response evidence only.",
+    "Cost totals describe the full campaign, not per-question comparable-result cost.",
+    "Historical unrecorded original API/protocol identifiers remain unknown as previously reviewed."
+  ],
+  "remaining_blockers": [],
+  "ledger_scans": 0,
+  "ancestor_api_cache_scans": 0,
+  "network_calls": 0,
+  "model_calls": 0,
+  "evaluation_calls": 0,
+  "process_actions": 0,
+  "original_artifact_writes": 0
+}

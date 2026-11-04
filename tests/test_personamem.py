@@ -151,9 +151,12 @@ def test_personamem_evaluation_choices_history_reuse_and_isolated_runs(persona_d
 
         def complete(self, system, prompt, json_response=True):
             assert json_response is True
+            assert "project requirement takes precedence" in system
             body = json.loads(prompt)
             assert set(body) == {"memories", "question", "options"}
             assert list(body["options"]) == list("ABCD")
+            assert '"topic": "profile"' in body["memories"]
+            assert '"scope": "global"' in body["memories"]
             model_prompts.append(body)
             choice = next(key for key, text in body["options"].items() if text == selected_text)
             return " \n" + json.dumps({"choice": choice}) + "\n "
@@ -167,7 +170,7 @@ def test_personamem_evaluation_choices_history_reuse_and_isolated_runs(persona_d
 
         def search(self, request):
             searches.append(request)
-            return SearchResponse(data=[Evidence(id="e1", content="I live in Paris.", score=1.0)])
+            return SearchResponse(data=[Evidence(id="e1", content="I live in Paris.", score=1.0, topic="profile", scope="global")])
 
     monkeypatch.setattr(evaluation, "OpenAILLM", FakeLLM)
     monkeypatch.setattr(evaluation, "OpenAIEmbedder", lambda config, telemetry=None: object())
@@ -178,6 +181,7 @@ def test_personamem_evaluation_choices_history_reuse_and_isolated_runs(persona_d
     assert all("memory-index" in path for path in databases)
     assert requests[0].request_id == requests[1].request_id
     assert requests[0].messages == requests[1].messages
+    assert {request.project_id for request in requests + searches} == {"benchmark:personamem:persona-1"}
     assert "metadata" not in requests[0].model_dump_json()
     predictions = [json.loads(line) for line in (first_run / "predictions.jsonl").read_text().splitlines()]
     for prediction, search, prompt in zip(predictions, searches, model_prompts):

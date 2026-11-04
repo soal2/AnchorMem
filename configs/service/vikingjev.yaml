@@ -1,7 +1,7 @@
-version: vikingjev-1
+version: vikingjev-generic-topics-2
 competition_mode: false
-database_dir: ../../data/vikingjev-topics
-snapshot_dir: ../../artifacts/vikingjev/service
+database_dir: ../../data/vikingjev-generic-topics-v5
+snapshot_dir: ../../artifacts/vikingjev-generic-topics/service-v2
 host: 0.0.0.0
 port: 8000
 workers: 1

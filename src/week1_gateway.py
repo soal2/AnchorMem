@@ -42,9 +42,8 @@ SOURCES = {
 
 
 # Transient upstream failures are retried with bounded exponential backoff.
-# 402 (credit exhausted) and 400 (provider-side rejects that OpenRouter sometimes
-# returns transiently) are included; a 400 gets fewer attempts.
-TRANSIENT_STATUSES = frozenset({400, 402, 408, 409, 425, 429, 500, 502, 503, 504, 520, 522, 524})
+# Invalid requests (400) are permanent; region refusals (403) are transient.
+TRANSIENT_STATUSES = frozenset({402, 408, 409, 425, 429, 500, 502, 503, 504, 520, 522, 524})
 TRANSPORT_FAILURES = frozenset({"ConnectError", "ConnectTimeout", "ReadTimeout", "WriteTimeout", "PoolTimeout",
                                 "RemoteProtocolError", "ReadError", "WriteError"})
 # Failures that never reached a billable generation.
@@ -57,11 +56,13 @@ BACKOFF_MAX_SECONDS = 300.0
 
 def backoff_seconds(attempt, status=None):
     """Delay before retry number ``attempt`` (1-based); credit/rate errors wait longer."""
-    base = BACKOFF_BASE_SECONDS * (6 if status in (402, 429) else 1)
+    base = BACKOFF_BASE_SECONDS * (6 if status in (402, 403, 429) else 1)
     return min(BACKOFF_MAX_SECONDS, base * (2 ** (attempt - 1)))
 
 
 def is_transient(status, failure):
+    if status == 403:
+        return failure == "upstream_region_error"
     if status is not None and not 200 <= status < 300:
         return status in TRANSIENT_STATUSES
     # Only connections that never opened are resent; a request that may have
@@ -128,6 +129,7 @@ class Gateway:
         self.allow_unconfirmed_costs = False
         self.stopped = None
         self._last_failure = (None, None)
+        self._last_resend_safe = False
         self.url = None
         self._server = self._thread = self._client = self._file_lock = None
 
@@ -281,6 +283,12 @@ class Gateway:
         if row is None:
             return identity, None
         if row["request_sha256"] != request_sha256:
+            event = json.loads(row["completed_json"] or "{}")
+            # A failed HTTP response alone does not prove zero billing.
+            safe = row["state"] == "failed" and self._safe_to_resend(event)
+            if safe:
+                self._supersede(row)
+                return identity, None
             raise GatewayError("week1_replay_mismatch", "request differs from the frozen call checkpoint")
         if row["state"] == "completed":
             self._record_completion(json.loads(row["completed_json"]))
@@ -289,7 +297,7 @@ class Gateway:
             self._supersede(row)
             return identity, None
         if row["state"] == "failed":
-            raise GatewayError("week1_upstream_error", "previous upstream request failed; call will not be repeated",
+            raise GatewayError("week1_upstream_error", f"previous upstream request failed ({self._row_failure(row)[1]}); call will not be repeated",
                                status_code=row["status_code"] or 400)
         raise GatewayError("week1_call_uncertain", "previous request may have been sent; automatic resend is prohibited")
 
@@ -299,13 +307,25 @@ class Gateway:
 
     def _row_failure(self, row):
         completed = json.loads(row["completed_json"]) if row["completed_json"] else {}
-        return completed.get("http_status", row["status_code"]), completed.get("failure")
+        status = completed.get("http_status", row["status_code"])
+        failure = completed.get("failure")
+        if status == 403 and "region" in str(completed.get("upstream_error", "")).lower():
+            failure = "upstream_region_error"
+        return status, failure
+
+    @staticmethod
+    def _safe_to_resend(event):
+        return (not event.get("request_id") and (
+            event.get("actual_cost_usd") == 0 or uncharged(event)
+            or event.get("failure") in UNSENT_FAILURES))
 
     def _may_resend(self, row):
         """A checkpointed transient failure may be sent again, within the attempt bound."""
         status, failure = self._row_failure(row)
         # Uncertain (possibly sent) calls are never resent automatically.
-        allowed = row["state"] == "failed" and is_transient(status, failure)
+        event = json.loads(row["completed_json"] or "{}")
+        allowed = (row["state"] == "failed" and is_transient(status, failure)
+                   and self._safe_to_resend(event))
         return allowed and self._attempts(row["scope"], row["ordinal"]) < attempt_limit(status)
 
     def _supersede(self, row):
@@ -619,7 +639,7 @@ class Gateway:
                 except GatewayError as error:
                     status, failure = self._last_failure
                     if (getattr(error, "code", None) != "week1_upstream_error" or not is_transient(status, failure)
-                            or attempt >= attempt_limit(status) or self.stopped):
+                            or not self._last_resend_safe or attempt >= attempt_limit(status) or self.stopped):
                         raise
                     wait = backoff_seconds(attempt, status)
                     self._append({"event": "transient-retry", "http_status": status, "failure": failure,
@@ -637,6 +657,7 @@ class Gateway:
 
     def _send(self, path, body, upper, estimated, identity, retry):
         self._last_failure = (None, None)
+        self._last_resend_safe = False
         with self._lock:
             if self.stopped and not (retry and self.stopped == "week1_budget_exhausted"):
                 raise GatewayError(self.stopped, "paid requests stopped: " + self.stopped)
@@ -670,6 +691,9 @@ class Gateway:
                 returnable = isinstance(result, dict) and "error" not in result
                 if not returnable:
                     failure = "upstream_http_error"
+                if (status == 403 and isinstance(result, dict)
+                        and "region" in str(result.get("error", "")).lower()):
+                    failure = "upstream_region_error"
                 actual, cost_source = self._actual_cost(result)
             except Exception as error:
                 failure = failure or type(error).__name__  # No exception text: it can contain secrets or prompts.
@@ -702,5 +726,6 @@ class Gateway:
                 # Later calls stop unless the user authorized conservative reservations.
                 return 200, json.loads(self._redact(_encoded(result))) if identity is not None else result
             self._last_failure = (status, failure)
-            raise GatewayError(self.stopped or "week1_upstream_error", "upstream request failed",
+            self._last_resend_safe = self._safe_to_resend(completed)
+            raise GatewayError(self.stopped or "week1_upstream_error", f"upstream request failed ({failure})",
                                status_code=status if status is not None and not 200 <= status < 300 else 400)

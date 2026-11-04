@@ -2,13 +2,42 @@
 
 import hashlib
 import json
+import re
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
 
 
+def retryable_error(error):
+    """Conservative task retries: unknown/invalid/possibly billed work needs review."""
+    text = json.dumps(error, ensure_ascii=False).lower()
+    if any(marker in text for marker in ("uncertain", "replay_mismatch", "badrequest", "invalid", "finish_reason", "will not be repeated")):
+        return False
+    status = error.get("status_code")
+    if status is None:
+        match = re.search(r"\b(?:http(?: status)?|error code)\s*[:=]?\s*(\d{3})\b", text)
+        status = int(match[1]) if match else None
+    if status == 400:
+        return False
+    if status == 403:
+        return "region" in text
+    if "retryable" in error:
+        return error["retryable"] is True
+    return status in {402, 408, 409, 425, 429, 500, 502, 503, 504, 520, 522, 524} or any(
+        marker in text for marker in ("connecterror", "connecttimeout"))
+
+
 def json_text(value):
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def permanent_error(error):
+    """Unknown errors need review; do not label them confirmed invalid requests."""
+    if retryable_error(error):
+        return False
+    text = json.dumps(error, ensure_ascii=False).lower()
+    return error.get("status_code") in {400, 401, 403, 404, 422} or any(
+        marker in text for marker in ("http 400", "http 401", "http 403", "invalid", "badrequest", "finish_reason"))
 
 
 def history_digest(example):
@@ -181,16 +210,16 @@ class TaskStore:
         return self.connection.execute("SELECT COUNT(*) FROM failures WHERE task_id=?", (task_id,)).fetchone()[0]
 
     def requeue(self, max_attempts):
-        """Return failed tasks with attempts left, and QA blocked on a requeued build, to pending.
+        """Return transient failed tasks with attempts left, and their dependent QA, to pending.
 
         Completed units and stages are kept, so work resumes where it stopped.
         Budget-stopped tasks are left alone. Returns the requeued task ids.
         """
         requeued = []
         with self.connection:
-            for row in self.connection.execute("SELECT task_id, kind, method, group_id FROM tasks WHERE state='failed'"
+            for row in self.connection.execute("SELECT task_id, kind, method, group_id, error FROM tasks WHERE state='failed'"
                                                " ORDER BY position").fetchall():
-                if self.attempts(row[0]) < max_attempts:
+                if retryable_error(json.loads(row[4] or "{}")) and self.attempts(row[0]) < max_attempts:
                     self.connection.execute("UPDATE tasks SET state='pending', error=NULL WHERE task_id=?", (row[0],))
                     requeued.append(row[0])
             for row in self.connection.execute("SELECT task_id, method, group_id FROM tasks WHERE state='blocked'"

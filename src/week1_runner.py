@@ -16,6 +16,7 @@ import uuid
 from collections import defaultdict
 from contextlib import contextmanager
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from time import perf_counter, sleep
 from urllib.parse import urlsplit
@@ -41,7 +42,7 @@ from .week1_memorybank_benchmark import (
 )
 from .week1_gateway import Gateway
 from .week1_memorybank import MemoryBankProcess, metadata as memorybank_metadata, prepare as prepare_memorybank, verify as verify_memorybank
-from .week1_tasks import TaskStore, history_digest, ingestion_units, json_text
+from .week1_tasks import TaskStore, history_digest, ingestion_units, json_text, retryable_error, permanent_error
 
 
 METHODS = ("rag", "mem0", "memorybank", "ours")
@@ -225,7 +226,7 @@ class NativeMemory:
 
 
 class BaselineProcess:
-    def __init__(self, root, path, method, gateway_url):
+    def __init__(self, root, path, method, gateway_url, manifest=None):
         python = root / "data/week1/envs" / method / "bin/python"
         gateway = urlsplit(gateway_url)
         host = gateway.scheme + "://" + gateway.netloc
@@ -239,7 +240,7 @@ class BaselineProcess:
             "--method", method, "--root", str(path), "--gateway-url", host],
             stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=self.log, text=True, env=env)
         try:
-            self.call({"action": "init"}, timeout=180)
+            self.call({"action": "init", "manifest": manifest}, timeout=180)
         except Exception:
             self.process.kill()
             self.process.wait()
@@ -288,6 +289,10 @@ class BaselineProcess:
 
 def clean_error(error):
     record = {"type": type(error).__name__, "message": str(error)[:4000]}
+    if getattr(error, "status_code", None) is not None:
+        record["status_code"] = error.status_code
+    if getattr(error, "code", None) is not None:
+        record["code"] = error.code
     if isinstance(error, providers.ProviderError):
         record.update(diagnostics=error.diagnostics, raw_response=error.raw_response)
     text = json.dumps(record, ensure_ascii=False)
@@ -453,6 +458,37 @@ def pause(seconds):
     sleep(seconds)
 
 
+def legacy_mem0_prompt_date(run_id):
+    started = datetime.strptime(run_id, "%Y%m%dT%H%M%S%fZ").replace(tzinfo=timezone.utc)
+    return started.astimezone(ZoneInfo("Asia/Shanghai")).date().isoformat()
+
+
+class FailurePauses:
+    """Bound task-level idle time across the entire runner invocation."""
+    def __init__(self):
+        self.failures = self.pauses = self.total = 0
+
+    def success(self):
+        self.failures = self.pauses = 0
+
+    def wait(self, seconds):
+        seconds = min(seconds, max(0, 600 - self.total))
+        self.total += seconds
+        return seconds
+
+    def failure(self, retryable):
+        if not retryable:
+            self.success()
+            return 0
+        self.failures += 1
+        if self.failures < FAILURE_BURST:
+            return 0
+        self.failures = 0
+        seconds = self.wait(min(1800, FAILURE_BURST_PAUSE_SECONDS * 2 ** min(self.pauses, 10)))
+        self.pauses += 1
+        return seconds
+
+
 def effective_files(manifest):
     amendments = manifest.get("code_amendments") or []
     return amendments[-1]["files"] if amendments else manifest["frozen_files"]
@@ -581,6 +617,7 @@ def freeze_run(root, config, budget_usd=20, benchmark="pilot", methods=None):
     files = frozen_files(root)
     manifest = {"run_id": run_id, "scope": scope, "benchmark": benchmark, "methods": list(methods),
             "task_protocol": TASK_PROTOCOL, "frozen_files": files,
+            "mem0_prompt_date": datetime.now().astimezone().date().isoformat(),
             "protocol_sha256": hashlib.sha256(json_text({"protocol": TASK_PROTOCOL, "files": files,
                 "config": config.model_dump(), "benchmark": benchmark, "methods": list(methods)}).encode()).hexdigest(),
             "budget_usd": budget_usd, "requested_per_method": requested,
@@ -747,6 +784,8 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
         store.seed(examples, methods, manifest["protocol_sha256"])
         if inherit_run:
             import_baselines(root, directory, manifest, examples, store, inherit_run)
+        # Legacy runs used the local date in Asia/Shanghai at creation.
+        manifest.setdefault("mem0_prompt_date", legacy_mem0_prompt_date(manifest["run_id"]))
         manifest["status"] = "running"
         write_json(directory / "manifest.json", manifest)
         runtime_status(directory, store, "running", stage="preflight-complete")
@@ -764,7 +803,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                 return (AuthorRAG(root, path, embedder) if method == "rag" else
                         NativeMemory(root, path, config, config_path) if method == "ours" else
                         MemoryBankProcess(root, path, gateway.url) if method == "memorybank" else
-                        BaselineProcess(root, path, method, gateway.url))
+                        BaselineProcess(root, path, method, gateway.url, manifest))
 
             def identity(method, item):
                 return {"run_id": manifest["run_id"], "method": method,
@@ -776,16 +815,15 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                 call_context(gateway, {"run_id": manifest["run_id"], **task}, stage,
                              task["task_id"], unit, manifest["protocol_sha256"])
 
-            streak = {"failures": 0, "pauses": 0}
+            streak = FailurePauses()
 
             def failure(task, stage, error):
-                store.fail(task["task_id"], stage, clean_error(error), gateway.stopped)
-                streak["failures"] += 1
-                if streak["failures"] >= FAILURE_BURST and not gateway.stopped:
-                    wait = min(1800, FAILURE_BURST_PAUSE_SECONDS * (2 ** streak["pauses"]))
-                    print(f"{streak['failures']} consecutive failures; pausing {wait}s before continuing", flush=True)
-                    streak["failures"] = 0
-                    streak["pauses"] += 1
+                record = clean_error(error)
+                record["retryable"] = retryable_error(record)
+                store.fail(task["task_id"], stage, record, gateway.stopped)
+                wait = streak.failure(record["retryable"]) if not gateway.stopped else 0
+                if wait:
+                    print(f"Transient failure burst; pausing {wait}s", flush=True)
                     pause(wait)
                 export_records(directory, store)
                 report(directory)
@@ -805,6 +843,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                     memory.close()
                     memory = None
                     version = publish_index(work)
+                    streak.success()
                     return result, version
                 finally:
                     if memory is not None:
@@ -839,7 +878,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                     wait = RETRY_ROUND_PAUSE_SECONDS * (2 ** (round_number - 1))
                     print(f"retry round {round_number}: {len(requeued)} tasks re-queued; pausing {wait}s", flush=True)
                     runtime_status(directory, store, "running", stage=f"retry-round-{round_number}")
-                    pause(wait)
+                    pause(streak.wait(wait))
                 for method, group_questions in method_group_pairs:
                     example = group_questions[0]
                     build = store.build(method, example["group"])
@@ -859,6 +898,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                                         memory.ingest(example)
                                 _, version = mutate(build, "ingestion", unit["id"], ingest)
                                 store.commit_build_unit(build["task_id"], number, version)
+                                streak.success()
                                 prune_indexes(directory, store)
                                 build = store.get(build["task_id"])
                                 runtime_status(directory, store, "running", build, "ingestion-committed", number)
@@ -867,6 +907,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                                 "source_messages": sum(len(s["messages"]) for s in example["sessions"]),
                                 "source_tokens": example["source_tokens"], "seconds": perf_counter() - started,
                                 "protocol_sha256": manifest["protocol_sha256"]})
+                            streak.success()
                             export_records(directory, store)
                             report(directory)
                         except Exception as error:
@@ -907,6 +948,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                                     "evidence_tokens": retrieved["evidence_tokens"], "search_seconds": retrieved["search_seconds"],
                                     "answer_seconds": perf_counter() - started}
                                 store.commit_stage(task["task_id"], "answer", saved)
+                                streak.success()
                             if saved["finish_reason"] != "stop":
                                 raise providers.ProviderError("answer output is incomplete", {"finish_reason": saved["finish_reason"]}, saved["answer"])
                             judge_text = None
@@ -924,6 +966,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                                     judged = {**identity(method, item), "judge_response": response.choices[0].message.content or "",
                                               "finish_reason": response.choices[0].finish_reason, "request_id": response.id}
                                     store.commit_stage(task["task_id"], "judge", judged)
+                                    streak.success()
                                 if judged["finish_reason"] != "stop":
                                     raise providers.ProviderError("judge output is incomplete", {"finish_reason": judged["finish_reason"]}, judged["judge_response"])
                                 judge_text = judged["judge_response"]
@@ -941,12 +984,14 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                             export_records(directory, store)
                             report(directory)
                             print(f"{method} {item['dataset']} {item['id']} score={score:.3f}", flush=True)
-                            streak["failures"] = streak["pauses"] = 0
+                            streak.success()
                         except Exception as error:
                             failure(task, stage, error)
             counts = store.counts()
+            failed = [row for row in store.rows() if row["state"] == "failed"]
             status = ("finished" if counts["qa"]["success"] == len(examples) * len(methods) else
-                      "budget-stopped" if gateway.stopped else "incomplete")
+                      "budget-stopped" if gateway.stopped else "permanent-errors" if failed and all(
+                          permanent_error(row["error"] or {}) for row in failed) else "incomplete")
             manifest.update(status=status, budget=gateway.summary())
     except KeyboardInterrupt:
         status = "interrupted"

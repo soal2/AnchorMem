@@ -94,62 +94,37 @@ def test_persistent_rate_limit_is_returned_as_429_after_bounded_attempts(tmp_pat
         assert len([row for row in ledger if row["event"] == "reservation"]) == MAX_CALL_ATTEMPTS
 
 
-def test_rate_limit_retry_checks_the_twenty_dollar_hard_gate_before_network(tmp_path, monkeypatch, retry_waits):
-    waits = retry_waits
+def test_unknown_rate_limit_is_not_resent_even_with_authorized_reservations(tmp_path, retry_waits):
     transport, requests = install(lambda request: upstream_error(429, cost=None))
     with Gateway("private-key", tmp_path, transport=transport) as gateway:
-        gateway.allow_unconfirmed_costs = True  # Authorized policy is tested separately.
+        gateway.allow_unconfirmed_costs = True
         gateway._spent = Decimal("14.7")
-        # This valid embedding batch reserves $3.2768: one fits $18, two exceed $20.
         payload = {"model": "openai/text-embedding-3-small", "input": ["x"] * 20_000}
         with httpx.Client(trust_env=False) as client:
             response = client.post(gateway.base_url + "/embeddings", json=payload)
-        assert response.status_code == 400
-        assert response.json()["error"]["code"] == "week1_budget_exhausted"
+        assert response.status_code == 429
         assert gateway.summary()["normal_limit_usd"] == 18
         assert gateway.summary()["budget_usd"] == 20
         assert gateway.summary()["reserved_usd"] == pytest.approx(3.2768)
         assert gateway.summary()["committed_upper_usd"] == pytest.approx(17.9768)
         assert len(paid_requests(requests)) == 1
-        assert waits == [backoff_seconds(1, 429)]
-        ledger = events(gateway)
-        assert len([row for row in ledger if row["event"] == "reservation"]) == 1
-        assert len([row for row in ledger if row["event"] == "completed"]) == 1
-        rejected = [row for row in ledger if row["event"] == "rejected"]
-        assert len(rejected) == 1
-        assert rejected[0]["retry_reserve"] is False
-        assert rejected[0]["code"] == "week1_budget_exhausted"
-        first = next(row for row in ledger if row["event"] == "completed")
-        assert first["http_status"] == 429
-        assert first["actual_cost_usd"] is None
-        assert first["cost_status"] == "unknown"
-        assert gateway.stop_reason == "week1_budget_exhausted"
+        assert retry_waits == []
+        assert not any(row["event"] == "transient-retry" for row in events(gateway))
 
 
-def test_authorized_unknown_rate_limit_charge_keeps_full_upper_reservation(tmp_path, monkeypatch, retry_waits):
-    waits = retry_waits
-    attempts = 0
-
-    def respond(request):
-        nonlocal attempts
-        attempts += 1
-        return upstream_error(429, cost=None) if attempts == 1 else httpx.Response(200, json=completion())
-
-    transport, requests = install(respond)
+def test_authorized_unknown_rate_limit_charge_keeps_full_upper_reservation(tmp_path, retry_waits):
+    transport, requests = install(lambda request: upstream_error(429, cost=None))
     with Gateway("private-key", tmp_path, transport=transport) as gateway:
         gateway.allow_unconfirmed_costs = True
         with httpx.Client(trust_env=False) as client:
             response = client.post(gateway.base_url + "/chat/completions", json=body())
-        assert response.status_code == 200
+        assert response.status_code == 429
         completed = [row for row in events(gateway) if row["event"] == "completed"]
         assert completed[0]["actual_cost_usd"] is None
-        assert completed[0]["cost_status"] == "unknown"
         assert gateway.summary()["reserved_usd"] == completed[0]["cost_quoted_upper_usd"]
-        assert gateway.summary()["spent_usd"] == pytest.approx(.0001)
-        assert gateway.stop_reason is None
-        assert len(paid_requests(requests)) == 2
-        assert waits == [backoff_seconds(1, 429)]
-        assert all(request.url.path in {"/api/v1/models", "/api/v1/chat/completions"} for request in requests)
+        assert gateway.summary()["spent_usd"] == 0
+        assert len(paid_requests(requests)) == 1
+        assert retry_waits == []
 
 
 def test_retry_cannot_bypass_an_unauthorized_unknown_cost_stop(tmp_path, monkeypatch, retry_waits):
@@ -167,7 +142,7 @@ def test_retry_cannot_bypass_an_unauthorized_unknown_cost_stop(tmp_path, monkeyp
         assert len([row for row in events(gateway) if row["event"] == "reservation"]) == 1
 
 
-@pytest.mark.parametrize("status,attempts", [(400, 2), (403, 1), (500, MAX_CALL_ATTEMPTS),
+@pytest.mark.parametrize("status,attempts", [(400, 1), (403, 1), (500, MAX_CALL_ATTEMPTS),
                                              (502, MAX_CALL_ATTEMPTS), (503, MAX_CALL_ATTEMPTS)])
 def test_http_errors_preserve_status_and_retry_only_transient_ones(tmp_path, monkeypatch, retry_waits, status, attempts):
     waits = retry_waits

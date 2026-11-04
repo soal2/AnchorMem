@@ -209,26 +209,78 @@ class TaskStore:
     def attempts(self, task_id):
         return self.connection.execute("SELECT COUNT(*) FROM failures WHERE task_id=?", (task_id,)).fetchone()[0]
 
-    def requeue(self, max_attempts):
-        """Return transient failed tasks with attempts left, and their dependent QA, to pending.
+    def recovery_evidence(self, checkpoint_path):
+        """Read billing evidence without initializing or modifying the gateway DB."""
+        from .week1_gateway import Gateway
+        result = {}
+        if checkpoint_path is None or not Path(checkpoint_path).is_file():
+            return result
+        connection = sqlite3.connect(Path(checkpoint_path).resolve().as_uri() + "?mode=ro", uri=True)
+        connection.row_factory = sqlite3.Row
+        try:
+            for row in connection.execute("SELECT * FROM calls"):
+                scope = json.loads(row["scope"])
+                if scope.get("run_id") != self.path.parent.name:
+                    continue
+                task_id = scope.get("task_id")
+                task = self.get(task_id) if task_id else None
+                if not task or task["method"] not in {"ours", "mem0"}:
+                    continue
+                if row["state"] == "completed":
+                    continue  # Successful calls replay from cache.
+                event = json.loads(row["completed_json"] or "{}")
+                safe = Gateway._retryable_state(row, event) and Gateway._safe_to_resend(event)
+                status = event.get("http_status", row["status_code"])
+                region = status == 403 and (event.get("failure") == "upstream_region_error"
+                            or "region" in str(event.get("upstream_error", "")).lower())
+                unsent = event.get("http_status") is None and event.get("failure") in {"ConnectError", "ConnectTimeout"}
+                result.setdefault(task_id, []).append((safe, region or unsent))
+        finally:
+            connection.close()
+        return result
 
-        Completed units and stages are kept, so work resumes where it stopped.
-        Budget-stopped tasks are left alone. Returns the requeued task ids.
+    def requeue(self, max_attempts, checkpoint_path=None, dry_run=False):
+        """Reclassify legacy failures from billing evidence, retaining audit history.
+
+        dry_run performs no writes. Old non-retryable failures do not consume the
+        bounded recovery allowance; new retryable failures do.
         """
+        evidence = self.recovery_evidence(checkpoint_path)
         requeued = []
-        with self.connection:
-            for row in self.connection.execute("SELECT task_id, kind, method, group_id, error FROM tasks WHERE state='failed'"
-                                               " ORDER BY position").fetchall():
-                if retryable_error(json.loads(row[4] or "{}")) and self.attempts(row[0]) < max_attempts:
-                    self.connection.execute("UPDATE tasks SET state='pending', error=NULL WHERE task_id=?", (row[0],))
-                    requeued.append(row[0])
-            for row in self.connection.execute("SELECT task_id, method, group_id FROM tasks WHERE state='blocked'"
-                                               " AND kind='qa'").fetchall():
-                build = self.connection.execute("SELECT state FROM tasks WHERE kind='build' AND method=? AND group_id=?",
-                                                (row[1], row[2])).fetchone()
-                if build is not None and build[0] in ("pending", "running", "success"):
-                    self.connection.execute("UPDATE tasks SET state='pending', error=NULL WHERE task_id=?", (row[0],))
-                    requeued.append(row[0])
+        recoveries = {}
+        for task in self.rows():
+            if task["state"] != "failed" or task["method"] not in {"ours", "mem0"}:
+                continue
+            error = task["error"] or {}
+            calls = evidence.get(task["task_id"], [])
+            mismatch = "replay_mismatch" in json_text(error).lower()
+            recovery = bool(calls) and all(safe and (mismatch or transient)
+                                           for safe, transient in calls)
+            eligible = recovery or (retryable_error(error) and not calls
+                                    and error.get("retryable") is not False)
+            attempts = self.attempts(task["task_id"])
+            if recovery:
+                attempts = sum(item.get("retryable") is True for item in self.failures()
+                               if item.get("task_id") == task["task_id"])
+                count = self.stage(task["task_id"], "recovery-requeues") or 0
+                attempts = max(attempts, count)
+                recoveries[task["task_id"]] = count + 1
+            if eligible and attempts < max_attempts:
+                requeued.append(task["task_id"])
+        for task in self.rows("qa"):
+            if task["state"] != "blocked" or task["method"] not in {"ours", "mem0"}:
+                continue
+            build = self.build(task["method"], task["group"])
+            if build and (build["state"] in {"pending", "running", "success"} or build["task_id"] in requeued):
+                requeued.append(task["task_id"])
+        if not dry_run:
+            with self.connection:
+                for task_id in requeued:
+                    if task_id in recoveries:
+                        self.connection.execute("INSERT OR REPLACE INTO stages VALUES (?,?,?)",
+                                                (task_id, "recovery-requeues", json_text(recoveries[task_id])))
+                self.connection.executemany("UPDATE tasks SET state='pending',error=NULL WHERE task_id=?",
+                                            [(task_id,) for task_id in requeued])
         return requeued
 
     def failures(self):

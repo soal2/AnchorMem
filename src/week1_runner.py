@@ -865,14 +865,14 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
                 for group_questions in groups.values():
                     for method in methods:
                         method_group_pairs.append((method, group_questions))
-            requeued = store.requeue(MAX_TASK_ATTEMPTS)
+            requeued = store.requeue(MAX_TASK_ATTEMPTS, base / "api-call-checkpoints.sqlite3")
             if requeued:
                 print(f"resume: {len(requeued)} failed or blocked tasks re-queued", flush=True)
             for round_number in range(MAX_RETRY_ROUNDS + 1):
                 if round_number:
                     if gateway.stopped:
                         break
-                    requeued = store.requeue(MAX_TASK_ATTEMPTS)
+                    requeued = store.requeue(MAX_TASK_ATTEMPTS, base / "api-call-checkpoints.sqlite3")
                     if not requeued:
                         break
                     wait = RETRY_ROUND_PAUSE_SECONDS * (2 ** (round_number - 1))

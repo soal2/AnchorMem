@@ -169,3 +169,58 @@ def test_only_confirmed_permanent_errors_get_permanent_status():
     assert permanent_error({"status_code": 400, "message": "bad request"})
     assert not permanent_error({"message": "unknown worker error"})
     assert not permanent_error({"status_code": 403, "message": "region refusal"})
+
+
+@pytest.mark.parametrize("method,message,state,event,expected", [
+    ("mem0", "HTTP 403 region refusal", "failed", {"http_status": 403, "actual_cost_usd": 0, "upstream_error": "region refusal"}, True),
+    ("mem0", "HTTP 400 week1_replay_mismatch", "failed", {"http_status": 400, "actual_cost_usd": 0}, True),
+    ("mem0", "week1_call_uncertain", "uncertain", {"failure": "ConnectError"}, True),
+    ("mem0", "week1_call_uncertain cn:焦彦", "uncertain", {}, False),
+    ("mem0", "HTTP 403 region refusal", "failed", {"http_status": 403, "actual_cost_usd": None}, False),
+    ("mem0", "week1_replay_mismatch", "failed", {"http_status": 400, "actual_cost_usd": 0, "request_id": "paid"}, False),
+    ("ours", "HTTP 400 invalid input", "failed", {"http_status": 400, "actual_cost_usd": 0}, False),
+    ("ours", "week1_replay_mismatch", "failed", {"http_status": 400, "actual_cost_usd": None}, False),
+])
+def test_legacy_requeue_uses_checkpoint_evidence_and_is_bounded(tmp_path, method, message, state, event, expected):
+    store = TaskStore(tmp_path / "tasks.sqlite3")
+    store.seed([{"id": "q", "dataset": "memorybank", "group": "cn:姚国栋", "sessions": []}], [method], "p")
+    task = store.build(method, "cn:姚国栋")
+    for _ in range(5):
+        store.fail(task["task_id"], "ingestion", {"message": message, "retryable": False})
+    gateway = checkpoint_gateway(tmp_path)
+    scope = json.dumps({"task_id": task["task_id"], "run_id": tmp_path.name})
+    gateway._checkpoints.execute("INSERT INTO calls(scope,ordinal,request_sha256,call_id,state,reservation_json,completed_json) VALUES (?,?,?,?,?,?,?)",
+        (scope, 0, "hash", "call", state, "{}", json.dumps(event)))
+    gateway._checkpoints.commit()
+    gateway._checkpoints.close()
+    path = tmp_path / "api-call-checkpoints.sqlite3"
+    before = store.connection.iterdump()
+    before = list(before)
+    selected = store.requeue(2, path, dry_run=True)
+    assert bool(selected) is expected
+    assert list(store.connection.iterdump()) == before
+    assert store.requeue(2, path) == selected
+    assert len(store.failures()) == 5
+    if expected:
+        assert len(selected) == 2
+        for _ in range(2):
+            store.fail(task["task_id"], "ingestion", {"message": message, "retryable": False})
+            store.requeue(2, path)
+        assert store.get(task["task_id"])["state"] == "failed"
+    store.close()
+
+
+def test_requeue_does_not_borrow_evidence_from_another_run(tmp_path):
+    store = TaskStore(tmp_path / "tasks.sqlite3")
+    store.seed([{"id": "q", "dataset": "memorybank", "group": "cn:焦彦", "sessions": []}], ["mem0"], "p")
+    task_id = store.build("mem0", "cn:焦彦")["task_id"]
+    store.fail(task_id, "ingestion", {"message": "HTTP 403 region refusal", "retryable": False})
+    assert store.requeue(4, dry_run=True) == []
+    gateway = checkpoint_gateway(tmp_path)
+    gateway._checkpoints.execute("INSERT INTO calls(scope,ordinal,request_sha256,call_id,state,reservation_json,completed_json) VALUES (?,?,?,?,?,?,?)",
+        (json.dumps({"task_id": task_id, "run_id": "another-run"}), 0, "h", "c", "failed", "{}",
+         json.dumps({"http_status": 403, "actual_cost_usd": 0, "upstream_error": "region refusal"})))
+    gateway._checkpoints.commit()
+    gateway._checkpoints.close()
+    assert store.requeue(4, tmp_path / "api-call-checkpoints.sqlite3", dry_run=True) == []
+    store.close()

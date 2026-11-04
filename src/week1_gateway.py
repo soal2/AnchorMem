@@ -75,12 +75,18 @@ def attempt_limit(status):
 
 
 def uncharged(event):
-    """OpenRouter refuses 402 (insufficient credit) before routing, so it creates no generation.
+    """Recognize explicit pre-generation HTTP refusals.
 
-    Every other unknown cost keeps its full reservation until an explicit audit.
+    A generic HTTP/region error is insufficient evidence of zero billing.
+    Positive cost or a generation ID always prevents this classification.
     """
-    return (event.get("actual_cost_usd") is None and event.get("http_status") == 402
-            and not event.get("request_id"))
+    if event.get("actual_cost_usd") not in (None, 0) or event.get("request_id"):
+        return False
+    error = event.get("upstream_error")
+    message = error.get("message", "") if isinstance(error, dict) else ""
+    region_refusal = (event.get("http_status") == 403
+                      and "model is not available in your region" in str(message).lower())
+    return event.get("http_status") == 402 or region_refusal
 
 
 class GatewayError(ValueError):
@@ -285,7 +291,7 @@ class Gateway:
         if row["request_sha256"] != request_sha256:
             event = json.loads(row["completed_json"] or "{}")
             # A failed HTTP response alone does not prove zero billing.
-            safe = row["state"] == "failed" and self._safe_to_resend(event)
+            safe = self._retryable_state(row, event) and self._safe_to_resend(event)
             if safe:
                 self._supersede(row)
                 return identity, None
@@ -299,7 +305,8 @@ class Gateway:
         if row["state"] == "failed":
             raise GatewayError("week1_upstream_error", f"previous upstream request failed ({self._row_failure(row)[1]}); call will not be repeated",
                                status_code=row["status_code"] or 400)
-        raise GatewayError("week1_call_uncertain", "previous request may have been sent; automatic resend is prohibited")
+        raise GatewayError("week1_call_uncertain", "previous request may have been sent; automatic resend is prohibited; "
+                           "this checkpoint requires manual review and blocks only this task")
 
     def _attempts(self, scope, ordinal):
         return self._checkpoints.execute("SELECT COUNT(*) FROM call_attempts WHERE scope=? AND ordinal=?",
@@ -315,16 +322,23 @@ class Gateway:
 
     @staticmethod
     def _safe_to_resend(event):
-        return (not event.get("request_id") and (
-            event.get("actual_cost_usd") == 0 or uncharged(event)
-            or event.get("failure") in UNSENT_FAILURES))
+        return (not event.get("request_id")
+                and (event.get("actual_cost_usd") == 0 or uncharged(event)
+                     or (event.get("actual_cost_usd") is None and event.get("http_status") is None
+                         and event.get("failure") in UNSENT_FAILURES)))
+
+    @staticmethod
+    def _retryable_state(row, event):
+        # Older versions stored even proven-unsent connection errors as uncertain.
+        return row["state"] == "failed" or (row["state"] == "uncertain"
+            and event.get("http_status") is None and event.get("failure") in UNSENT_FAILURES)
 
     def _may_resend(self, row):
         """A checkpointed transient failure may be sent again, within the attempt bound."""
         status, failure = self._row_failure(row)
         # Uncertain (possibly sent) calls are never resent automatically.
         event = json.loads(row["completed_json"] or "{}")
-        allowed = (row["state"] == "failed" and is_transient(status, failure)
+        allowed = (self._retryable_state(row, event) and is_transient(status, failure)
                    and self._safe_to_resend(event))
         return allowed and self._attempts(row["scope"], row["ordinal"]) < attempt_limit(status)
 

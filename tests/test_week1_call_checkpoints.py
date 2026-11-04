@@ -293,3 +293,60 @@ def test_shared_checkpoint_damage_stops_new_paid_calls(tmp_path):
             gateway._request(PATH, payload())
         assert failure.value.code == gateway.stopped == "week1_checkpoint_error"
     assert paid == []
+
+
+@pytest.mark.parametrize('state,status,failure,message,cost,request_id,safe', [
+    ('failed', 403, 'upstream_http_error', 'This model is not available in your region.', None, None, True),
+    ('failed', 403, 'upstream_region_error', 'This model is not available in your region.', None, None, True),
+    ('uncertain', None, 'ConnectError', None, None, None, True),
+    ('failed', 403, 'upstream_region_error', 'region provider error', None, None, False),
+    ('failed', 403, 'upstream_http_error', 'This model is not available in your region.', .01, None, False),
+    ('failed', 403, 'upstream_http_error', 'This model is not available in your region.', None, 'gen-id', False),
+    ('uncertain', None, 'RemoteProtocolError', None, None, None, False),
+    ('uncertain', None, 'ReadTimeout', None, None, None, False),
+    ('uncertain', None, 'ConnectError', None, .01, None, False),
+])
+@pytest.mark.parametrize('changed', [False, True])
+def test_legacy_checkpoint_refusals_and_uncertain_calls_are_isolated(
+        tmp_path, state, status, failure, message, cost, request_id, safe, changed):
+    """Real shared-DB shape: unknown costs, old failure label, NULL response.
+
+    Only synthetic records are written; no running artifacts are used by tests.
+    """
+    network, paid = transport()
+    with Gateway('dummy-test-key', tmp_path, transport=network) as gateway:
+        gateway.set_context(context(task_id='build:mem0:cn:焦彦'))
+        path, body, _, _ = gateway._prepare(PATH, payload())
+        identity, _ = gateway._checkpoint_call(path, body)
+        reservation = {'call_id': 'legacy-call', 'context': dict(gateway._context),
+                       'cost_quoted_upper_usd': .02}
+        completed = {**reservation, 'actual_cost_usd': cost, 'http_status': status,
+                     'failure': failure, 'request_id': request_id, 'cost_status': 'unknown',
+                     'stop_reason': None, 'upstream_error': {'code': str(status), 'message': message}
+                     if message else None}
+        gateway._checkpoints.execute('INSERT INTO calls VALUES (?,?,?,?,?,?,?,?,?)',
+            (*identity, 'legacy-call', state, json.dumps(reservation), json.dumps(completed), None, status))
+        gateway._checkpoints.commit()
+    with Gateway('dummy-test-key', tmp_path, transport=network) as resumed:
+        if safe and status == 403:
+            assert resumed.stopped is None
+            assert resumed.summary()['reserved_usd'] == 0
+        permit_unknown(resumed)
+        resumed.set_context(context(task_id='build:mem0:cn:焦彦'))
+        if safe:
+            assert resumed._request(PATH, payload('revised' if changed else 'complete legal history'))[0] == 200
+            assert resumed.summary()['reserved_usd'] == (.02 if status is None else 0)
+        else:
+            with pytest.raises(GatewayError) as error:
+                resumed._request(PATH, payload('revised' if changed else 'complete legal history'))
+            assert error.value.code == ('week1_replay_mismatch' if changed else
+                'week1_call_uncertain' if state == 'uncertain' else 'week1_upstream_error')
+            if state == 'uncertain' and not changed:
+                assert 'manual review' in str(error.value) and 'only this task' in str(error.value)
+        assert resumed.stopped is None
+        assert resumed.budget == 20
+        resumed.set_context(context(task_id='build:mem0:cn:other'))
+        assert resumed._request(PATH, payload())[0] == 200
+        archived = resumed._checkpoints.execute('SELECT call_id FROM call_attempts').fetchall()
+        assert [row[0] for row in archived] == (['legacy-call'] if safe else [])
+    assert len(paid) == (2 if safe else 1)

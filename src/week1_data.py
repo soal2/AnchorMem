@@ -162,6 +162,7 @@ def normalize_pilot(locomo: list[dict], longmemeval: list[dict], selections: lis
     locomo_by_id = {item["sample_id"]: item for item in locomo}
     lme_by_id = {item["question_id"]: item for item in longmemeval}
     histories = {}
+    history_sizes = {}
     encoding = tiktoken.encoding_for_model("gpt-4o-mini")
     examples = []
     for selection in selections:
@@ -186,9 +187,11 @@ def normalize_pilot(locomo: list[dict], longmemeval: list[dict], selections: lis
         example.update({"dataset": dataset, "id": selection["id"], "group": group,
                         "sessions": sessions, "exposure": selection["exposure"],
                         "prior_exposure": selection["prior_exposure"], "exposure_note": selection["exposure_note"]})
-        example["source_messages"] = sum(len(session["messages"]) for session in sessions)
-        example["source_tokens"] = sum(len(encoding.encode(message["content"], disallowed_special=()))
-                                       for session in sessions for message in session["messages"])
+        if group not in history_sizes:
+            history_sizes[group] = (sum(len(session["messages"]) for session in sessions),
+                sum(len(encoding.encode(message["content"], disallowed_special=()))
+                    for session in sessions for message in session["messages"]))
+        example["source_messages"], example["source_tokens"] = history_sizes[group]
         examples.append(example)
     return examples
 
@@ -243,6 +246,35 @@ def prepare(root: Path) -> dict:
                             "longmemeval": "Official get_anscheck_prompt and label expression; yes substring in stripped lowercase judge response"}}
     _save_json(directory / "prepared.json", manifest)
     return manifest
+
+
+def load_locomo(root: Path, max_questions=None) -> list[dict]:
+    """Read only the native LoCoMo dataset; retain source order and complete histories."""
+    if max_questions is not None and max_questions <= 0:
+        raise ValueError("max_questions must be positive")
+    path = Path(root) / "data/week1/datasets/locomo10.json"
+    if content_sha256(path) != SOURCES["locomo"]["sha256"]:
+        raise ValueError("Frozen locomo SHA256 mismatch")
+    raw = _read_json(path)
+    selections = [{"dataset": "locomo", "id": f"{item['sample_id']}#q{index:04d}",
+                   "group": item["sample_id"], "qa_index": index,
+                   "exposure": "development", "prior_exposure": "unknown",
+                   "exposure_note": "Full native LoCoMo; development-exposed benchmark."}
+                  for item in raw for index, qa in enumerate(item["qa"]) if qa["category"] != 5]
+    return normalize_pilot(raw, [], selections[:max_questions])
+
+
+def locomo_manifest(root: Path) -> dict:
+    directory = Path(root) / "data/week1"
+    sources = {}
+    for name in ("locomo", "locomo_scorer"):
+        spec = SOURCES[name]
+        path = directory / spec["path"]
+        if content_sha256(path) != spec["sha256"]:
+            raise ValueError(f"Frozen {name} SHA256 mismatch")
+        sources[name] = spec
+    return {"sources": sources, "scoring": "Token F1; existing official LoCoMo scorer",
+            "selection_policy": "source order; category != 5; optional prefix cap"}
 
 
 def load_pilot(root: Path) -> list[dict]:

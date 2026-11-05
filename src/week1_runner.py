@@ -32,7 +32,7 @@ from .config import ServiceConfig, load_config
 from .contracts import AddRequest, Message, SearchRequest
 from .directory_selector import JevDirectorySelector
 from .engine import MemoryEngine
-from .week1_data import get_lme_judge_prompt, load_pilot, parse_lme_judge, prepare, score_locomo
+from .week1_data import get_lme_judge_prompt, load_pilot, load_locomo, locomo_manifest, parse_lme_judge, prepare, score_locomo
 from .week1_memorybank_benchmark import (
     estimate_cost as estimate_memorybank_cost,
     get_memorybank_judge_prompt,
@@ -309,7 +309,14 @@ def call_context(gateway, identity, stage, task_id, unit_id, protocol_sha256):
 
 
 
-def active_methods(benchmark):
+def active_methods(benchmark, methods=None):
+    if methods is not None:
+        allowed = active_methods(benchmark)
+        if not methods or len(set(methods)) != len(methods) or set(methods) - set(allowed):
+            raise ValueError("methods must be unique members of the benchmark methods")
+        return tuple(methods)
+    if benchmark == "locomo":
+        return ("ours", "mem0", "memorybank")
     if benchmark == "pilot":
         return METHODS
     if benchmark == "memorybank":
@@ -317,7 +324,13 @@ def active_methods(benchmark):
     raise ValueError(f"unsupported benchmark: {benchmark}")
 
 
-def load_examples_for_benchmark(root, benchmark):
+def load_examples_for_benchmark(root, benchmark, max_questions=None):
+    if max_questions is not None and max_questions <= 0:
+        raise ValueError("max_questions must be positive")
+    if benchmark == "locomo":
+        return load_locomo(root, max_questions)
+    if max_questions is not None:
+        return load_examples_for_benchmark(root, benchmark)[:max_questions]
     if benchmark == "pilot":
         return load_pilot(root)
     if benchmark == "memorybank":
@@ -371,6 +384,34 @@ def preflight_memorybank(root):
     }
 
 
+def locomo_selection(examples):
+    return [{key: value for key, value in example.items() if key != "sessions"} for example in examples]
+
+
+def preflight_locomo(root, methods=None, max_questions=None):
+    methods = active_methods("locomo", methods)
+    locomo_manifest(root)
+    examples = load_locomo(root, max_questions)
+    if not os.environ.get("OPENAI_API_KEY"):
+        raise RuntimeError("OPENAI_API_KEY is missing; export OPENAI_API_KEY from the operator's gateway key")
+    for method in set(methods) - {"ours"}:
+        if not (root / "data/week1/envs" / method / "bin/python").exists():
+            raise RuntimeError(f"missing isolated {method} environment")
+        if method == "memorybank":
+            verify_memorybank(root)
+        else:
+            info = json.loads((root / "data/week1/baselines/manifest.json").read_text())[method]
+            paths = [(root / "data/week1/baselines/mem0" / name, sha)
+                     for name, sha in info["source_sha256"].items()]
+            paths += [(root / "data/week1/baselines/mem0.tar.gz", info["archive_sha256"]),
+                      (root / "data/week1/envs/mem0-requirements.lock", info["dependency_lock_sha256"])]
+            for path, sha in paths:
+                if hashlib.sha256(path.read_bytes()).hexdigest() != sha:
+                    raise ValueError("frozen mem0 source or dependencies changed")
+    return {"questions": len(examples), "histories": len({e["group"] for e in examples}),
+            "methods": list(methods), "metric": "Token F1", "api_key_configured": True}
+
+
 def preflight(root):
     load_environment(root)
     examples = load_pilot(root)
@@ -411,16 +452,24 @@ def baseline_sources(root):
     return {"mem0": sources["mem0"], "memorybank": memorybank_metadata(root)}
 
 
-def snapshot_authors(root, directory):
+def snapshot_authors(root, directory, benchmark="pilot"):
     destination = directory / "author-source"
     destination.mkdir(exist_ok=True)
     for method in ("mem0",):
         shutil.copyfile(root / f"data/week1/baselines/{method}.tar.gz", destination / f"{method}.tar.gz")
     shutil.copyfile(root / "data/week1/memorybank/source.tar.gz", destination / "memorybank.tar.gz")
-    shutil.copyfile(prepare_rag(root), destination / "rag.py")
-    shutil.copyfile(root / "data/week1/rag-source/manifest.json", destination / "rag-manifest.json")
+    if benchmark != "locomo":
+        shutil.copyfile(prepare_rag(root), destination / "rag.py")
+        shutil.copyfile(root / "data/week1/rag-source/manifest.json", destination / "rag-manifest.json")
+    receipt = root / "data/week1/envs/memorybank-environment.json"
+    if receipt.exists():
+        shutil.copyfile(receipt, destination / receipt.name)
     (destination / "baselines-manifest.json").write_text(json.dumps(baseline_sources(root), indent=2))
-    shutil.copytree(root / "data/week1/scorers", destination / "scorers", dirs_exist_ok=True)
+    if benchmark == "locomo":
+        (destination / "scorers").mkdir()
+        shutil.copyfile(root / "data/week1/scorers/locomo_evaluation.py", destination / "scorers/locomo_evaluation.py")
+    else:
+        shutil.copytree(root / "data/week1/scorers", destination / "scorers", dirs_exist_ok=True)
 
 
 def experiment_protocol(path):
@@ -534,12 +583,22 @@ def verify_resume(root, directory, manifest, config):
         raise ValueError("resume requires the current frozen task protocol; import validated baselines into a new run")
     selection_source = (root / "data/week1/datasets/memorybank/selection-full.json"
                         if manifest.get("benchmark") == "memorybank" else root / "data/week1/selection.json")
+    if manifest.get("benchmark") == "locomo":
+        selection_source = directory / "selection.json"
+        if json.loads(selection_source.read_text())["examples"] != locomo_selection(load_locomo(root, manifest.get("max_questions"))):
+            raise ValueError("frozen LoCoMo selection changed")
+    if manifest.get("max_questions") is not None and manifest.get("benchmark") != "locomo":
+        selected = json.loads(selection_source.read_text())
+        selected["examples"] = selected["examples"][:manifest["max_questions"]]
+        if selected != json.loads((directory / "selection.json").read_text()):
+            raise ValueError("frozen capped question selection changed")
+        selection_source = directory / "selection.json"
     for path in (selection_source, directory / "selection.json"):
         if hashlib.sha256(path.read_bytes()).hexdigest() != manifest["selection_sha256"]:
             raise ValueError("frozen question selection changed")
     methods = list(manifest.get("methods") or METHODS)
     benchmark = manifest.get("benchmark", "pilot")
-    if methods != list(active_methods(benchmark)):
+    if tuple(methods) != active_methods(benchmark, methods):
         raise ValueError("frozen experiment methods changed")
     if (manifest["service_config"] != config.model_dump()
             or manifest["answer_system"] != ANSWER_SYSTEM or manifest["answer_model"] != "openai/gpt-4o-mini"
@@ -576,21 +635,39 @@ def verify_resume(root, directory, manifest, config):
         raise ValueError("frozen baseline sources or dependencies changed")
     data_manifest = (root / "data/week1/datasets/memorybank/prepared.json"
                      if manifest.get("benchmark") == "memorybank" else root / "data/week1/prepared.json")
+    if manifest.get("benchmark") == "locomo":
+        for method in set(methods) - {"ours"}:
+            saved_lock = directory / f"{method}-requirements.lock"
+            current_lock = root / f"data/week1/envs/{method}-requirements.lock"
+            if saved_lock.read_bytes() != current_lock.read_bytes():
+                raise ValueError(f"frozen {method} dependency lock changed")
+        if json.loads((directory / "data-manifest.json").read_text()) != locomo_manifest(root):
+            raise ValueError("frozen LoCoMo data changed")
+        return
     if data_manifest.read_bytes() != (directory / "data-manifest.json").read_bytes():
         raise ValueError("frozen benchmark data manifest changed")
 
 
-def freeze_run(root, config, budget_usd=20, benchmark="pilot", methods=None):
+def freeze_run(root, config, budget_usd=20, benchmark="pilot", methods=None, max_questions=None):
     """Save a fresh, reviewable protocol snapshot before opening any model client."""
     if not 0 < budget_usd <= 20:
         raise ValueError("week1 budget must be positive and at most 20 USD")
-    methods = tuple(methods or active_methods(benchmark))
+    methods = active_methods(benchmark, methods)
     run_id = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
     directory = root / "artifacts/week1" / run_id
     directory.mkdir(parents=True, exist_ok=False)
     shutil.copytree(root / "src", directory / "source", ignore=shutil.ignore_patterns("__pycache__"))
     shutil.copytree(root / "prompts", directory / "prompts")
-    if benchmark == "pilot":
+    if benchmark == "locomo":
+        examples = load_locomo(root, max_questions)
+        write_json(directory / "selection.json", {"examples": locomo_selection(examples)})
+        write_json(directory / "data-manifest.json", locomo_manifest(root))
+        for method in set(methods) - {"ours"}:
+            shutil.copyfile(root / f"data/week1/envs/{method}-requirements.lock", directory / f"{method}-requirements.lock")
+        scope = "week1-locomo-full"
+        requested = len(examples)
+        selection_policy = "native LoCoMo source order; category != 5; Token F1"
+    elif benchmark == "pilot":
         shutil.copyfile(root / "data/week1/selection.json", directory / "selection.json")
         shutil.copyfile(root / "data/week1/prepared.json", directory / "data-manifest.json")
         for method in ("mem0", "memorybank"):
@@ -611,9 +688,19 @@ def freeze_run(root, config, budget_usd=20, benchmark="pilot", methods=None):
         selection_policy = "full MemoryBank probing set; methods ours+mem0 only"
     else:
         raise ValueError(f"unsupported benchmark: {benchmark}")
+    if max_questions is not None and benchmark != "locomo":
+        if max_questions <= 0:
+            raise ValueError("max_questions must be positive")
+        selection = json.loads((directory / "selection.json").read_text())
+        selection["examples"] = selection["examples"][:max_questions]
+        write_json(directory / "selection.json", selection)
+        requested = len(selection["examples"])
     shutil.copyfile(root / "uv.lock", directory / "uv.lock")
     shutil.copyfile(root / "pyproject.toml", directory / "pyproject.toml")
-    snapshot_authors(root, directory)
+    if benchmark == "locomo":
+        snapshot_authors(root, directory, benchmark)
+    else:
+        snapshot_authors(root, directory)
     files = frozen_files(root)
     manifest = {"run_id": run_id, "scope": scope, "benchmark": benchmark, "methods": list(methods),
             "task_protocol": TASK_PROTOCOL, "frozen_files": files,
@@ -621,7 +708,7 @@ def freeze_run(root, config, budget_usd=20, benchmark="pilot", methods=None):
             "protocol_sha256": hashlib.sha256(json_text({"protocol": TASK_PROTOCOL, "files": files,
                 "config": config.model_dump(), "benchmark": benchmark, "methods": list(methods)}).encode()).hexdigest(),
             "budget_usd": budget_usd, "requested_per_method": requested,
-            "selection_policy": selection_policy,
+            "selection_policy": selection_policy, "max_questions": max_questions,
             "service_config": config.model_dump(), "answer_system": ANSWER_SYSTEM,
             "answer_model": "openai/gpt-4o-mini", "judge_model": "openai/gpt-4o-2024-08-06",
             "evidence_budget_tokens": 16000,
@@ -738,17 +825,19 @@ def import_baselines(root, directory, manifest, examples, store, parent):
     return receipts
 
 
-def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot"):
+def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot", methods=None, max_questions=None):
     if not 0 < budget_usd <= 20:
         raise ValueError("week1 budget must be positive and at most 20 USD")
     if resume_dir and inherit_run:
         raise ValueError("inheritance is allowed only when freezing a new run")
-    if benchmark == "pilot":
+    methods = active_methods(benchmark, methods)
+    if benchmark == "locomo":
+        preflight_locomo(root, methods, max_questions)
+    elif benchmark == "pilot":
         preflight(root)
     else:
         preflight_memorybank(root)
-    examples = load_examples_for_benchmark(root, benchmark)
-    methods = active_methods(benchmark)
+    examples = load_examples_for_benchmark(root, benchmark, max_questions)
     tokenizer = tiktoken.get_encoding("o200k_base")
     base = root / "artifacts/week1"
     config_path = root / "configs/service/vikingjev.yaml"
@@ -767,10 +856,12 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
         verify_resume(root, directory, manifest, config)
         if manifest["budget_usd"] != budget_usd:
             raise ValueError("resume must preserve the authorized budget")
+        if tuple(manifest["methods"]) != methods or manifest.get("max_questions") != max_questions:
+            raise ValueError("resume methods or question cap mismatch")
         methods = tuple(manifest["methods"])
         manifest.setdefault("resumed_at", []).append(datetime.now(timezone.utc).isoformat())
     else:
-        directory, manifest = freeze_run(root, config, budget_usd, benchmark=benchmark, methods=methods)
+        directory, manifest = freeze_run(root, config, budget_usd, benchmark=benchmark, methods=methods, max_questions=max_questions)
     lock = (directory / "executor.lock").open("a+")
     try:
         fcntl.flock(lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
@@ -1105,7 +1196,8 @@ def report(directory, result_methods=None):
                   "reason": "Complete pilot ingestion, answering and judging measurements are required for an empirical full-run estimate.",
                   "full_questions_per_method": {"locomo": 1540, "longmemeval": 500}}}
     (directory / "metrics.json").write_text(json.dumps(result, ensure_ascii=False, indent=2))
-    title = ("# MemoryBank 评测集实验报告" if manifest.get("benchmark") == "memorybank"
+    title = ("# LoCoMo Token F1 实验报告" if manifest.get("benchmark") == "locomo" else
+             "# MemoryBank 评测集实验报告" if manifest.get("benchmark") == "memorybank"
              else "# 第一周小样本实验报告")
     lines = [title, "", f"运行：`{manifest['run_id']}`；状态：`{manifest['status']}`；benchmark：`{manifest.get('benchmark', 'pilot')}`。", "",
         "| Benchmark / 方法 | 请求 | 完成 | 完成率 | 已完成题得分 |", "|---|---:|---:|---:|---:|"]
@@ -1120,7 +1212,9 @@ def report(directory, result_methods=None):
         json.dumps(task_counts, ensure_ascii=False, indent=2), "```",
         "", f"外部阻断：{manifest.get('blocking_error') or '无已确认的外部阻断'}。",
         "", "分阶段 API 费用与耗时：", "```json", json.dumps(stages, ensure_ascii=False, indent=2), "```",
-        "", "此报告是开发 pilot，不是完整官方 MemoryBank 人工评测复现。"])
+        "", ("LoCoMo：category != 5；使用现有官方 Token F1 scorer；开发评测。"
+             if manifest.get("benchmark") == "locomo" else
+             "此报告是开发 pilot，不是完整官方 MemoryBank 人工评测复现。")])
     (directory / "report.md").write_text("\n".join(lines) + "\n")
     return result
 
@@ -1132,12 +1226,24 @@ def main():
     parser.add_argument("--budget-usd", type=float, default=20)
     parser.add_argument("--run-dir", type=Path)
     parser.add_argument("--inherit-run", type=Path)
-    parser.add_argument("--benchmark", choices=("pilot", "memorybank"), default="pilot",
-                        help="pilot=LoCoMo+LME 32-q; memorybank=full MemoryBank probing (ours+mem0 only)")
+    parser.add_argument("--benchmark", choices=("pilot", "memorybank", "locomo"), default="pilot",
+                        help="pilot=LoCoMo+LME 32-q; memorybank=full probing; locomo=all scorable LoCoMo (ours+mem0+memorybank)")
+    parser.add_argument("--methods", nargs="+", choices=METHODS, help="optional ordered subset of benchmark methods")
+    parser.add_argument("--max-questions", type=int, help="optional source-order question cap; histories stay complete")
     args = parser.parse_args()
+    active_methods(args.benchmark, args.methods)
+    if args.max_questions is not None and args.max_questions <= 0:
+        parser.error("--max-questions must be positive")
     root = Path(__file__).resolve().parents[1]
     if args.phase == "prepare":
-        if args.benchmark == "memorybank":
+        if args.benchmark == "locomo":
+            print(json.dumps(locomo_manifest(root), indent=2))
+            selected = active_methods("locomo", args.methods)
+            if "mem0" in selected:
+                subprocess.run([sys.executable, str(root / "src/week1_baseline_worker.py"), "--prepare"], check=True)
+            if "memorybank" in selected:
+                prepare_memorybank(root)
+        elif args.benchmark == "memorybank":
             print(json.dumps(prepare_memorybank_benchmark(root), ensure_ascii=False, indent=2))
             subprocess.run([sys.executable, str(root / "src/week1_baseline_worker.py"), "--prepare"], check=True)
         else:
@@ -1146,7 +1252,9 @@ def main():
             subprocess.run([sys.executable, str(root / "src/week1_baseline_worker.py"), "--prepare"], check=True)
             prepare_memorybank(root)
     elif args.phase == "preflight":
-        if args.benchmark == "memorybank":
+        if args.benchmark == "locomo":
+            print(json.dumps(preflight_locomo(root, args.methods, args.max_questions), indent=2))
+        elif args.benchmark == "memorybank":
             print(json.dumps(preflight_memorybank(root), indent=2))
         else:
             print(json.dumps(preflight(root), indent=2))
@@ -1154,7 +1262,7 @@ def main():
         def stop(_signal, _frame):
             raise KeyboardInterrupt
         signal.signal(signal.SIGTERM, stop)
-        print(run(root, args.budget_usd, args.run_dir, args.inherit_run, benchmark=args.benchmark))
+        print(run(root, args.budget_usd, args.run_dir, args.inherit_run, benchmark=args.benchmark, methods=args.methods, max_questions=args.max_questions))
     elif args.phase == "amend-code":
         if not args.run_dir or not args.reason:
             raise SystemExit("amend-code requires --run-dir and --reason")

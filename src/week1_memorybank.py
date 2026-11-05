@@ -44,14 +44,39 @@ def verify(root):
             raise ValueError(f"MemoryBank frozen file changed: {relative}")
     lock = root / "data/week1/envs/memorybank-requirements.lock"
     if digest(lock) != info["dependency_lock_sha256"]:
-        raise ValueError("MemoryBank dependency lock changed")
+        receipt = lock.with_name("memorybank-environment.json")
+        if not receipt.exists() or json.loads(receipt.read_text()) != {
+                "source_manifest_sha256": digest(folder / "manifest.json"),
+                "dependency_lock_sha256": digest(lock), "dependencies": DEPENDENCIES}:
+            raise ValueError("MemoryBank dependency lock changed")
     return info
+
+
+def prepare_environment(root):
+    """Repair the local runtime without rewriting frozen author provenance."""
+    root = Path(root)
+    environment = root / "data/week1/envs/memorybank"
+    python = environment / "bin/python"
+    lock = environment.with_name("memorybank-requirements.lock")
+    if lock.exists():
+        verify(root)
+    if not python.exists():
+        subprocess.run(["uv", "venv", "--python", "3.11", str(environment)], check=True)
+    requirements = ["--requirement", str(lock)] if lock.exists() else DEPENDENCIES
+    subprocess.run(["uv", "pip", "install", "--python", str(python), *requirements], check=True)
+    if not lock.exists():
+        lock.write_text(subprocess.check_output(["uv", "pip", "freeze", "--python", str(python)], text=True))
+        receipt = {"source_manifest_sha256": digest(root / "data/week1/memorybank/manifest.json"),
+                   "dependency_lock_sha256": digest(lock), "dependencies": DEPENDENCIES}
+        lock.with_name("memorybank-environment.json").write_text(json.dumps(receipt, indent=2) + "\n")
+    subprocess.run([str(python), "-c", "import langchain, openai, httpx, numpy, faiss, unstructured, torch"], check=True)
 
 
 def prepare(root):
     root = Path(root).resolve()
     folder = root / "data/week1/memorybank"
     if (folder / "manifest.json").exists():
+        prepare_environment(root)
         return verify(root)
     folder.mkdir(parents=True, exist_ok=True)
     archive = folder / "source.tar.gz"

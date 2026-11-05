@@ -228,3 +228,36 @@ def test_real_author_worker_summary_faiss_forgetting_and_reinforcement(tmp_path,
     finally:
         server.shutdown()
         server.server_close()
+
+
+def test_prepare_repairs_missing_environment_preserving_frozen_manifest(tmp_path, monkeypatch):
+    folder = tmp_path / 'data/week1/memorybank'
+    folder.mkdir(parents=True)
+    source = folder / 'source.py'
+    source.write_text('# frozen author source\n')
+    info = {'commit': memorybank.COMMIT, 'repo': memorybank.REPO,
+            'files_sha256': {'source.py': memorybank.digest(source)},
+            'dependency_lock_sha256': 'unavailable-original-platform-lock'}
+    manifest = folder / 'manifest.json'
+    manifest.write_text(json.dumps(info))
+    original = manifest.read_bytes()
+    calls = []
+
+    def command(args, **kwargs):
+        calls.append(args)
+        if args[:2] == ['uv', 'venv']:
+            python = Path(args[-1]) / 'bin/python'
+            python.parent.mkdir(parents=True)
+            python.touch()
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(memorybank.subprocess, 'run', command)
+    monkeypatch.setattr(memorybank.subprocess, 'check_output', lambda *args, **kwargs: 'numpy==1.26.4\n')
+    assert memorybank.prepare(tmp_path) == info
+    assert manifest.read_bytes() == original
+    assert any(args[:3] == ['uv', 'pip', 'install'] for args in calls)
+    assert memorybank.verify(tmp_path) == info
+    lock = tmp_path / 'data/week1/envs/memorybank-requirements.lock'
+    lock.write_text('tampered')
+    with pytest.raises(ValueError, match='lock changed'):
+        memorybank.verify(tmp_path)

@@ -504,3 +504,58 @@ def test_another_executor_cannot_reset_running_tasks_before_gateway_lock(executi
     finally:
         lock.close()
     assert not execution.calls and not execution.searches and not execution.ingestions
+
+
+def test_locomo_run_uses_selected_methods_cap_and_f1_without_judge(execution, monkeypatch):
+    state = execution
+    examples = [e for e in state.examples if e['dataset'] == 'locomo']
+    monkeypatch.setattr(runner, 'preflight_locomo', lambda *args: None)
+    monkeypatch.setattr(runner, 'load_locomo', lambda root, cap=None: examples[:cap])
+    monkeypatch.setattr(runner, 'locomo_manifest', lambda root: {'metric': 'Token F1'})
+    monkeypatch.setattr(runner, 'load_pilot', lambda *args: pytest.fail('loaded pilot/LME'))
+    monkeypatch.setattr(runner, 'preflight_memorybank', lambda *args: pytest.fail('wrong benchmark'))
+    directory = runner.run(state.root, benchmark='locomo', methods=['ours', 'memorybank'], max_questions=1)
+    manifest = json.loads((directory / 'manifest.json').read_text())
+    assert manifest['status'] == 'finished'
+    assert manifest['methods'] == ['ours', 'memorybank']
+    assert manifest['requested_per_method'] == 1
+    assert manifest['budget_usd'] == 20
+    assert len(json.loads((directory / 'selection.json').read_text())['examples']) == 1
+    assert {call[3] for call in state.calls} == {'answer'}
+    assert {call[0] for call in state.calls} == {'ours', 'memorybank'}
+    assert runner.report(directory)['requested_predictions'] == 2
+    runner.run(state.root, resume_dir=directory, benchmark='locomo', methods=['ours', 'memorybank'], max_questions=1)
+    with pytest.raises(ValueError, match='selection|cap'):
+        runner.run(state.root, resume_dir=directory, benchmark='locomo', methods=['ours', 'memorybank'], max_questions=2)
+
+
+def test_locomo_native_population_and_cap_without_lme(tmp_path, monkeypatch):
+    from src import week1_data as data
+    import shutil
+    root = Path(runner.__file__).parents[1]
+    path = tmp_path / 'data/week1/datasets/locomo10.json'
+    path.parent.mkdir(parents=True)
+    shutil.copyfile(root / 'data/week1/datasets/locomo10.json', path)
+    monkeypatch.setattr(data, '_download', lambda *args: pytest.fail('network fetch'))
+    full = data.load_locomo(tmp_path)
+    assert len(full) == 1540
+    assert len({e['group'] for e in full}) == 10
+    assert all(e['category'] != 5 for e in full)
+    capped = data.load_locomo(tmp_path, 2)
+    assert capped == full[:2]
+    assert capped[0]['sessions'] == full[0]['sessions']
+    with pytest.raises(ValueError, match='positive'):
+        data.load_locomo(tmp_path, 0)
+
+
+def test_locomo_preflight_uses_exported_openai_key_only(tmp_path, monkeypatch):
+    monkeypatch.setenv('OPENAI_API_KEY', 'fake-exported-key')
+    monkeypatch.delenv('AML_MEMORY_KEY', raising=False)
+    monkeypatch.setattr(runner, 'load_environment', lambda *args: pytest.fail('read dotenv'))
+    monkeypatch.setattr(runner, 'locomo_manifest', lambda *args: {})
+    monkeypatch.setattr(runner, 'load_locomo', lambda *args: [{'group': 'g'}])
+    assert runner.preflight_locomo(tmp_path, ['ours'])['api_key_configured']
+    assert runner.active_methods('locomo') == ('ours', 'mem0', 'memorybank')
+    for methods in ([], ['rag'], ['ours', 'ours']):
+        with pytest.raises(ValueError):
+            runner.active_methods('locomo', methods)

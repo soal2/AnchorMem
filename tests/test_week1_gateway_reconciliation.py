@@ -214,6 +214,35 @@ def test_receipt_claims_cannot_override_actual_ledger_status_or_generation_id(tm
         assert_rejected_without_changing_ledger(gateway, path)
 
 
+
+def test_restore_tolerates_completed_then_reconciled_zero_for_same_call(tmp_path):
+    """A ledger that settles a call twice must not KeyError on restart.
+
+    Real run 933deca1… had completed (which cleared the reservation) followed by
+    reconciled-zero; hard pop used to crash Gateway before requeue could run.
+    """
+    ledger = tmp_path / "api-ledger.jsonl"
+    call_id = "933deca1-completed-then-reconciled"
+    rows = [
+        {"event": "reservation", "call_id": call_id, "cost_quoted_upper_usd": 0.01},
+        {"event": "completed", "call_id": call_id, "actual_cost_usd": 0.001, "stop_reason": None},
+        {"event": "reconciled-zero", "call_id": call_id, "actual_cost_usd": 0,
+         "cost_source": "account-balance-reconciliation"},
+        {"event": "reservation", "call_id": "still-open", "cost_quoted_upper_usd": 0.02},
+        {"event": "completed", "call_id": "uncharged-403", "actual_cost_usd": None,
+         "http_status": 403, "stop_reason": None},
+        {"event": "reconciled-zero", "call_id": "uncharged-403", "actual_cost_usd": 0},
+    ]
+    ledger.write_text("\n".join(json.dumps(row) for row in rows) + "\n")
+    transport, _ = install(lambda request: pytest.fail("restore must not call paid endpoint"))
+    with Gateway("private-key", tmp_path, transport=transport) as gateway:
+        assert gateway.spent_usd == 0.001
+        assert call_id not in gateway._reservations
+        assert "uncharged-403" not in gateway._reservations
+        assert gateway.summary()["reserved_usd"] == 0.02
+        assert gateway.stopped == "week1_cost_unknown"
+
+
 def test_crashed_reservation_without_completed_403_cannot_be_reconciled(tmp_path):
     ledger = tmp_path / "api-ledger.jsonl"
     ledger.write_text(json.dumps({"event": "completed", "call_id": "confirmed",

@@ -212,7 +212,8 @@ class Gateway:
             elif event["event"] == "rejected" and event["code"] == "week1_budget_exhausted":
                 self.stopped = event["code"]
             elif event["event"] == "reconciled-zero":
-                self._reservations.pop(event["call_id"])
+                # Reservation may already be cleared by a prior completed event.
+                self._reservations.pop(event["call_id"], None)
                 self.stopped = None
             elif event["event"] == "unconfirmed-cost-policy-authorized":
                 self.allow_unconfirmed_costs = True
@@ -439,7 +440,7 @@ class Gateway:
             self._append({"event": "reconciled-zero", "call_id": call_id, "actual_cost_usd": 0,
                 "cost_source": "account-balance-reconciliation", "receipt": str(receipt_path),
                 "receipt_sha256": hashlib.sha256(receipt_path.read_bytes()).hexdigest()})
-            self._reservations.pop(call_id)
+            self._reservations.pop(call_id, None)
             self.stopped = None
             self._save_summary()
 

@@ -336,7 +336,7 @@ def execution(tmp_path, monkeypatch):
         return SimpleNamespace(id='judge-id', choices=[SimpleNamespace(message=SimpleNamespace(content='yes'), finish_reason='stop')])
 
     @contextmanager
-    def clients(url, call_timeout=None):
+    def clients(url, call_timeout=None, exchange_deadline=None):
         yield lambda: SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
 
     monkeypatch.setattr(runner, 'Gateway', FakeGateway)

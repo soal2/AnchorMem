@@ -113,3 +113,178 @@ def test_local_clients_wait_for_the_gateway_retry_window(monkeypatch):
                                       extensions={'timeout': {'read': 120}}))
     assert seen[0].extensions['timeout']['read'] == 3300
     routed.close()
+
+
+@pytest.mark.parametrize('stage', ['extraction', 'embedding', 'decision'])
+@pytest.mark.parametrize('where', ['headers', 'body'])
+def test_native_ingestion_socket_deadline_requeues_without_retaining_lock(tmp_path, monkeypatch, stage, where):
+    import socket
+    from pathlib import Path
+    from src import week1_runner as runner
+    from src.week1_tasks import ingestion_units
+    from test_vikingjev_engine import FactModel
+
+    left, right = socket.socketpair()
+    entered = threading.Event()
+    finished = threading.Event()
+
+    class BlockedStream(httpx.SyncByteStream):
+        def __iter__(self):
+            entered.set()
+            try:
+                yield left.recv(1)  # Real C-level socket/poll; no socket timeout.
+            finally:
+                finished.set()
+
+    def handle(request):
+        if where == 'headers':
+            entered.set()
+            try:
+                left.recv(1)
+            finally:
+                finished.set()
+            return httpx.Response(200, json={})
+        return httpx.Response(200, stream=BlockedStream())
+
+    monkeypatch.setenv('OPENAI_API_KEY', 'offline-test')
+    config, config_path = runner.load_config(Path('configs/service/vikingjev.yaml'), runner.ServiceConfig)
+    example = {'id': 'q', 'dataset': 'locomo', 'group': 'conv-26',
+               'sessions': [{'id': 'session_9', 'messages': [{'role': 'user', 'content': 'I like tea.'}]}]}
+    unit = ingestion_units(example, 'ours')[0]
+    store = TaskStore(tmp_path / 'tasks.sqlite3')
+    store.seed([example], ['ours'], 'p')
+    memory = None
+    try:
+        with runner.routed_clients('http://127.0.0.1:12345', 1, .05):
+            memory = runner.NativeMemory(tmp_path, tmp_path / 'index', config, config_path)
+            if stage == 'decision':
+                from test_vikingjev_engine import Embedder
+                memory.engine.llm = FactModel()
+                memory.engine.embedder = Embedder()
+                provider = memory.engine.decision_model
+            elif stage == 'embedding':
+                memory.engine.llm = FactModel()
+                provider = memory.engine.embedder
+            else:
+                provider = memory.engine.llm
+            transport = provider.client._client._transport
+            transport.transport.close()
+            transport.transport = httpx.MockTransport(handle)
+            started = time.monotonic()
+            with pytest.raises(runner.providers.ProviderError) as caught:
+                memory.ingest_unit(example, unit)
+            assert entered.is_set()
+            assert time.monotonic() - started < 1
+            assert not memory.engine._lock('paper:conv-26').locked()
+            failure = runner.clean_error(caught.value)
+            assert runner.retryable_error(failure)
+            build = store.build('ours', 'conv-26')
+            store.fail(build['task_id'], 'ingestion', failure)
+            assert store.requeue(4)
+            assert store.build('ours', 'conv-26')['completed_units'] == 0
+            assert store.build('ours', 'conv-26')['state'] == 'pending'
+            # Retry the same unit on the same engine: the old socket worker owns
+            # neither its user lock nor its database transaction.
+            memory.engine.llm = FactModel()
+            from test_vikingjev_engine import Embedder, Relations, Selector
+            memory.engine.embedder = Embedder()
+            memory.engine.decision_model = Relations()
+            memory.engine.directory_selector = Selector()
+            memory.ingest_unit(example, unit)
+    finally:
+        right.close()
+        if entered.is_set():
+            assert finished.wait(1)
+        left.close()
+        store.close()
+
+
+@pytest.mark.parametrize('method', ['mem0', 'memorybank'])
+@pytest.mark.parametrize('endpoint', ['chat/completions', 'embeddings'])
+def test_baseline_ingestion_blocked_socket_requeues(tmp_path, monkeypatch, method, endpoint):
+    import socket
+    from types import SimpleNamespace
+    from src.week1_baseline_worker import GatewayNetwork, BaselineWorker
+    from src.week1_memorybank import MemoryBankWorker
+    from src.week1_runner import clean_error
+
+    monkeypatch.setenv('WEEK1_EXCHANGE_DEADLINE', '.05')
+    left, right = socket.socketpair()
+    finished = threading.Event()
+
+    class Stream(httpx.SyncByteStream):
+        def __iter__(self):
+            try:
+                yield left.recv(1)
+            finally:
+                finished.set()
+
+    network = GatewayNetwork('http://127.0.0.1:12345', httpx.MockTransport(
+        lambda request: httpx.Response(200, stream=Stream())))
+    client = network.client()
+
+    def blocked(*args, **kwargs):
+        client.post('https://api.openai.com/v1/' + endpoint, json={})
+
+    example = {'id': 'q', 'dataset': 'locomo', 'group': 'conv-26',
+               'sessions': [{'id': 'session_9', 'messages': [{'role': 'user', 'content': '[Session date: 2024-01-01]\nTea.'}]}]}
+    store = TaskStore(tmp_path / 'tasks.sqlite3')
+    store.seed([example], [method], 'p')
+    if method == 'mem0':
+        worker = BaselineWorker.__new__(BaselineWorker)
+        worker.method, worker.network, worker.completed_adds = method, network, set()
+        worker.system = SimpleNamespace(add=blocked)
+        operation = lambda: worker.add({'messages': example['sessions'][0]['messages'], 'request_id': 'session_9:0'})
+    else:
+        worker = MemoryBankWorker.__new__(MemoryBankWorker)
+        worker.clock, worker.network = None, network
+        worker.memory_file = tmp_path / 'memory.json'
+        worker.path = tmp_path
+        worker.summary = SimpleNamespace(summarize_memory=blocked if endpoint == 'chat/completions' else lambda *a, **k: None)
+        worker.retrieval = SimpleNamespace(init_memory_vector_store=blocked)
+        operation = lambda: worker.ingest({'sessions': example['sessions'], 'group': 'conv-26'})
+    try:
+        started = time.monotonic()
+        with pytest.raises(httpx.ReadTimeout) as caught:
+            operation()
+        assert time.monotonic() - started < 1
+        assert 'ReadTimeout' in network.failed
+        build = store.build(method, 'conv-26')
+        store.fail(build['task_id'], 'ingestion', clean_error(caught.value))
+        assert store.requeue(4)
+        assert store.build(method, 'conv-26')['state'] == 'pending'
+        assert store.build(method, 'conv-26')['completed_units'] == 0
+        if method == 'mem0':
+            assert not worker.completed_adds
+    finally:
+        right.close()
+        assert finished.wait(1)
+        left.close()
+        client.close()
+        network.close()
+        store.close()
+
+
+def test_local_deadline_bounds_gateway_retries_and_releases_ledger_lock(tmp_path):
+    from src.week1_gateway import GatewayError
+    release = threading.Event()
+    transport, _ = install(lambda request: release.wait(10) or httpx.Response(200, json=completion()))
+    try:
+        with Gateway('private-key', tmp_path, transport=transport, attempt_deadline_seconds=10,
+                     retry_uncertain=True) as gateway:
+            started = time.monotonic()
+            with pytest.raises(GatewayError):
+                gateway._request('/api/v1/chat/completions', body(), deadline=started + .05)
+            assert time.monotonic() - started < 1
+            assert gateway.summary()['reserved_usd'] > 0
+            assert len([e for e in events(gateway) if e['event'] == 'reservation']) == 1
+            acquired = threading.Event()
+            def inspect():
+                gateway.summary()
+                acquired.set()
+            thread = threading.Thread(target=inspect, daemon=True)
+            thread.start()
+            assert acquired.wait(1)
+            thread.join()
+    finally:
+        release.set()

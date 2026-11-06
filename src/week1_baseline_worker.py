@@ -107,10 +107,57 @@ def prepare() -> dict:
     return manifest
 
 
+def exchange(transport, request, seconds):
+    """Abandon only isolated I/O; workers own no engine, ledger or task state.
+
+    The gateway retains conservative reservations for a lost local response.
+    Each transport is consumed once, including after a timeout.
+    """
+    import queue
+    import threading
+    import time
+    import httpx
+
+    request.headers["X-Week1-Deadline"] = str(time.monotonic() + seconds)
+    result = queue.Queue(maxsize=1)
+
+    def work():
+        try:
+            response = transport.handle_request(request)
+            # HTTPTransport returns headers before consuming the socket stream.
+            # Both the headers and the entire body must be inside the watchdog.
+            try:
+                content = response.read()
+                detached = httpx.Response(response.status_code, headers=response.headers,
+                                          content=content, request=request)
+            finally:
+                response.close()
+            result.put((True, detached))
+        except BaseException as error:
+            result.put((False, error))
+        finally:
+            transport.close()
+
+    threading.Thread(target=work, daemon=True).start()
+    try:
+        ok, value = result.get(timeout=seconds)
+    except queue.Empty:
+        # Closing a transport can itself wait for its pool lock. Never perform
+        # cleanup on the ingestion thread, or reuse this request's transport.
+        threading.Thread(target=transport.close, daemon=True).start()
+        raise httpx.ReadTimeout("AttemptDeadlineExceeded: local gateway exchange expired",
+                                request=request) from None
+    if not ok:
+        raise value
+    return value
+
+
 class GatewayNetwork:
     """Rewrite even absolute SDK URLs and stop after any failed model request."""
     def __init__(self, url: str, transport=None):
         import httpx
+        import threading
+        self._transport_lock = threading.Lock()
         parsed = urlsplit(url)
         if parsed.scheme != "http" or parsed.hostname not in {"127.0.0.1", "localhost", "::1"}:
             raise ValueError("A baseline requires a loopback HTTP budget gateway")
@@ -140,9 +187,13 @@ class GatewayNetwork:
                                       headers=headers, content=request.read(),
                                       extensions=request.extensions)
                 try:
-                    response = network.transport.handle_request(local)
-                except Exception:
-                    network.failed = "Gateway transport failed; subsequent model requests stopped"
+                    replacement = httpx.HTTPTransport(retries=0)
+                    with network._transport_lock:
+                        transport = network.transport
+                        network.transport = replacement
+                    response = exchange(transport, local, float(os.environ.get("WEEK1_EXCHANGE_DEADLINE", network.timeout)))
+                except Exception as error:
+                    network.failed = type(error).__name__ + ": Gateway transport failed; subsequent model requests stopped"
                     raise
                 if response.status_code >= 400:
                     region = response.status_code == 403 and b"region" in response.read().lower()

@@ -12,6 +12,7 @@ import signal
 import shutil
 import subprocess
 import sys
+import threading
 import uuid
 from collections import defaultdict
 from contextlib import contextmanager
@@ -40,6 +41,7 @@ from .week1_memorybank_benchmark import (
     parse_memorybank_judge,
     prepare as prepare_memorybank_benchmark,
 )
+from .week1_baseline_worker import exchange
 from .week1_gateway import Gateway
 from .week1_memorybank import MemoryBankProcess, metadata as memorybank_metadata, prepare as prepare_memorybank, verify as verify_memorybank
 from .week1_tasks import TaskStore, history_digest, ingestion_units, json_text, retryable_error, permanent_error
@@ -78,6 +80,7 @@ class GatewayTransport(httpx.BaseTransport):
 
     def __init__(self, gateway_url, timeout=None):
         self.timeout = timeout
+        self._transport_lock = threading.Lock()
         url = urlsplit(gateway_url)
         self.origin = url.scheme + "://" + url.netloc
         self.transport = httpx.HTTPTransport(retries=0)
@@ -87,14 +90,21 @@ class GatewayTransport(httpx.BaseTransport):
             request.extensions["timeout"] = dict.fromkeys(("connect", "read", "write", "pool"), self.timeout)
         request.url = httpx.URL(self.origin + request.url.raw_path.decode("ascii"))
         request.headers["authorization"] = "Bearer week1-local"
-        return self.transport.handle_request(request)
+        replacement = httpx.HTTPTransport(retries=0)
+        with self._transport_lock:
+            transport = self.transport
+            self.transport = replacement
+        return exchange(transport, request, float(os.environ.get("WEEK1_EXCHANGE_DEADLINE", self.timeout or 240)))
 
     def close(self):
         self.transport.close()
 
 
 @contextmanager
-def routed_clients(gateway_url, call_timeout=None):
+def routed_clients(gateway_url, call_timeout=None, exchange_deadline=None):
+    old_deadline = os.environ.get("WEEK1_EXCHANGE_DEADLINE")
+    if exchange_deadline is not None:
+        os.environ["WEEK1_EXCHANGE_DEADLINE"] = str(exchange_deadline)
     old_timeout = os.environ.get("WEEK1_LOCAL_REQUEST_TIMEOUT")
     if call_timeout is not None:
         os.environ["WEEK1_LOCAL_REQUEST_TIMEOUT"] = str(call_timeout)
@@ -116,6 +126,10 @@ def routed_clients(gateway_url, call_timeout=None):
     try:
         yield factory
     finally:
+        if old_deadline is None:
+            os.environ.pop("WEEK1_EXCHANGE_DEADLINE", None)
+        else:
+            os.environ["WEEK1_EXCHANGE_DEADLINE"] = old_deadline
         if old_timeout is None:
             os.environ.pop("WEEK1_LOCAL_REQUEST_TIMEOUT", None)
         else:
@@ -910,7 +924,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
             groups.setdefault(example["group"], []).append(example)
         with Gateway(os.environ["OPENAI_API_KEY"], base, budget_usd=budget_usd,
                      normal_limit=max(0, budget_usd - 2), attempt_deadline_seconds=attempt_deadline_seconds,
-                     retry_uncertain=True) as gateway, routed_clients(gateway.url, gateway.local_request_timeout) as factory:
+                     retry_uncertain=True) as gateway, routed_clients(gateway.url, gateway.local_request_timeout, attempt_deadline_seconds) as factory:
             client = factory()
             embedder = providers.OpenAIEmbedder(config.embedding)
 

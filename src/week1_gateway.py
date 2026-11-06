@@ -562,7 +562,11 @@ class Gateway:
                         if length <= 0 or length > 8_000_000:
                             raise GatewayError("week1_invalid_request", "invalid request length")
                         payload = json.loads(self.rfile.read(length))
-                        status, result = gateway._request(self.path, payload, self.headers.get("X-Week1-Retry") == "1")
+                        deadline = self.headers.get("X-Week1-Deadline")
+                        deadline = float(deadline) if deadline is not None else None
+                        if deadline is not None and not math.isfinite(deadline):
+                            raise GatewayError("week1_invalid_request", "invalid local deadline")
+                        status, result = gateway._request(self.path, payload, self.headers.get("X-Week1-Retry") == "1", deadline=deadline)
                     except (ValueError, TypeError) as error:
                         status, result = getattr(error, "status_code", 400), {
                             "error": {"code": getattr(error, "code", "week1_invalid_request"),
@@ -719,15 +723,15 @@ class Gateway:
             return _money(record["total_cost"]), "generation.total_cost"
         raise ValueError("no billed cost or generation identifier was supplied")
 
-    def _request(self, path, payload, retry=False):
+    def _request(self, path, payload, retry=False, deadline=None):
         with self._lock:
             try:
-                return self._request_serial(path, payload, retry)
+                return self._request_serial(path, payload, retry, deadline)
             except (sqlite3.Error, OSError) as error:
                 self.stopped = "week1_checkpoint_error"
                 raise GatewayError(self.stopped, "shared call checkpoint could not be read or committed") from error
 
-    def _request_serial(self, path, payload, retry=False):
+    def _request_serial(self, path, payload, retry=False, deadline=None):
         with self._lock:
             path, body, upper, estimated = self._prepare(path, payload)
             identity, replay = self._checkpoint_call(path, body)
@@ -736,11 +740,14 @@ class Gateway:
             attempt = self._attempts(*identity[:2]) if identity is not None else 1
             while True:
                 try:
-                    return self._send(path, body, upper, estimated, identity, retry)
+                    if deadline is not None and time.monotonic() >= deadline:
+                        raise GatewayError("week1_upstream_error", "AttemptDeadlineExceeded: local exchange expired")
+                    return self._send(path, body, upper, estimated, identity, retry, deadline)
                 except GatewayError as error:
                     status, failure = self._last_failure
                     if (getattr(error, "code", None) != "week1_upstream_error" or not is_transient(status, failure)
-                            or not self._last_resend_safe or attempt >= attempt_limit(status) or self.stopped):
+                            or not self._last_resend_safe or attempt >= attempt_limit(status) or self.stopped
+                            or (deadline is not None and time.monotonic() >= deadline)):
                         raise
                     wait = backoff_seconds(attempt, status)
                     self._append({"event": "transient-retry", "http_status": status, "failure": failure,
@@ -750,13 +757,15 @@ class Gateway:
                                                         identity[:2]).fetchone()
                         if row is not None:
                             self._supersede(row)
+                    if deadline is not None:
+                        wait = min(wait, max(0, deadline - time.monotonic()) / 1.2)
                     self._sleep(wait)
                     attempt += 1
 
     def _sleep(self, seconds):
         time.sleep(seconds * random.uniform(0.8, 1.2))
 
-    def _send(self, path, body, upper, estimated, identity, retry):
+    def _send(self, path, body, upper, estimated, identity, retry, deadline=None):
         self._last_failure = (None, None)
         self._last_resend_safe = False
         with self._lock:
@@ -784,7 +793,8 @@ class Gateway:
             returnable = False
             try:
                 response = wall_clock_call(lambda: self._client.post(ORIGIN + path, json=body),
-                                           self.attempt_deadline_seconds)
+                                           min(self.attempt_deadline_seconds, max(0, deadline - time.monotonic()))
+                                           if deadline is not None else self.attempt_deadline_seconds)
                 status = response.status_code
                 if not 200 <= status < 300:
                     failure = "upstream_http_error"

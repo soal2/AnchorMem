@@ -253,6 +253,7 @@ class TaskStore:
         requeued = []
         recoveries = {}
         compactions = set()
+        size_recoveries = set()
         for task in self.rows():
             if task["state"] != "failed" or task["method"] not in {"ours", "mem0", "memorybank"}:
                 continue
@@ -274,11 +275,22 @@ class TaskStore:
                     "model": "typesafe/jev-1.13", "phase": "decision_jev", "status_code": 400}
                 and not calls
                 and not self.stage(task["task_id"], "json-compaction-requeue"))
-            eligible = compact_recovery or recovery or (retryable_error(error) and not calls
+            # One migration per fix version, only for the two audited unsent
+            # local size rejections. Permanent provider 400s remain terminal.
+            size_failure = (
+                self.path.parent.name == "20261105T122803255750Z"
+                and task["kind"] == "build" and task["method"] == "ours"
+                and task["group"] in {"conv-26", "conv-41"}
+                and (error.get("http_response_body") or {}).get("code") == "week1_input_too_long"
+                and error.get("status_code") == 400
+                and (error.get("diagnostics") or {}).get("model") == "typesafe/jev-1.13"
+                and (error.get("diagnostics") or {}).get("phase") == "decision_jev")
+            size_recovery = size_failure and not self.stage(task["task_id"], "evidence-table-requeue")
+            eligible = size_recovery if size_failure else compact_recovery or recovery or (retryable_error(error) and not calls
                 and (error.get("retryable") is not False or any(marker in json_text(error).lower()
                     for marker in ("readtimeout", "attemptdeadlineexceeded", "week1_call_uncertain", "connecterror", "connecttimeout"))))
             attempts = self.attempts(task["task_id"])
-            if recovery:
+            if recovery and not size_failure:
                 attempts = sum(item.get("retryable") is True for item in self.failures()
                                if item.get("task_id") == task["task_id"])
                 count = self.stage(task["task_id"], "recovery-requeues") or 0
@@ -286,6 +298,8 @@ class TaskStore:
                 recoveries[task["task_id"]] = count + 1
             if eligible and attempts < max_attempts:
                 requeued.append(task["task_id"])
+                if size_recovery:
+                    size_recoveries.add(task["task_id"])
                 if compact_recovery:
                     compactions.add(task["task_id"])
         for task in self.rows("qa"):
@@ -297,6 +311,9 @@ class TaskStore:
         if not dry_run:
             with self.connection:
                 for task_id in requeued:
+                    if task_id in size_recoveries:
+                        self.connection.execute("INSERT INTO stages VALUES (?,?,?)",
+                                                (task_id, "evidence-table-requeue", "true"))
                     if task_id in compactions:
                         self.connection.execute("INSERT INTO stages VALUES (?,?,?)",
                                                 (task_id, "json-compaction-requeue", "true"))

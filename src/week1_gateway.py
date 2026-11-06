@@ -137,6 +137,32 @@ def _encoded(value):
     return json.dumps(value, ensure_ascii=False, separators=(",", ":"), allow_nan=False)
 
 
+def _table_state(value):
+    """Lossless, readable column encoding for repeated evidence records.
+
+    Only homogeneous object arrays become tables. Nested values and row order
+    are preserved, including explicit nulls and empty arrays.
+    """
+    if isinstance(value, dict):
+        if set(value) in ({"columns", "rows"}, {"literal_object"}):
+            return {"literal_object": [[key, _table_state(item)] for key, item in value.items()]}
+        return {key: _table_state(item) for key, item in value.items()}
+    if isinstance(value, list):
+        if (len(value) > 1 and all(isinstance(item, dict) for item in value)
+                and all(list(item) == list(value[0]) for item in value)):
+            return {"columns": list(value[0]),
+                    "rows": [[_table_state(item[key]) for key in value[0]] for item in value]}
+        return [_table_state(item) for item in value]
+    return value
+
+
+def _compact_evidence(state):
+    return {"encoding": "Lossless JSON tables: objects with columns and rows represent an array of "
+                        "records; zip each row with columns in order. Objects with literal_object contain "
+                        "literal key/value pairs. Decode recursively. All evidence values are unchanged.",
+            "evidence": _table_state(state)}
+
+
 class Gateway:
     def __init__(self, api_key, run_dir, budget_usd=20, normal_limit=18, *, transport=None,
                  attempt_deadline_seconds=180, retry_uncertain=False):
@@ -652,6 +678,16 @@ class Gateway:
                         pass
                 state_bytes = len(_encoded(body["state"]).encode())
                 estimated = state_bytes + sum(question_bytes) + 256
+                if estimated > min(context, 64000) or state_bytes + max(question_bytes) + 256 > 32000:
+                    try:
+                        state = json.loads(body["state"]) if isinstance(body["state"], str) else body["state"]
+                        compact = _encoded(_compact_evidence(state))
+                        if len(_encoded(compact).encode()) < state_bytes:
+                            body["state"] = compact
+                    except (ValueError, TypeError):
+                        pass
+                    state_bytes = len(_encoded(body["state"]).encode())
+                    estimated = state_bytes + sum(question_bytes) + 256
                 if estimated > min(context, 64000) or state_bytes + max(question_bytes) + 256 > 32000:
                     raise GatewayError("week1_input_too_long", "decisions exceed conservative input bound; no truncation")
             if completion_price:

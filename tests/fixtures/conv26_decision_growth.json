@@ -1,0 +1,1219 @@
+{
+  "state": {
+    "new_fact": {
+      "id": "mem_0bd3d5454cd612e3f62927382a683cfa",
+      "content": "The session date was 1:56 pm on 8 May, 2023.",
+      "topic": "events",
+      "scope": "project",
+      "project_id": "paper:conv-26",
+      "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+      "occurred_start": "2023-05-08T13:56:00Z",
+      "occurred_end": "2023-05-08T13:56:00Z",
+      "occurred_precision": "minute",
+      "mentioned_at": "2023-05-08T13:56:00Z",
+      "event_status": "unknown",
+      "conditions": null,
+      "verification": null
+    },
+    "candidate_observations": [
+      {
+        "id": "mem_6601f6d97c564994002ebca5bcaee400",
+        "content": "The session date is 1:56 pm on 8 May, 2023.",
+        "topic": "events",
+        "scope": "project",
+        "project_id": "paper:conv-26",
+        "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+        "source_facts": [
+          {
+            "id": "mem_0bd3d5454cd612e3f62927382a683cfa",
+            "content": "The session date was 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_109ff151e43414533176a245b28cc8a7",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00",
+            "occurred_end": "2023-05-08T13:56:00",
+            "occurred_precision": "minute",
+            "mentioned_at": null,
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_1ed4dd5f61cf642bec7c8af633de1abd",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_3924960c671c61978d0938eb2eaf5c5b",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_5efee3d5726e02f5d7fc425134e02fc5",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_9bf5fc68184dc94445a46b0fc3329c11",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_a238890f2213a0602f262debd39b8e02",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00",
+            "occurred_end": "2023-05-08T13:56:00",
+            "occurred_precision": "minute",
+            "mentioned_at": null,
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_c76a9803974b5601c8e47f8feb6395a3",
+            "content": "The session date was 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_d43ad99c0e349fd50b4a332a6b0c1555",
+            "content": "The session date is 2023-05-08 at 1:56 pm.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": null,
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_dac2f80624963efe58a3c04fc2ea689a",
+            "content": "The session date is 2023-05-08 at 1:56 pm.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": null,
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_e5e4ed1f6ee8d384467896fa7ebae745",
+            "content": "The session date is 2023-05-08 at 1:56 pm.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          }
+        ],
+        "pending_facts": [
+          {
+            "id": "mem_0bd3d5454cd612e3f62927382a683cfa",
+            "content": "The session date was 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_109ff151e43414533176a245b28cc8a7",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00",
+            "occurred_end": "2023-05-08T13:56:00",
+            "occurred_precision": "minute",
+            "mentioned_at": null,
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_1ed4dd5f61cf642bec7c8af633de1abd",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_3924960c671c61978d0938eb2eaf5c5b",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_5efee3d5726e02f5d7fc425134e02fc5",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_9bf5fc68184dc94445a46b0fc3329c11",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_a238890f2213a0602f262debd39b8e02",
+            "content": "The session date is 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00",
+            "occurred_end": "2023-05-08T13:56:00",
+            "occurred_precision": "minute",
+            "mentioned_at": null,
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_c76a9803974b5601c8e47f8feb6395a3",
+            "content": "The session date was 1:56 pm on 8 May, 2023.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_d43ad99c0e349fd50b4a332a6b0c1555",
+            "content": "The session date is 2023-05-08 at 1:56 pm.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": null,
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_dac2f80624963efe58a3c04fc2ea689a",
+            "content": "The session date is 2023-05-08 at 1:56 pm.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": null,
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_e5e4ed1f6ee8d384467896fa7ebae745",
+            "content": "The session date is 2023-05-08 at 1:56 pm.",
+            "occurred_start": "2023-05-08T13:56:00Z",
+            "occurred_end": "2023-05-08T13:56:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_cbb2cb5bfe969c5d6d591ef4ee81fa26",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          }
+        ],
+        "pending_relations": [
+          {
+            "fact_id": "mem_0bd3d5454cd612e3f62927382a683cfa",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_109ff151e43414533176a245b28cc8a7",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_1ed4dd5f61cf642bec7c8af633de1abd",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_3924960c671c61978d0938eb2eaf5c5b",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_5efee3d5726e02f5d7fc425134e02fc5",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_9bf5fc68184dc94445a46b0fc3329c11",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_a238890f2213a0602f262debd39b8e02",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_c76a9803974b5601c8e47f8feb6395a3",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_d43ad99c0e349fd50b4a332a6b0c1555",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_dac2f80624963efe58a3c04fc2ea689a",
+            "relation": "supplement"
+          },
+          {
+            "fact_id": "mem_e5e4ed1f6ee8d384467896fa7ebae745",
+            "relation": "supplement"
+          }
+        ],
+        "time_metadata": {
+          "occurred_start": null,
+          "occurred_end": null,
+          "mentioned_at": "2023-05-08T13:56:00Z",
+          "occurred_precision": "minute",
+          "incomparable_fields": [
+            "occurred_start",
+            "occurred_end"
+          ]
+        },
+        "temporal_comparisons": [
+          {
+            "fact_id": "mem_0bd3d5454cd612e3f62927382a683cfa",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_109ff151e43414533176a245b28cc8a7",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "unknown"
+          },
+          {
+            "fact_id": "mem_1ed4dd5f61cf642bec7c8af633de1abd",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_3924960c671c61978d0938eb2eaf5c5b",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_5efee3d5726e02f5d7fc425134e02fc5",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_9bf5fc68184dc94445a46b0fc3329c11",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_a238890f2213a0602f262debd39b8e02",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "unknown"
+          },
+          {
+            "fact_id": "mem_c76a9803974b5601c8e47f8feb6395a3",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_d43ad99c0e349fd50b4a332a6b0c1555",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_dac2f80624963efe58a3c04fc2ea689a",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_e5e4ed1f6ee8d384467896fa7ebae745",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_0bd3d5454cd612e3f62927382a683cfa",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_109ff151e43414533176a245b28cc8a7",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "unknown"
+          },
+          {
+            "fact_id": "mem_1ed4dd5f61cf642bec7c8af633de1abd",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_3924960c671c61978d0938eb2eaf5c5b",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_5efee3d5726e02f5d7fc425134e02fc5",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_9bf5fc68184dc94445a46b0fc3329c11",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_a238890f2213a0602f262debd39b8e02",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "unknown"
+          },
+          {
+            "fact_id": "mem_c76a9803974b5601c8e47f8feb6395a3",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_d43ad99c0e349fd50b4a332a6b0c1555",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_dac2f80624963efe58a3c04fc2ea689a",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_e5e4ed1f6ee8d384467896fa7ebae745",
+            "event_to_new": "overlap",
+            "mentioned_to_new": "overlap"
+          }
+        ]
+      },
+      {
+        "id": "mem_0da87acd27e1d49676c3ca45a11b3de2",
+        "content": "The session date is 27 June, 2023 at 10:37 am.",
+        "topic": "events",
+        "scope": "project",
+        "project_id": "paper:conv-26",
+        "matter_id": "mem_344d850ea7c94c369be0800e42961e1a",
+        "source_facts": [
+          {
+            "id": "mem_13673d0929724bcbb98c7b3cd59e00ef",
+            "content": "The session date is 27 June 2023 at 10:37 am.",
+            "occurred_start": "2023-06-27T10:37:00Z",
+            "occurred_end": null,
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-27T10:37:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_344d850ea7c94c369be0800e42961e1a",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_16152736c620a6bb2ddac167e7cbf946",
+            "content": "The session date is 27 June 2023 at 10:37 am.",
+            "occurred_start": "2023-06-27T10:37:00Z",
+            "occurred_end": "2023-06-27T10:37:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-27T10:37:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_344d850ea7c94c369be0800e42961e1a",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_1ff77261713abfe271da564cc06519ab",
+            "content": "The session date is 27 June, 2023 at 10:37 am.",
+            "occurred_start": "2023-06-27T10:37:00Z",
+            "occurred_end": "2023-06-27T10:37:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-27T10:37:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_344d850ea7c94c369be0800e42961e1a",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_339abbc94a5712cca9bc7f543b1547d5",
+            "content": "The session date is 27 June 2023 at 10:37 am.",
+            "occurred_start": "2023-06-27T10:37:00Z",
+            "occurred_end": "2023-06-27T10:37:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-27T10:37:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_344d850ea7c94c369be0800e42961e1a",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_4a86aeaf008c2f2ab6d89e0707c7c583",
+            "content": "The session date was 27 June 2023 at 10:37 am.",
+            "occurred_start": "2023-06-27T10:37:00Z",
+            "occurred_end": "2023-06-27T10:37:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-27T10:37:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_344d850ea7c94c369be0800e42961e1a",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_7f6d1db1eef6a2ff156fda2cc1f3b0c3",
+            "content": "The session date was 27 June, 2023 at 10:37 am.",
+            "occurred_start": "2023-06-27T10:37:00",
+            "occurred_end": "2023-06-27T10:37:00",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-27T10:37:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_344d850ea7c94c369be0800e42961e1a",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_d24fb77803465cd41d6b3299d2ea55f4",
+            "content": "The session date is 10:37 am on 27 June, 2023.",
+            "occurred_start": "2023-06-27T10:37:00",
+            "occurred_end": "2023-06-27T10:37:00",
+            "occurred_precision": "minute",
+            "mentioned_at": null,
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_344d850ea7c94c369be0800e42961e1a",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_d3307ad386c51524b3035f4c8c02f36e",
+            "content": "The session date is 27 June, 2023 at 10:37 am.",
+            "occurred_start": "2023-06-27T10:37:00Z",
+            "occurred_end": "2023-06-27T10:37:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-27T10:37:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_344d850ea7c94c369be0800e42961e1a",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          }
+        ],
+        "pending_facts": [],
+        "pending_relations": [],
+        "time_metadata": {
+          "occurred_start": null,
+          "occurred_end": null,
+          "mentioned_at": "2023-06-27T10:37:00Z",
+          "occurred_precision": "minute",
+          "incomparable_fields": [
+            "occurred_start",
+            "occurred_end"
+          ]
+        },
+        "temporal_comparisons": [
+          {
+            "fact_id": "mem_13673d0929724bcbb98c7b3cd59e00ef",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_16152736c620a6bb2ddac167e7cbf946",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_1ff77261713abfe271da564cc06519ab",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_339abbc94a5712cca9bc7f543b1547d5",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_4a86aeaf008c2f2ab6d89e0707c7c583",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_7f6d1db1eef6a2ff156fda2cc1f3b0c3",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_d24fb77803465cd41d6b3299d2ea55f4",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "unknown"
+          },
+          {
+            "fact_id": "mem_d3307ad386c51524b3035f4c8c02f36e",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          }
+        ]
+      },
+      {
+        "id": "mem_3533264b3e15ec9811a506f47e6aab1b",
+        "content": "The session date was 7:55 pm on 9 June, 2023.",
+        "topic": "events",
+        "scope": "project",
+        "project_id": "paper:conv-26",
+        "matter_id": "mem_fae59704df4e073a9096d84dccf37811",
+        "source_facts": [
+          {
+            "id": "mem_1b5a417259d78beef495904c93690434",
+            "content": "The session date was 7:55 pm on 9 June, 2023.",
+            "occurred_start": "2023-06-09T19:55:00Z",
+            "occurred_end": null,
+            "occurred_precision": "minute",
+            "mentioned_at": null,
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_fae59704df4e073a9096d84dccf37811",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_4e8a40d5ca46a0da66219902c1eb9822",
+            "content": "The session date is 7:55 pm on 9 June, 2023.",
+            "occurred_start": "2023-06-09T19:55:00",
+            "occurred_end": "2023-06-09T19:55:00",
+            "occurred_precision": "minute",
+            "mentioned_at": null,
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_fae59704df4e073a9096d84dccf37811",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_b4383f1505b1d5ad0c1b3667cae82fd6",
+            "content": "The session date is 7:55 pm on 9 June, 2023.",
+            "occurred_start": "2023-06-09T19:55:00Z",
+            "occurred_end": "2023-06-09T19:55:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-09T19:55:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_fae59704df4e073a9096d84dccf37811",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_b855f1b282b7879f05cd6435886d97da",
+            "content": "The session date is 7:55 pm on 9 June, 2023.",
+            "occurred_start": "2023-06-09T19:55:00",
+            "occurred_end": "2023-06-09T19:55:00",
+            "occurred_precision": "minute",
+            "mentioned_at": null,
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_fae59704df4e073a9096d84dccf37811",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_d50195e7cb90af622cf6631a5e59e38e",
+            "content": "The session date was 7:55 pm on 9 June, 2023.",
+            "occurred_start": "2023-06-09T19:55:00Z",
+            "occurred_end": "2023-06-09T19:55:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-09T19:55:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_fae59704df4e073a9096d84dccf37811",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_e19fed5de341d115bae8de91d518efbf",
+            "content": "The session date was 7:55 pm on 9 June, 2023.",
+            "occurred_start": "2023-06-09T19:55:00Z",
+            "occurred_end": "2023-06-09T19:55:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-09T19:55:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_fae59704df4e073a9096d84dccf37811",
+            "event_status": "completed",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_f687454459eec52619651d61769b6efb",
+            "content": "The session date is 2023-06-09 at 19:55.",
+            "occurred_start": "2023-06-09T19:55:00Z",
+            "occurred_end": "2023-06-09T19:55:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-06-09T19:55:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_fae59704df4e073a9096d84dccf37811",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          }
+        ],
+        "pending_facts": [],
+        "pending_relations": [],
+        "time_metadata": {
+          "occurred_start": null,
+          "occurred_end": null,
+          "mentioned_at": "2023-06-09T19:55:00Z",
+          "occurred_precision": "minute",
+          "incomparable_fields": [
+            "occurred_start",
+            "occurred_end"
+          ]
+        },
+        "temporal_comparisons": [
+          {
+            "fact_id": "mem_1b5a417259d78beef495904c93690434",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "unknown"
+          },
+          {
+            "fact_id": "mem_4e8a40d5ca46a0da66219902c1eb9822",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "unknown"
+          },
+          {
+            "fact_id": "mem_b4383f1505b1d5ad0c1b3667cae82fd6",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_b855f1b282b7879f05cd6435886d97da",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "unknown"
+          },
+          {
+            "fact_id": "mem_d50195e7cb90af622cf6631a5e59e38e",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_e19fed5de341d115bae8de91d518efbf",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_f687454459eec52619651d61769b6efb",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          }
+        ]
+      },
+      {
+        "id": "mem_9a0fc5d19d5ca9e5e7d659ab1d25362a",
+        "content": "Caroline found the transgender stories inspiring and was happy and thankful for all the support. The support group has made her feel accepted and given her courage to embrace herself. She is truly grateful for all the support she has received from friends and mentors, and has been blessed with loads of love and support throughout her journey. Caroline is grateful for the chance to share her story and give others hope, and expressed gratitude for support and encouragement, stating that they can tackle life's challenges together. Her friends, family, and mentors motivate her and give her the strength to push on, as mentioned on 2023-06-09.",
+        "topic": "profile",
+        "scope": "global",
+        "project_id": null,
+        "matter_id": null,
+        "source_facts": [
+          {
+            "id": "mem_0f43470281de52369f29ed1805c856ff",
+            "content": "Caroline has been blessed with loads of love and support throughout her journey.",
+            "occurred_start": null,
+            "occurred_end": null,
+            "occurred_precision": null,
+            "mentioned_at": "2023-06-09T19:55:00Z",
+            "topic": "profile",
+            "scope": "global",
+            "project_id": null,
+            "matter_id": null,
+            "event_status": null,
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_208ade3c6f10352aec776b841e1631d6",
+            "content": "Caroline found the transgender stories inspiring and was happy and thankful for all the support.",
+            "occurred_start": null,
+            "occurred_end": null,
+            "occurred_precision": null,
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "profile",
+            "scope": "global",
+            "project_id": null,
+            "matter_id": null,
+            "event_status": null,
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_3af12e512de0ca4f806dae49818904a3",
+            "content": "Caroline is grateful for the chance to share her story and give others hope.",
+            "occurred_start": null,
+            "occurred_end": null,
+            "occurred_precision": null,
+            "mentioned_at": "2023-06-09T19:55:00Z",
+            "topic": "profile",
+            "scope": "global",
+            "project_id": null,
+            "matter_id": null,
+            "event_status": null,
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_3fe42c33a5bb395a3aad3645be50aafd",
+            "content": "Caroline's friends, family, and mentors motivate her and give her the strength to push on.",
+            "occurred_start": null,
+            "occurred_end": null,
+            "occurred_precision": null,
+            "mentioned_at": "2023-06-09T19:55:00Z",
+            "topic": "profile",
+            "scope": "global",
+            "project_id": null,
+            "matter_id": null,
+            "event_status": null,
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_4cc9ad1fe56db1c43adb96a1ef0ceced",
+            "content": "Caroline expressed gratitude for support and encouragement, stating that they can tackle life's challenges together.",
+            "occurred_start": null,
+            "occurred_end": null,
+            "occurred_precision": null,
+            "mentioned_at": "2023-06-09T19:55:00Z",
+            "topic": "profile",
+            "scope": "global",
+            "project_id": null,
+            "matter_id": null,
+            "event_status": null,
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_a59207cc8fe52ffb0148c10c9d88c2bd",
+            "content": "Caroline is truly grateful for all the support she has received from friends and mentors.",
+            "occurred_start": null,
+            "occurred_end": null,
+            "occurred_precision": null,
+            "mentioned_at": "2023-05-25T13:14:00Z",
+            "topic": "profile",
+            "scope": "global",
+            "project_id": null,
+            "matter_id": null,
+            "event_status": null,
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_e56ff289b31e916bbe4a1a0d912bf36f",
+            "content": "The support group has made Caroline feel accepted and given her courage to embrace herself.",
+            "occurred_start": null,
+            "occurred_end": null,
+            "occurred_precision": null,
+            "mentioned_at": "2023-05-08T13:56:00Z",
+            "topic": "profile",
+            "scope": "global",
+            "project_id": null,
+            "matter_id": null,
+            "event_status": null,
+            "conditions": null,
+            "verification": null
+          }
+        ],
+        "pending_facts": [],
+        "pending_relations": [],
+        "time_metadata": {
+          "occurred_start": null,
+          "occurred_end": null,
+          "mentioned_at": "2023-06-09T19:55:00Z",
+          "occurred_precision": null,
+          "incomparable_fields": []
+        },
+        "temporal_comparisons": [
+          {
+            "fact_id": "mem_0f43470281de52369f29ed1805c856ff",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_208ade3c6f10352aec776b841e1631d6",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "overlap"
+          },
+          {
+            "fact_id": "mem_3af12e512de0ca4f806dae49818904a3",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_3fe42c33a5bb395a3aad3645be50aafd",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_4cc9ad1fe56db1c43adb96a1ef0ceced",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_a59207cc8fe52ffb0148c10c9d88c2bd",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_e56ff289b31e916bbe4a1a0d912bf36f",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "overlap"
+          }
+        ]
+      },
+      {
+        "id": "mem_a14c54e112b3c97a63c15d30b5d2a2e8",
+        "content": "The session date was 1:14 pm on 25 May, 2023.",
+        "topic": "events",
+        "scope": "project",
+        "project_id": "paper:conv-26",
+        "matter_id": "mem_8dc4730e66c010b6cd7a3a752cd00a40",
+        "source_facts": [
+          {
+            "id": "mem_3e4e746d9c9041f5ca8c359ccfa7a1c7",
+            "content": "The session date is 1:14 pm on 25 May, 2023.",
+            "occurred_start": "2023-05-25T13:14:00Z",
+            "occurred_end": "2023-05-25T13:14:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-25T13:14:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_8dc4730e66c010b6cd7a3a752cd00a40",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_548c584c0e8beee34e08186cd2aa849a",
+            "content": "The session date was 1:14 pm on 25 May, 2023.",
+            "occurred_start": "2023-05-25T13:14:00Z",
+            "occurred_end": "2023-05-25T13:14:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-25T13:14:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_8dc4730e66c010b6cd7a3a752cd00a40",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_947aba7deadeb8ce2bb727fa16c06c00",
+            "content": "The session date was 1:14 pm on 25 May, 2023.",
+            "occurred_start": "2023-05-25T13:14:00",
+            "occurred_end": "2023-05-25T13:14:00",
+            "occurred_precision": "minute",
+            "mentioned_at": null,
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_8dc4730e66c010b6cd7a3a752cd00a40",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_bd87616681c1eb6942ef837bb99054e0",
+            "content": "The session date is 25 May, 2023 at 1:14 pm.",
+            "occurred_start": "2023-05-25T13:14:00Z",
+            "occurred_end": "2023-05-25T13:14:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-25T13:14:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_8dc4730e66c010b6cd7a3a752cd00a40",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_c6d7b643477d52f3c08dbc7d835909bc",
+            "content": "The session date was 1:14 pm on 25 May, 2023.",
+            "occurred_start": "2023-05-25T13:14:00Z",
+            "occurred_end": "2023-05-25T13:14:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-25T13:14:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_8dc4730e66c010b6cd7a3a752cd00a40",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          },
+          {
+            "id": "mem_de9e377b8e120310af74b032d25b68ed",
+            "content": "The session date was 1:14 pm on 25 May, 2023.",
+            "occurred_start": "2023-05-25T13:14:00Z",
+            "occurred_end": "2023-05-25T13:14:00Z",
+            "occurred_precision": "minute",
+            "mentioned_at": "2023-05-25T13:14:00Z",
+            "topic": "events",
+            "scope": "project",
+            "project_id": "paper:conv-26",
+            "matter_id": "mem_8dc4730e66c010b6cd7a3a752cd00a40",
+            "event_status": "unknown",
+            "conditions": null,
+            "verification": null
+          }
+        ],
+        "pending_facts": [],
+        "pending_relations": [],
+        "time_metadata": {
+          "occurred_start": null,
+          "occurred_end": null,
+          "mentioned_at": "2023-05-25T13:14:00Z",
+          "occurred_precision": "minute",
+          "incomparable_fields": [
+            "occurred_start",
+            "occurred_end"
+          ]
+        },
+        "temporal_comparisons": [
+          {
+            "fact_id": "mem_3e4e746d9c9041f5ca8c359ccfa7a1c7",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_548c584c0e8beee34e08186cd2aa849a",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_947aba7deadeb8ce2bb727fa16c06c00",
+            "event_to_new": "unknown",
+            "mentioned_to_new": "unknown"
+          },
+          {
+            "fact_id": "mem_bd87616681c1eb6942ef837bb99054e0",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_c6d7b643477d52f3c08dbc7d835909bc",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          },
+          {
+            "fact_id": "mem_de9e377b8e120310af74b032d25b68ed",
+            "event_to_new": "after",
+            "mentioned_to_new": "after"
+          }
+        ]
+      }
+    ],
+    "time_policy": "Use source mentioned_at and occurred intervals. Arrival order does not establish current truth. Late old information may add history without replacing a newer state. Unknown times stay unknown. temporal_comparisons are code-computed source-to-new interval relations, not truth judgments.",
+    "context_policy": "Candidates share the new fact's topic, scope and project_id. For events, distinguish the same facet from a different facet of the same matter; a shared event name alone is not enough to establish the same matter."
+  },
+  "criteria": {
+    "new": "A distinct durable facet with no matching candidate. Shared topic alone is not a match.",
+    "uncertain": "The entity, facet, or relation cannot be determined confidently; keep a separate observation.",
+    "target0_duplicate": "Target mem_6601f6d97c564994002ebca5bcaee400: The same entity and facet, with no additional detail, condition, negation, or changed value.",
+    "target0_supplement": "Target mem_6601f6d97c564994002ebca5bcaee400: The same entity and facet, adding compatible detail without changing its state.",
+    "target0_state_change": "Target mem_6601f6d97c564994002ebca5bcaee400: The same entity and facet, explicitly describing a historical transition; preserve both states and dates.",
+    "target0_correction": "Target mem_6601f6d97c564994002ebca5bcaee400: The same entity and facet, explicitly correcting an earlier claim rather than merely arriving later.",
+    "target0_conflict": "Target mem_6601f6d97c564994002ebca5bcaee400: The same entity and facet, incompatible claims whose contradiction or temporal order remains unresolved.",
+    "target0_same_matter": "Target mem_6601f6d97c564994002ebca5bcaee400: A distinct facet of the same concrete matter, supported by the event context; keep it as a separate observation linked to that matter. A shared name or topic alone does not establish the same matter.",
+    "target1_duplicate": "Target mem_0da87acd27e1d49676c3ca45a11b3de2: The same entity and facet, with no additional detail, condition, negation, or changed value.",
+    "target1_supplement": "Target mem_0da87acd27e1d49676c3ca45a11b3de2: The same entity and facet, adding compatible detail without changing its state.",
+    "target1_state_change": "Target mem_0da87acd27e1d49676c3ca45a11b3de2: The same entity and facet, explicitly describing a historical transition; preserve both states and dates.",
+    "target1_correction": "Target mem_0da87acd27e1d49676c3ca45a11b3de2: The same entity and facet, explicitly correcting an earlier claim rather than merely arriving later.",
+    "target1_conflict": "Target mem_0da87acd27e1d49676c3ca45a11b3de2: The same entity and facet, incompatible claims whose contradiction or temporal order remains unresolved.",
+    "target1_same_matter": "Target mem_0da87acd27e1d49676c3ca45a11b3de2: A distinct facet of the same concrete matter, supported by the event context; keep it as a separate observation linked to that matter. A shared name or topic alone does not establish the same matter.",
+    "target2_duplicate": "Target mem_3533264b3e15ec9811a506f47e6aab1b: The same entity and facet, with no additional detail, condition, negation, or changed value.",
+    "target2_supplement": "Target mem_3533264b3e15ec9811a506f47e6aab1b: The same entity and facet, adding compatible detail without changing its state.",
+    "target2_state_change": "Target mem_3533264b3e15ec9811a506f47e6aab1b: The same entity and facet, explicitly describing a historical transition; preserve both states and dates.",
+    "target2_correction": "Target mem_3533264b3e15ec9811a506f47e6aab1b: The same entity and facet, explicitly correcting an earlier claim rather than merely arriving later.",
+    "target2_conflict": "Target mem_3533264b3e15ec9811a506f47e6aab1b: The same entity and facet, incompatible claims whose contradiction or temporal order remains unresolved.",
+    "target2_same_matter": "Target mem_3533264b3e15ec9811a506f47e6aab1b: A distinct facet of the same concrete matter, supported by the event context; keep it as a separate observation linked to that matter. A shared name or topic alone does not establish the same matter.",
+    "target3_duplicate": "Target mem_9a0fc5d19d5ca9e5e7d659ab1d25362a: The same entity and facet, with no additional detail, condition, negation, or changed value.",
+    "target3_supplement": "Target mem_9a0fc5d19d5ca9e5e7d659ab1d25362a: The same entity and facet, adding compatible detail without changing its state.",
+    "target3_state_change": "Target mem_9a0fc5d19d5ca9e5e7d659ab1d25362a: The same entity and facet, explicitly describing a historical transition; preserve both states and dates.",
+    "target3_correction": "Target mem_9a0fc5d19d5ca9e5e7d659ab1d25362a: The same entity and facet, explicitly correcting an earlier claim rather than merely arriving later.",
+    "target3_conflict": "Target mem_9a0fc5d19d5ca9e5e7d659ab1d25362a: The same entity and facet, incompatible claims whose contradiction or temporal order remains unresolved.",
+    "target4_duplicate": "Target mem_a14c54e112b3c97a63c15d30b5d2a2e8: The same entity and facet, with no additional detail, condition, negation, or changed value.",
+    "target4_supplement": "Target mem_a14c54e112b3c97a63c15d30b5d2a2e8: The same entity and facet, adding compatible detail without changing its state.",
+    "target4_state_change": "Target mem_a14c54e112b3c97a63c15d30b5d2a2e8: The same entity and facet, explicitly describing a historical transition; preserve both states and dates.",
+    "target4_correction": "Target mem_a14c54e112b3c97a63c15d30b5d2a2e8: The same entity and facet, explicitly correcting an earlier claim rather than merely arriving later.",
+    "target4_conflict": "Target mem_a14c54e112b3c97a63c15d30b5d2a2e8: The same entity and facet, incompatible claims whose contradiction or temporal order remains unresolved.",
+    "target4_same_matter": "Target mem_a14c54e112b3c97a63c15d30b5d2a2e8: A distinct facet of the same concrete matter, supported by the event context; keep it as a separate observation linked to that matter. A shared name or topic alone does not establish the same matter."
+  }
+}

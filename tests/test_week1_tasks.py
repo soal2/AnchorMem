@@ -167,3 +167,23 @@ def test_audited_local_400_requeues_once_with_total_attempt_cap(tmp_path):
     store.fail(target, 'ingestion', error)
     assert target not in store.requeue(4)
     store.close()
+
+
+@pytest.mark.parametrize('group', ['conv-26', 'conv-41'])
+def test_evidence_table_fix_requeues_audited_size_error_once(tmp_path, group):
+    folder = tmp_path / '20261105T122803255750Z'
+    folder.mkdir()
+    store = TaskStore(folder / 'tasks.sqlite3')
+    store.seed([{**example(), 'group': group}], ['ours'], 'protocol')
+    target = store.build('ours', group)['task_id']
+    error = {'type': 'ProviderError', 'message': 'Relation decision failed', 'retryable': False,
+             'status_code': 400, 'diagnostics': {'phase': 'decision_jev', 'model': 'typesafe/jev-1.13'},
+             'http_response_body': {'code': 'week1_input_too_long'}}
+    for _ in range(3):
+        store.fail(target, 'ingestion', error)
+    assert target not in store.requeue(3, dry_run=True)
+    assert target in store.requeue(4, dry_run=True)
+    assert target in store.requeue(4)
+    store.fail(target, 'ingestion', error)
+    assert target not in store.requeue(100)
+    store.close()

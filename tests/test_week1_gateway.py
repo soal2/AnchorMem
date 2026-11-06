@@ -274,3 +274,62 @@ def test_decision_compacts_only_oversize_json_without_losing_evidence(tmp_path):
         assert gateway._prepare('/api/alpha/decisions', small)[1]['state'] == small['state']
         with pytest.raises(GatewayError, match='conservative input bound'):
             gateway._prepare('/api/alpha/decisions', {**payload, 'state': json.dumps({'text': 'x' * 33000})})
+
+
+def test_conv26_pending_evidence_growth_through_live_routing(tmp_path, monkeypatch):
+    """Saved conv-26 evidence plus pending growth reproduces the >32KB failure.
+
+    The rejected session_5:0 request was unsent and its exact body was not saved.
+    This fixture uses its preceding index's source facts and real state layout.
+    """
+    from pathlib import Path
+    from src.providers import OpenAIDecision
+    from src.config import ServiceConfig, load_config
+    from src.week1_runner import routed_clients
+    from src.week1_gateway import _encoded
+
+    fixture = json.loads((Path(__file__).parent / 'fixtures/conv26_decision_growth.json').read_text())
+    state, criteria = fixture['state'], fixture['criteria']
+    assert len(_encoded(_encoded(state)).encode()) > 32000
+
+    def expand(value):
+        if isinstance(value, dict):
+            if set(value) == {'literal_object'}:
+                return {key: expand(item) for key, item in value['literal_object']}
+            if set(value) == {'columns', 'rows'}:
+                return [dict(zip(value['columns'], map(expand, row))) for row in value['rows']]
+            return {key: expand(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return list(map(expand, value))
+        return value
+
+    from src.week1_gateway import _compact_evidence
+    edge = {'null': None, 'empty': [], 'unicode': '中文',
+            'collision': {'columns': ['a'], 'rows': [[1]]},
+            'literal': {'literal_object': 'original'},
+            'records': [{'a': None, 'b': []}, {'a': 'x', 'b': {}}]}
+    assert expand(_compact_evidence(edge)['evidence']) == edge
+
+    def respond(request):
+        assert len(request.content) <= 32000
+        payload = json.loads(request.content)
+        encoded = json.loads(payload['state'])
+        assert expand(encoded['evidence']) == state
+        assert payload['questions']['relation']['criteria'] == criteria
+        question = payload['questions']['relation']
+        assert (len(_encoded(payload['state']).encode()) + len(_encoded(question).encode())
+                + len('relation') + 64 + 256) <= 32000
+        return httpx.Response(200, json={'model': 'typesafe/jev-1.13', 'id': 'mock-decision',
+            'answers': {'relation': {'type': 'choice', 'choice': 'new',
+                'probabilities': {key: int(key == 'new') for key in criteria}}},
+            'usage': {'cost': 0}})
+
+    transport, requests = install(respond)
+    monkeypatch.setenv('OPENAI_API_KEY', 'dummy')
+    config = load_config('configs/service/v1-b3.yaml', ServiceConfig)[0]
+    model = config.llm.model_copy(update={'name': 'typesafe/jev-1.13'})
+    with Gateway('private-key', tmp_path, transport=transport) as gateway:
+        with routed_clients(gateway.url):
+            result = OpenAIDecision(model, 'jev').decide(state, criteria)
+    assert result['choice'] == 'new'
+    assert len(requests) == 2  # Mock pricing and one mock decision, no network LLM.

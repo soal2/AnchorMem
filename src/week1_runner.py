@@ -305,6 +305,19 @@ def clean_error(error):
         record["code"] = error.code
     if isinstance(error, providers.ProviderError):
         record.update(diagnostics=error.diagnostics, raw_response=error.raw_response)
+    cause = error
+    seen = set()
+    while cause is not None and id(cause) not in seen:
+        seen.add(id(cause))
+        if getattr(cause, "status_code", None) is not None:
+            record["status_code"] = cause.status_code
+            body = getattr(cause, "body", None)
+            response = getattr(cause, "response", None)
+            if body is None and response is not None:
+                body = response.text
+            record["http_response_body"] = body
+            break
+        cause = cause.__cause__
     text = json.dumps(record, ensure_ascii=False)
     for name in ("OPENAI_API_KEY", "OPENROUTER_API_KEY", "AML_MEMORY_KEY"):
         if os.environ.get(name):

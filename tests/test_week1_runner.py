@@ -560,3 +560,19 @@ def test_locomo_preflight_uses_exported_openai_key_only(tmp_path, monkeypatch):
     for methods in ([], ['rag'], ['ours', 'ours']):
         with pytest.raises(ValueError):
             runner.active_methods('locomo', methods)
+
+
+def test_clean_error_preserves_wrapped_http_body_and_redacts_secrets(monkeypatch):
+    import httpx
+    from openai import BadRequestError
+    from src.providers import ProviderError
+    from src.week1_runner import clean_error
+    monkeypatch.setenv('OPENROUTER_API_KEY', 'test-private-secret')
+    body = {'error': {'code': 'week1_input_too_long', 'message': 'test-private-secret'}}
+    cause = BadRequestError('bad request', response=httpx.Response(400, request=httpx.Request('POST', 'https://example.com')), body=body)
+    error = ProviderError('Relation decision failed', {'phase': 'decision_jev'})
+    error.__cause__ = cause
+    record = clean_error(error)
+    assert record['status_code'] == 400
+    assert record['http_response_body']['error']['code'] == 'week1_input_too_long'
+    assert 'test-private-secret' not in json.dumps(record)

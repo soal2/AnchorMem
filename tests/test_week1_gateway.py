@@ -257,3 +257,20 @@ def test_one_process_owns_task_ledger(tmp_path):
         with pytest.raises(BlockingIOError):
             with Gateway("private-key", tmp_path, transport=transport):
                 pass
+
+
+def test_decision_compacts_only_oversize_json_without_losing_evidence(tmp_path):
+    transport, _ = install(lambda request: httpx.Response(200, json=completion()))
+    with Gateway('private-key', tmp_path, transport=transport) as gateway:
+        state = {'facts': [{'text': 'evidence', 'number': i} for i in range(780)]}
+        payload = {'model': 'typesafe/jev-1.13', 'state': json.dumps(state),
+                   'questions': {'relation': {'type': 'choice', 'criteria': {'a': 'new', 'b': 'old'}}}}
+        original = payload['state']
+        _, prepared, _, size = gateway._prepare('/api/alpha/decisions', payload)
+        assert json.loads(prepared['state']) == state
+        assert prepared['state'] != original
+        assert size < 32000
+        small = {**payload, 'state': json.dumps({'text': 'keep spacing'})}
+        assert gateway._prepare('/api/alpha/decisions', small)[1]['state'] == small['state']
+        with pytest.raises(GatewayError, match='conservative input bound'):
+            gateway._prepare('/api/alpha/decisions', {**payload, 'state': json.dumps({'text': 'x' * 33000})})

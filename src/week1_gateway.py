@@ -643,7 +643,17 @@ class Gateway:
             question_bytes = [len(_encoded(question).encode()) + len(key.encode()) + 64 for key, question in questions.items()]
             estimated = state_bytes + sum(question_bytes) + 256
             if estimated > min(context, 64000) or state_bytes + max(question_bytes) + 256 > 32000:
-                raise GatewayError("week1_input_too_long", "decisions exceed conservative input bound; no truncation")
+                # Remove JSON formatting whitespace only when needed. Keep already
+                # checkpointed requests byte-identical and preserve every evidence value.
+                if isinstance(body["state"], str):
+                    try:
+                        body["state"] = _encoded(json.loads(body["state"]))
+                    except (ValueError, TypeError):
+                        pass
+                state_bytes = len(_encoded(body["state"]).encode())
+                estimated = state_bytes + sum(question_bytes) + 256
+                if estimated > min(context, 64000) or state_bytes + max(question_bytes) + 256 > 32000:
+                    raise GatewayError("week1_input_too_long", "decisions exceed conservative input bound; no truncation")
             if completion_price:
                 raise GatewayError("week1_unbounded_request", "Jev output pricing changed; no documented output cap")
         if not path.endswith("decisions"):

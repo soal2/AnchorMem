@@ -145,3 +145,25 @@ def test_requeue_leaves_budget_stopped_tasks_alone(tmp_path):
     assert store.requeue(max_attempts=5) == []
     assert store.get(build['task_id'])['state'] == 'budget-stopped'
     store.close()
+
+
+def test_audited_local_400_requeues_once_with_total_attempt_cap(tmp_path):
+    from src.week1_tasks import retryable_error
+    folder = tmp_path / '20261105T122803255750Z'
+    folder.mkdir()
+    store = TaskStore(folder / 'tasks.sqlite3')
+    store.seed([{**example(), 'group': 'conv-26'}], ['ours'], 'protocol')
+    target = store.build('ours', 'conv-26')['task_id']
+    error = {'type': 'ProviderError', 'message': 'Relation decision failed', 'raw_response': None,
+             'retryable': False, 'diagnostics': {'exception_type': 'BadRequestError', 'model': 'typesafe/jev-1.13',
+                                                'phase': 'decision_jev', 'status_code': 400}}
+    store.fail(target, 'ingestion', error)
+    store.fail(target, 'ingestion', error)
+    assert not retryable_error(error)
+    assert target not in store.requeue(2, dry_run=True)
+    assert target in store.requeue(4, dry_run=True)
+    assert store.get(target)['state'] == 'failed'
+    assert target in store.requeue(4)
+    store.fail(target, 'ingestion', error)
+    assert target not in store.requeue(4)
+    store.close()

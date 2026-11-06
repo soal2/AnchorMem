@@ -5,6 +5,7 @@ Reservations are fsynced before network I/O; unpriced requests stop paid calls
 unless the user authorizes keeping their full upper bounds in the budget.
 """
 
+from contextlib import contextmanager
 import fcntl
 import hashlib
 import json
@@ -181,6 +182,7 @@ class Gateway:
         self.ledger = self.run_dir / "api-ledger.jsonl"
         self._transport = transport
         self._lock = threading.RLock()
+        self._request_lock = threading.Lock()
         self._context = {}
         self._ordinal = 0
         self._checkpoints = None
@@ -219,12 +221,17 @@ class Gateway:
         if "task_id" in context and any(not context.get(key) for key in
                 ("run_id", "task_id", "unit_id", "stage", "protocol_sha256")):
             raise ValueError("checkpointed calls require run, task, unit, stage and protocol identifiers")
-        with self._lock:
-            self._context = {key: self._redact(str(value)) for key, value in context.items()}
-            self._ordinal = 0
+        if not self._request_lock.acquire(timeout=self.attempt_deadline_seconds):
+            raise AttemptDeadlineExceeded("gateway context lock deadline expired")
+        try:
+            with self._state_lock():
+                self._context = {key: self._redact(str(value)) for key, value in context.items()}
+                self._ordinal = 0
+        finally:
+            self._request_lock.release()
 
     def summary(self):
-        with self._lock:
+        with self._state_lock():
             return {"spent_usd": float(self._spent), "reserved_usd": float(sum(self._reservations.values())),
                     "committed_upper_usd": float(self._spent + sum(self._reservations.values())),
                     "budget_usd": float(self.budget), "normal_limit_usd": float(self.normal_limit),
@@ -439,7 +446,7 @@ class Gateway:
 
     def enable_unconfirmed_cost_policy(self, receipt_path):
         """Keep unknown calls reserved at their full upper bound on user instruction."""
-        with self._lock:
+        with self._state_lock():
             receipt_path = Path(receipt_path)
             receipt_bytes = receipt_path.read_bytes()
             receipt = json.loads(receipt_bytes)
@@ -463,7 +470,7 @@ class Gateway:
 
     def reconcile_verified_zero(self, receipt_path):
         """Settle one refusal or connection failure after an explicit balance audit."""
-        with self._lock:
+        with self._state_lock():
             receipt_path = Path(receipt_path)
             receipt = json.loads(receipt_path.read_text())
             if self.stopped != "week1_cost_unknown" or len(self._reservations) != 1:
@@ -533,6 +540,17 @@ class Gateway:
         self.pricing_path.write_text(content, encoding="utf-8")
         (self.run_dir / "pricing.json").write_text(content, encoding="utf-8")
 
+    def _new_client(self):
+        transport = self._transport
+        if transport is None:
+            proxy = getproxies().get("https")
+            if proxy_bypass(urlsplit(ORIGIN).hostname):
+                proxy = None
+            transport = httpx.HTTPTransport(proxy=proxy, retries=0)
+        return httpx.Client(transport=transport,
+                            timeout=180, follow_redirects=False,
+                            headers={"Authorization": "Bearer " + self._api_key})
+
     def __enter__(self):
         self.run_dir.mkdir(parents=True, exist_ok=True)
         self._file_lock = (self.run_dir / "gateway.lock").open("a")
@@ -540,19 +558,15 @@ class Gateway:
             fcntl.flock(self._file_lock.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
             self._restore()
             self._open_checkpoints()
-            transport = self._transport
-            if transport is None:
-                proxy = getproxies().get("https")
-                if proxy_bypass(urlsplit(ORIGIN).hostname):
-                    proxy = None
-                transport = httpx.HTTPTransport(proxy=proxy, retries=0)
-            self._client = httpx.Client(transport=transport,
-                                        timeout=180, follow_redirects=False,
-                                        headers={"Authorization": "Bearer " + self._api_key})
+            self._client = self._new_client()
             self._pricing()
             gateway = self
 
             class Handler(BaseHTTPRequestHandler):
+                def setup(self):
+                    self.request.settimeout(gateway.local_request_timeout)
+                    super().setup()
+
                 def log_message(self, *_):
                     pass
 
@@ -567,10 +581,10 @@ class Gateway:
                         if deadline is not None and not math.isfinite(deadline):
                             raise GatewayError("week1_invalid_request", "invalid local deadline")
                         status, result = gateway._request(self.path, payload, self.headers.get("X-Week1-Retry") == "1", deadline=deadline)
-                    except (ValueError, TypeError) as error:
-                        status, result = getattr(error, "status_code", 400), {
+                    except (ValueError, TypeError, AttemptDeadlineExceeded) as error:
+                        status, result = getattr(error, "status_code", 408 if isinstance(error, AttemptDeadlineExceeded) else 400), {
                             "error": {"code": getattr(error, "code", "week1_invalid_request"),
-                                      "message": gateway._redact(str(error)), "type": "invalid_request_error"}}
+                                      "message": gateway._redact(type(error).__name__ + ": " + str(error)), "type": "invalid_request_error"}}
                     data = _encoded(result).encode()
                     self.send_response(status)
                     self.send_header("Content-Type", "application/json")
@@ -592,7 +606,10 @@ class Gateway:
 
     def __exit__(self, *_):
         if self._server:
-            self._server.shutdown()
+            try:
+                wall_clock_call(self._server.shutdown, 5)
+            except AttemptDeadlineExceeded:
+                pass
             self._server.server_close()
             self._thread.join(timeout=5)
         if self._client:
@@ -723,44 +740,62 @@ class Gateway:
             return _money(record["total_cost"]), "generation.total_cost"
         raise ValueError("no billed cost or generation identifier was supplied")
 
+    @contextmanager
+    def _state_lock(self):
+        if not self._lock.acquire(timeout=self.attempt_deadline_seconds):
+            raise AttemptDeadlineExceeded("gateway state lock deadline expired")
+        try:
+            yield
+        finally:
+            self._lock.release()
+
     def _request(self, path, payload, retry=False, deadline=None):
-        with self._lock:
-            try:
-                return self._request_serial(path, payload, retry, deadline)
-            except (sqlite3.Error, OSError) as error:
-                self.stopped = "week1_checkpoint_error"
-                raise GatewayError(self.stopped, "shared call checkpoint could not be read or committed") from error
+        # Serialize ordinals and retry metadata separately from ledger state.
+        seconds = self.attempt_deadline_seconds
+        if deadline is not None:
+            seconds = min(seconds, max(0, deadline - time.monotonic()))
+        if not self._request_lock.acquire(timeout=seconds):
+            raise AttemptDeadlineExceeded("gateway request lock deadline expired")
+        try:
+            return self._request_serial(path, payload, retry, deadline)
+        except AttemptDeadlineExceeded:
+            raise
+        except (sqlite3.Error, OSError) as error:
+            self.stopped = "week1_checkpoint_error"
+            raise GatewayError(self.stopped, "shared call checkpoint could not be read or committed") from error
+        finally:
+            self._request_lock.release()
 
     def _request_serial(self, path, payload, retry=False, deadline=None):
-        with self._lock:
+        with self._state_lock():
             path, body, upper, estimated = self._prepare(path, payload)
             identity, replay = self._checkpoint_call(path, body)
             if replay is not None:
                 return replay
-            attempt = self._attempts(*identity[:2]) if identity is not None else 1
-            while True:
-                try:
-                    if deadline is not None and time.monotonic() >= deadline:
-                        raise GatewayError("week1_upstream_error", "AttemptDeadlineExceeded: local exchange expired")
-                    return self._send(path, body, upper, estimated, identity, retry, deadline)
-                except GatewayError as error:
-                    status, failure = self._last_failure
-                    if (getattr(error, "code", None) != "week1_upstream_error" or not is_transient(status, failure)
-                            or not self._last_resend_safe or attempt >= attempt_limit(status) or self.stopped
-                            or (deadline is not None and time.monotonic() >= deadline)):
-                        raise
-                    wait = backoff_seconds(attempt, status)
-                    self._append({"event": "transient-retry", "http_status": status, "failure": failure,
-                                  "attempt": attempt, "wait_seconds": wait, "context": dict(self._context)})
-                    if identity is not None:
-                        row = self._checkpoints.execute("SELECT * FROM calls WHERE scope=? AND ordinal=?",
-                                                        identity[:2]).fetchone()
-                        if row is not None:
-                            self._supersede(row)
-                    if deadline is not None:
-                        wait = min(wait, max(0, deadline - time.monotonic()) / 1.2)
-                    self._sleep(wait)
-                    attempt += 1
+        attempt = self._attempts(*identity[:2]) if identity is not None else 1
+        while True:
+            try:
+                if deadline is not None and time.monotonic() >= deadline:
+                    raise GatewayError("week1_upstream_error", "AttemptDeadlineExceeded: local exchange expired")
+                return self._send(path, body, upper, estimated, identity, retry, deadline)
+            except GatewayError as error:
+                status, failure = self._last_failure
+                if (getattr(error, "code", None) != "week1_upstream_error" or not is_transient(status, failure)
+                        or not self._last_resend_safe or attempt >= attempt_limit(status) or self.stopped
+                        or (deadline is not None and time.monotonic() >= deadline)):
+                    raise
+                wait = backoff_seconds(attempt, status)
+                self._append({"event": "transient-retry", "http_status": status, "failure": failure,
+                              "attempt": attempt, "wait_seconds": wait, "context": dict(self._context)})
+                if identity is not None:
+                    row = self._checkpoints.execute("SELECT * FROM calls WHERE scope=? AND ordinal=?",
+                                                    identity[:2]).fetchone()
+                    if row is not None:
+                        self._supersede(row)
+                if deadline is not None:
+                    wait = min(wait, max(0, deadline - time.monotonic()) / 1.2)
+                self._sleep(wait)
+                attempt += 1
 
     def _sleep(self, seconds):
         time.sleep(seconds * random.uniform(0.8, 1.2))
@@ -768,7 +803,7 @@ class Gateway:
     def _send(self, path, body, upper, estimated, identity, retry, deadline=None):
         self._last_failure = (None, None)
         self._last_resend_safe = False
-        with self._lock:
+        with self._state_lock():
             if self.stopped and not (retry and self.stopped == "week1_budget_exhausted"):
                 raise GatewayError(self.stopped, "paid requests stopped: " + self.stopped)
             ceiling = self.budget if retry else self.normal_limit
@@ -784,31 +819,37 @@ class Gateway:
                      "input_tokens_estimated": estimated, "pricing_sha256": self.pricing_sha256,
                      "retry_reserve": retry}
             self._reserve_checkpoint(identity, event)
-            started = time.perf_counter()
-            actual = None
-            result = None
-            status = None
-            cost_source = None
-            failure = None
-            returnable = False
-            try:
-                response = wall_clock_call(lambda: self._client.post(ORIGIN + path, json=body),
-                                           min(self.attempt_deadline_seconds, max(0, deadline - time.monotonic()))
-                                           if deadline is not None else self.attempt_deadline_seconds)
-                status = response.status_code
-                if not 200 <= status < 300:
-                    failure = "upstream_http_error"
-                result = response.json()
-                _encoded(result)  # Reject non-JSON values before writing an invalid proxy response.
-                returnable = isinstance(result, dict) and "error" not in result
-                if not returnable:
-                    failure = "upstream_http_error"
-                if (status == 403 and isinstance(result, dict)
-                        and "region" in str(result.get("error", "")).lower()):
-                    failure = "upstream_region_error"
-                actual, cost_source = self._actual_cost(result)
-            except Exception as error:
-                failure = failure or type(error).__name__  # No exception text: it can contain secrets or prompts.
+        started = time.perf_counter()
+        actual = None
+        result = None
+        status = None
+        cost_source = None
+        failure = None
+        returnable = False
+        client = self._client
+        try:
+            response = wall_clock_call(lambda: client.post(ORIGIN + path, json=body),
+                                       min(self.attempt_deadline_seconds, max(0, deadline - time.monotonic()))
+                                       if deadline is not None else self.attempt_deadline_seconds)
+            status = response.status_code
+            if not 200 <= status < 300:
+                failure = "upstream_http_error"
+            result = response.json()
+            _encoded(result)  # Reject non-JSON values before writing an invalid proxy response.
+            returnable = isinstance(result, dict) and "error" not in result
+            if not returnable:
+                failure = "upstream_http_error"
+            if (status == 403 and isinstance(result, dict)
+                    and "region" in str(result.get("error", "")).lower()):
+                failure = "upstream_region_error"
+            actual, cost_source = self._actual_cost(result)
+        except Exception as error:
+            if isinstance(error, AttemptDeadlineExceeded) and self._transport is None:
+                # The abandoned I/O owns the old pool. Never reuse or join it.
+                self._client = self._new_client()
+                threading.Thread(target=client.close, daemon=True).start()
+            failure = failure or type(error).__name__  # No exception text: it can contain secrets or prompts.
+        with self._state_lock():
             if actual is None:
                 stop_reason = None if self.allow_unconfirmed_costs else "week1_cost_unknown"
             else:

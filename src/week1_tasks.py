@@ -10,6 +10,8 @@ from pathlib import Path
 
 def retryable_error(error):
     """Recognize transient failures, including legacy timeout wrappers."""
+    if error.get("deadline_exceeded") is True:
+        return True
     text = json.dumps(error, ensure_ascii=False).lower()
     if any(marker in text for marker in ("readtimeout", "attemptdeadlineexceeded", "connecterror", "connecttimeout", "week1_call_uncertain")):
         return True
@@ -287,7 +289,7 @@ class TaskStore:
                 and (error.get("diagnostics") or {}).get("phase") == "decision_jev")
             size_recovery = size_failure and not self.stage(task["task_id"], "evidence-table-requeue")
             eligible = size_recovery if size_failure else compact_recovery or recovery or (retryable_error(error) and not calls
-                and (error.get("retryable") is not False or any(marker in json_text(error).lower()
+                and (error.get("deadline_exceeded") is True or error.get("retryable") is not False or any(marker in json_text(error).lower()
                     for marker in ("readtimeout", "attemptdeadlineexceeded", "week1_call_uncertain", "connecterror", "connecttimeout"))))
             attempts = self.attempts(task["task_id"])
             if recovery and not size_failure:

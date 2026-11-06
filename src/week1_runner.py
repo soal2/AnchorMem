@@ -2,6 +2,8 @@
 
 import argparse
 import ast
+import faulthandler
+import time
 import fcntl
 import hashlib
 import importlib.util
@@ -42,7 +44,7 @@ from .week1_memorybank_benchmark import (
     prepare as prepare_memorybank_benchmark,
 )
 from .week1_baseline_worker import exchange
-from .week1_gateway import Gateway
+from .week1_gateway import Gateway, AttemptDeadlineExceeded, wall_clock_call
 from .week1_memorybank import MemoryBankProcess, metadata as memorybank_metadata, prepare as prepare_memorybank, verify as verify_memorybank
 from .week1_tasks import TaskStore, history_digest, ingestion_units, json_text, retryable_error, permanent_error
 
@@ -91,13 +93,20 @@ class GatewayTransport(httpx.BaseTransport):
         request.url = httpx.URL(self.origin + request.url.raw_path.decode("ascii"))
         request.headers["authorization"] = "Bearer week1-local"
         replacement = httpx.HTTPTransport(retries=0)
-        with self._transport_lock:
+        if not self._transport_lock.acquire(timeout=float(os.environ.get("WEEK1_EXCHANGE_DEADLINE", self.timeout or 240))):
+            raise httpx.ReadTimeout("AttemptDeadlineExceeded: transport handoff expired", request=request)
+        try:
             transport = self.transport
             self.transport = replacement
+        finally:
+            self._transport_lock.release()
         return exchange(transport, request, float(os.environ.get("WEEK1_EXCHANGE_DEADLINE", self.timeout or 240)))
 
     def close(self):
-        self.transport.close()
+        try:
+            wall_clock_call(self.transport.close, 1)
+        except AttemptDeadlineExceeded:
+            pass
 
 
 @contextmanager
@@ -137,7 +146,80 @@ def routed_clients(gateway_url, call_timeout=None, exchange_deadline=None):
         providers.OpenAI = original
         directory_selector.OpenAI = original_selector
         for client in clients:
-            client.close()
+            try:
+                wall_clock_call(client.close, 1)
+            except AttemptDeadlineExceeded:
+                pass
+
+
+class ProgressWatchdog:
+    """Observe durable progress without acquiring any application locks.
+
+    Hard exit deliberately skips cleanup: SQLite WAL and gateway reservations
+    remain the authority on resume, and unfinished index work is unpublished.
+    """
+    def __init__(self, directory, seconds=900, dump_seconds=300):
+        if seconds <= 0 or dump_seconds <= 0:
+            raise ValueError("watchdog and stack dump intervals must be positive")
+        self.directory = Path(directory)
+        self.seconds = seconds
+        self.dump_seconds = dump_seconds
+        self.stopped = threading.Event()
+        self.thread = None
+        self.stream = None
+        self.paths = [self.directory / name for name in
+                      ("runtime-status.json", "tasks.sqlite3-wal", "tasks.sqlite3")]
+        self.paths += [self.directory.parent / name for name in
+                       ("api-ledger.jsonl", "api-call-checkpoints.sqlite3", "api-call-checkpoints.sqlite3-wal")]
+
+    def fingerprint(self):
+        result = []
+        for path in self.paths:
+            try:
+                stat = path.stat()
+                result.append((stat.st_mtime_ns, stat.st_size))
+            except FileNotFoundError:
+                result.append(None)
+        return tuple(result)
+
+    def start(self):
+        self.stream = (self.directory / "thread-stacks.log").open("a", buffering=1)
+        faulthandler.enable(file=self.stream, all_threads=True)
+        faulthandler.register(signal.SIGUSR1, file=self.stream, all_threads=True)
+        # Native timer also dumps if the Python watchdog cannot obtain the GIL.
+        faulthandler.dump_traceback_later(self.dump_seconds, repeat=True, file=self.stream)
+        self.last_progress = time.monotonic()
+        self.last_progress_utc = datetime.now(timezone.utc).isoformat()
+        self.stream.write(f"Diagnostics started pid={os.getpid()} progress_timeout={self.seconds}s dump_interval={self.dump_seconds}s\n")
+        self.previous = self.fingerprint()
+        self.thread = threading.Thread(target=self.watch, name="progress-watchdog", daemon=True)
+        self.thread.start()
+        return self
+
+    def watch(self):
+        while not self.stopped.wait(min(1, self.seconds / 10)):
+            current = self.fingerprint()
+            now = time.monotonic()
+            if current != self.previous:
+                self.previous = current
+                self.last_progress = now
+                self.last_progress_utc = datetime.now(timezone.utc).isoformat()
+            if not self.stopped.is_set() and now - self.last_progress >= self.seconds:
+                self.stream.write(f"Progress watchdog expired; last progress={self.last_progress_utc}; exiting 124\n")
+                self.stream.flush()
+                faulthandler.dump_traceback(file=self.stream, all_threads=True)
+                os.fsync(self.stream.fileno())
+                os._exit(124)
+
+    def close(self):
+        self.stopped.set()
+        if self.thread is not None:
+            self.thread.join(timeout=2)
+        faulthandler.cancel_dump_traceback_later()
+        faulthandler.unregister(signal.SIGUSR1)
+        faulthandler.disable()
+        if self.stream is not None:
+            self.stream.close()
 
 
 def render_evidence(items, tokenizer, budget=16000):
@@ -267,7 +349,7 @@ class BaselineProcess:
             self.call({"action": "init", "manifest": manifest}, timeout=180)
         except Exception:
             self.process.kill()
-            self.process.wait()
+            self.process.wait(timeout=5)
             self.log.close()
             raise
 
@@ -307,7 +389,7 @@ class BaselineProcess:
         finally:
             if self.process.poll() is None:
                 self.process.kill()
-                self.process.wait()
+                self.process.wait(timeout=5)
             self.log.close()
 
 
@@ -320,18 +402,23 @@ def clean_error(error):
     if isinstance(error, providers.ProviderError):
         record.update(diagnostics=error.diagnostics, raw_response=error.raw_response)
     cause = error
+    cause_types = []
+    found_status = False
     seen = set()
     while cause is not None and id(cause) not in seen:
         seen.add(id(cause))
-        if getattr(cause, "status_code", None) is not None:
+        cause_types.append(type(cause).__name__)
+        if not found_status and getattr(cause, "status_code", None) is not None:
+            found_status = True
             record["status_code"] = cause.status_code
             body = getattr(cause, "body", None)
             response = getattr(cause, "response", None)
             if body is None and response is not None:
                 body = response.text
             record["http_response_body"] = body
-            break
         cause = cause.__cause__
+    if "AttemptDeadlineExceeded" in cause_types:
+        record["deadline_exceeded"] = True
     text = json.dumps(record, ensure_ascii=False)
     for name in ("OPENAI_API_KEY", "OPENROUTER_API_KEY", "AML_MEMORY_KEY"):
         if os.environ.get(name):
@@ -790,9 +877,9 @@ def export_records(directory, store):
 
 def prepare_index_work(directory, task, unit_id, committed):
     base = directory / "indexes" / task["method"] / hashlib.sha256(task["group"].encode()).hexdigest()[:20]
-    work = base / "work" / hashlib.sha256(unit_id.encode()).hexdigest()[:20]
-    if work.exists():
-        shutil.rmtree(work)
+    # A hard exit may leave a baseline child alive in its unpublished workdir.
+    # Never reuse/delete that directory: resume must isolate late worker writes.
+    work = base / "work" / (hashlib.sha256(unit_id.encode()).hexdigest()[:20] + "-" + uuid.uuid4().hex)
     work.parent.mkdir(parents=True, exist_ok=True)
     if committed:
         if not Path(committed).is_dir():
@@ -862,7 +949,9 @@ def import_baselines(root, directory, manifest, examples, store, parent):
     return receipts
 
 
-def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot", methods=None, max_questions=None, attempt_deadline_seconds=180):
+def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot", methods=None, max_questions=None, attempt_deadline_seconds=180, progress_timeout_seconds=900, stack_dump_seconds=300):
+    if progress_timeout_seconds <= 0 or stack_dump_seconds <= 0:
+        raise ValueError("watchdog and stack dump intervals must be positive")
     if not 0 < budget_usd <= 20:
         raise ValueError("week1 budget must be positive and at most 20 USD")
     if resume_dir and inherit_run:
@@ -905,6 +994,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
     except BlockingIOError:
         lock.close()
         raise ValueError("this experiment executor is already running") from None
+    watchdog = ProgressWatchdog(directory, progress_timeout_seconds, stack_dump_seconds).start()
     store = TaskStore(directory / "tasks.sqlite3")
     gateway = None
     status = "failed"
@@ -1139,6 +1229,7 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
         store.close()
         report(directory)
         lock.close()
+        watchdog.close()
     return directory
 
 
@@ -1261,6 +1352,8 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("phase", choices=("prepare", "preflight", "run", "report", "amend-code"))
     parser.add_argument("--reason", default="")
+    parser.add_argument("--progress-timeout-seconds", type=float, default=900)
+    parser.add_argument("--stack-dump-seconds", type=float, default=300)
     parser.add_argument("--attempt-deadline-seconds", type=float, default=180)
     parser.add_argument("--budget-usd", type=float, default=20)
     parser.add_argument("--run-dir", type=Path)
@@ -1301,7 +1394,7 @@ def main():
         def stop(_signal, _frame):
             raise KeyboardInterrupt
         signal.signal(signal.SIGTERM, stop)
-        print(run(root, args.budget_usd, args.run_dir, args.inherit_run, benchmark=args.benchmark, methods=args.methods, max_questions=args.max_questions, attempt_deadline_seconds=args.attempt_deadline_seconds))
+        print(run(root, args.budget_usd, args.run_dir, args.inherit_run, benchmark=args.benchmark, methods=args.methods, max_questions=args.max_questions, attempt_deadline_seconds=args.attempt_deadline_seconds, progress_timeout_seconds=args.progress_timeout_seconds, stack_dump_seconds=args.stack_dump_seconds))
     elif args.phase == "amend-code":
         if not args.run_dir or not args.reason:
             raise SystemExit("amend-code requires --run-dir and --reason")

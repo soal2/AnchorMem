@@ -116,6 +116,7 @@ class GatewayNetwork:
             raise ValueError("A baseline requires a loopback HTTP budget gateway")
         if parsed.path not in {"", "/"} or parsed.query or parsed.fragment or parsed.username:
             raise ValueError("gateway-url must be the base host without a path")
+        self.timeout = float(os.environ.get("WEEK1_LOCAL_REQUEST_TIMEOUT", "240"))
         self.url = url.rstrip("/")
         self.failed = None
         self.transport = transport or httpx.HTTPTransport(retries=0)
@@ -157,7 +158,7 @@ class GatewayNetwork:
 
     def client(self):
         import httpx
-        return httpx.Client(transport=self.local_transport_class(), timeout=240, trust_env=False)
+        return httpx.Client(transport=self.local_transport_class(), timeout=self.timeout, trust_env=False)
 
     def check(self):
         if self.failed:
@@ -177,7 +178,7 @@ def patch_openai(network: GatewayNetwork):
             if args:
                 raise ValueError("OpenAI client construction must use named parameters")
             kwargs.update(api_key=DUMMY_KEY, base_url=network.url + "/api/v1",
-                          max_retries=0, timeout=240, http_client=network.client())
+                          max_retries=0, timeout=network.timeout, http_client=network.client())
             super().__init__(**kwargs)
 
     openai.OpenAI = LocalOpenAI

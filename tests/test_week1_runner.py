@@ -260,6 +260,7 @@ def execution(tmp_path, monkeypatch):
 
     class FakeGateway:
         url = "local"
+        local_request_timeout = 3300
 
         def __init__(self, *args, **kwargs):
             self.stopped = state.budget_stopped
@@ -335,7 +336,7 @@ def execution(tmp_path, monkeypatch):
         return SimpleNamespace(id='judge-id', choices=[SimpleNamespace(message=SimpleNamespace(content='yes'), finish_reason='stop')])
 
     @contextmanager
-    def clients(url):
+    def clients(url, call_timeout=None):
         yield lambda: SimpleNamespace(chat=SimpleNamespace(completions=SimpleNamespace(create=create)))
 
     monkeypatch.setattr(runner, 'Gateway', FakeGateway)

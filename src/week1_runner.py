@@ -76,12 +76,15 @@ def load_environment(root):
 class GatewayTransport(httpx.BaseTransport):
     """Also intercept the existing Jev client's absolute Decisions URL."""
 
-    def __init__(self, gateway_url):
+    def __init__(self, gateway_url, timeout=None):
+        self.timeout = timeout
         url = urlsplit(gateway_url)
         self.origin = url.scheme + "://" + url.netloc
         self.transport = httpx.HTTPTransport(retries=0)
 
     def handle_request(self, request):
+        if self.timeout is not None:
+            request.extensions["timeout"] = dict.fromkeys(("connect", "read", "write", "pool"), self.timeout)
         request.url = httpx.URL(self.origin + request.url.raw_path.decode("ascii"))
         request.headers["authorization"] = "Bearer week1-local"
         return self.transport.handle_request(request)
@@ -91,7 +94,10 @@ class GatewayTransport(httpx.BaseTransport):
 
 
 @contextmanager
-def routed_clients(gateway_url):
+def routed_clients(gateway_url, call_timeout=None):
+    old_timeout = os.environ.get("WEEK1_LOCAL_REQUEST_TIMEOUT")
+    if call_timeout is not None:
+        os.environ["WEEK1_LOCAL_REQUEST_TIMEOUT"] = str(call_timeout)
     original = providers.OpenAI
     original_selector = directory_selector.OpenAI
     clients = []
@@ -100,7 +106,7 @@ def routed_clients(gateway_url):
         url = urlsplit(gateway_url)
         base_url = url.scheme + "://" + url.netloc + "/api/v1"
         kwargs.update(api_key="week1-local", base_url=base_url, max_retries=0,
-                      http_client=httpx.Client(transport=GatewayTransport(gateway_url), trust_env=False))
+                      http_client=httpx.Client(transport=GatewayTransport(gateway_url, call_timeout), trust_env=False))
         client = OpenAI(**kwargs)
         clients.append(client)
         return client
@@ -110,6 +116,10 @@ def routed_clients(gateway_url):
     try:
         yield factory
     finally:
+        if old_timeout is None:
+            os.environ.pop("WEEK1_LOCAL_REQUEST_TIMEOUT", None)
+        else:
+            os.environ["WEEK1_LOCAL_REQUEST_TIMEOUT"] = old_timeout
         providers.OpenAI = original
         directory_selector.OpenAI = original_selector
         for client in clients:
@@ -825,7 +835,7 @@ def import_baselines(root, directory, manifest, examples, store, parent):
     return receipts
 
 
-def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot", methods=None, max_questions=None):
+def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot", methods=None, max_questions=None, attempt_deadline_seconds=180):
     if not 0 < budget_usd <= 20:
         raise ValueError("week1 budget must be positive and at most 20 USD")
     if resume_dir and inherit_run:
@@ -886,7 +896,8 @@ def run(root, budget_usd=20, resume_dir=None, inherit_run=None, benchmark="pilot
         for example in examples:
             groups.setdefault(example["group"], []).append(example)
         with Gateway(os.environ["OPENAI_API_KEY"], base, budget_usd=budget_usd,
-                     normal_limit=max(0, budget_usd - 2)) as gateway, routed_clients(gateway.url) as factory:
+                     normal_limit=max(0, budget_usd - 2), attempt_deadline_seconds=attempt_deadline_seconds,
+                     retry_uncertain=True) as gateway, routed_clients(gateway.url, gateway.local_request_timeout) as factory:
             client = factory()
             embedder = providers.OpenAIEmbedder(config.embedding)
 
@@ -1223,6 +1234,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("phase", choices=("prepare", "preflight", "run", "report", "amend-code"))
     parser.add_argument("--reason", default="")
+    parser.add_argument("--attempt-deadline-seconds", type=float, default=180)
     parser.add_argument("--budget-usd", type=float, default=20)
     parser.add_argument("--run-dir", type=Path)
     parser.add_argument("--inherit-run", type=Path)
@@ -1262,7 +1274,7 @@ def main():
         def stop(_signal, _frame):
             raise KeyboardInterrupt
         signal.signal(signal.SIGTERM, stop)
-        print(run(root, args.budget_usd, args.run_dir, args.inherit_run, benchmark=args.benchmark, methods=args.methods, max_questions=args.max_questions))
+        print(run(root, args.budget_usd, args.run_dir, args.inherit_run, benchmark=args.benchmark, methods=args.methods, max_questions=args.max_questions, attempt_deadline_seconds=args.attempt_deadline_seconds))
     elif args.phase == "amend-code":
         if not args.run_dir or not args.reason:
             raise SystemExit("amend-code requires --run-dir and --reason")

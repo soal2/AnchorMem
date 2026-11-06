@@ -90,10 +90,10 @@ def test_task_store_requeues_region_but_keeps_invalid_and_uncertain_tasks(tmp_pa
         for i, message in enumerate(errors):
             store.fail(store.build(method, str(i))["task_id"], "ingestion", {"message": message})
     requeued = store.requeue(4)
-    assert len(requeued) == 4  # two builds and their blocked questions
+    assert len(requeued) == 8  # region and uncertain builds plus blocked questions
     for method in ("ours", "mem0"):
         for i in range(4):
-            assert store.build(method, str(i))["state"] == ("pending" if i == 1 else "failed")
+            assert store.build(method, str(i))["state"] == ("pending" if i in (1, 2) else "failed")
     store.close()
 
 
@@ -159,7 +159,7 @@ def test_gateway_retries_only_unbilled_transient_failures(tmp_path, status, cost
     ({"status_code": 400, "retryable": True}, False),
     ({"status_code": 403, "message": "region refusal"}, True),
     ({"message": "previous upstream request failed (upstream_region_error); call will not be repeated", "status_code": 403}, False),
-    ({"code": "week1_call_uncertain", "retryable": True}, False),
+    ({"code": "week1_call_uncertain", "retryable": True}, True),
 ])
 def test_task_classification_uses_status_and_never_overrides_unsafe_calls(error, expected):
     assert retryable_error(error) is expected
@@ -175,7 +175,7 @@ def test_only_confirmed_permanent_errors_get_permanent_status():
     ("mem0", "HTTP 403 region refusal", "failed", {"http_status": 403, "actual_cost_usd": 0, "upstream_error": "region refusal"}, True),
     ("mem0", "HTTP 400 week1_replay_mismatch", "failed", {"http_status": 400, "actual_cost_usd": 0}, True),
     ("mem0", "week1_call_uncertain", "uncertain", {"failure": "ConnectError"}, True),
-    ("mem0", "week1_call_uncertain cn:焦彦", "uncertain", {}, False),
+    ("mem0", "week1_call_uncertain cn:焦彦", "uncertain", {}, True),
     ("mem0", "HTTP 403 region refusal", "failed", {"http_status": 403, "actual_cost_usd": None}, False),
     ("mem0", "week1_replay_mismatch", "failed", {"http_status": 400, "actual_cost_usd": 0, "request_id": "paid"}, False),
     ("ours", "HTTP 400 invalid input", "failed", {"http_status": 400, "actual_cost_usd": 0}, False),

@@ -9,8 +9,10 @@ from pathlib import Path
 
 
 def retryable_error(error):
-    """Conservative task retries: unknown/invalid/possibly billed work needs review."""
+    """Recognize transient failures, including legacy timeout wrappers."""
     text = json.dumps(error, ensure_ascii=False).lower()
+    if any(marker in text for marker in ("readtimeout", "attemptdeadlineexceeded", "connecterror", "connecttimeout", "week1_call_uncertain")):
+        return True
     if any(marker in text for marker in ("uncertain", "replay_mismatch", "badrequest", "invalid", "finish_reason", "will not be repeated")):
         return False
     status = error.get("status_code")
@@ -23,7 +25,7 @@ def retryable_error(error):
         return "region" in text
     if "retryable" in error:
         return error["retryable"] is True
-    return status in {402, 408, 409, 425, 429, 500, 502, 503, 504, 520, 522, 524} or any(
+    return (isinstance(status, int) and 500 <= status < 600) or status in {402, 408, 409, 425, 429, 500, 502, 503, 504, 520, 522, 524} or any(
         marker in text for marker in ("connecterror", "connecttimeout"))
 
 
@@ -211,7 +213,7 @@ class TaskStore:
 
     def recovery_evidence(self, checkpoint_path):
         """Read billing evidence without initializing or modifying the gateway DB."""
-        from .week1_gateway import Gateway
+        from .week1_gateway import Gateway, is_transient
         result = {}
         if checkpoint_path is None or not Path(checkpoint_path).is_file():
             return result
@@ -224,23 +226,25 @@ class TaskStore:
                     continue
                 task_id = scope.get("task_id")
                 task = self.get(task_id) if task_id else None
-                if not task or task["method"] not in {"ours", "mem0"}:
+                if not task or task["method"] not in {"ours", "mem0", "memorybank"}:
                     continue
                 if row["state"] == "completed":
                     continue  # Successful calls replay from cache.
                 event = json.loads(row["completed_json"] or "{}")
-                safe = Gateway._retryable_state(row, event) and Gateway._safe_to_resend(event)
+                safe = ((Gateway._retryable_state(row, event) and Gateway._safe_to_resend(event, retry_uncertain=True))
+                        or (row["state"] in {"uncertain", "inflight"} and not event))
                 status = event.get("http_status", row["status_code"])
                 region = status == 403 and (event.get("failure") == "upstream_region_error"
                             or "region" in str(event.get("upstream_error", "")).lower())
                 unsent = event.get("http_status") is None and event.get("failure") in {"ConnectError", "ConnectTimeout"}
-                result.setdefault(task_id, []).append((safe, region or unsent))
+                result.setdefault(task_id, []).append((safe, region or unsent or is_transient(status, event.get("failure"))
+                    or (row["state"] in {"uncertain", "inflight"} and not event)))
         finally:
             connection.close()
         return result
 
     def requeue(self, max_attempts, checkpoint_path=None, dry_run=False):
-        """Reclassify legacy failures from billing evidence, retaining audit history.
+        """Reclassify legacy failures from checkpoints, retaining audit history.
 
         dry_run performs no writes. Old non-retryable failures do not consume the
         bounded recovery allowance; new retryable failures do.
@@ -249,7 +253,7 @@ class TaskStore:
         requeued = []
         recoveries = {}
         for task in self.rows():
-            if task["state"] != "failed" or task["method"] not in {"ours", "mem0"}:
+            if task["state"] != "failed" or task["method"] not in {"ours", "mem0", "memorybank"}:
                 continue
             error = task["error"] or {}
             calls = evidence.get(task["task_id"], [])
@@ -257,7 +261,8 @@ class TaskStore:
             recovery = bool(calls) and all(safe and (mismatch or transient)
                                            for safe, transient in calls)
             eligible = recovery or (retryable_error(error) and not calls
-                                    and error.get("retryable") is not False)
+                and (error.get("retryable") is not False or any(marker in json_text(error).lower()
+                    for marker in ("readtimeout", "attemptdeadlineexceeded", "week1_call_uncertain", "connecterror", "connecttimeout"))))
             attempts = self.attempts(task["task_id"])
             if recovery:
                 attempts = sum(item.get("retryable") is True for item in self.failures()
@@ -268,7 +273,7 @@ class TaskStore:
             if eligible and attempts < max_attempts:
                 requeued.append(task["task_id"])
         for task in self.rows("qa"):
-            if task["state"] != "blocked" or task["method"] not in {"ours", "mem0"}:
+            if task["state"] != "blocked" or task["method"] not in {"ours", "mem0", "memorybank"}:
                 continue
             build = self.build(task["method"], task["group"])
             if build and (build["state"] in {"pending", "running", "success"} or build["task_id"] in requeued):

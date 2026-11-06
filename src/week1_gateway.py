@@ -10,6 +10,8 @@ import hashlib
 import json
 import math
 import os
+import queue
+import random
 import sqlite3
 import threading
 import time
@@ -45,7 +47,7 @@ SOURCES = {
 # Invalid requests (400) are permanent; region refusals (403) are transient.
 TRANSIENT_STATUSES = frozenset({402, 408, 409, 425, 429, 500, 502, 503, 504, 520, 522, 524})
 TRANSPORT_FAILURES = frozenset({"ConnectError", "ConnectTimeout", "ReadTimeout", "WriteTimeout", "PoolTimeout",
-                                "RemoteProtocolError", "ReadError", "WriteError"})
+                                "RemoteProtocolError", "ReadError", "WriteError", "AttemptDeadlineExceeded"})
 # Failures that never reached a billable generation.
 UNSENT_FAILURES = frozenset({"ConnectError", "ConnectTimeout"})
 MAX_CALL_ATTEMPTS = 6
@@ -64,10 +66,9 @@ def is_transient(status, failure):
     if status == 403:
         return failure == "upstream_region_error"
     if status is not None and not 200 <= status < 300:
-        return status in TRANSIENT_STATUSES
-    # Only connections that never opened are resent; a request that may have
-    # reached the provider (timeouts, dropped streams) could be billed twice.
-    return failure in UNSENT_FAILURES
+        return status in TRANSIENT_STATUSES or 500 <= status < 600
+    # Possibly billed retries require the conservative reservation policy.
+    return failure in TRANSPORT_FAILURES
 
 
 def attempt_limit(status):
@@ -87,6 +88,30 @@ def uncharged(event):
     region_refusal = (event.get("http_status") == 403
                       and "model is not available in your region" in str(message).lower())
     return event.get("http_status") == 402 or region_refusal
+
+
+class AttemptDeadlineExceeded(TimeoutError):
+    pass
+
+
+def wall_clock_call(call, seconds):
+    """Abandoned daemon workers own no ledger or checkpoint state."""
+    result = queue.Queue(maxsize=1)
+
+    def work():
+        try:
+            result.put((True, call()))
+        except BaseException as error:
+            result.put((False, error))
+
+    threading.Thread(target=work, daemon=True).start()
+    try:
+        ok, value = result.get(timeout=seconds)
+    except queue.Empty:
+        raise AttemptDeadlineExceeded("upstream attempt deadline expired") from None
+    if not ok:
+        raise value
+    return value
 
 
 class GatewayError(ValueError):
@@ -113,9 +138,14 @@ def _encoded(value):
 
 
 class Gateway:
-    def __init__(self, api_key, run_dir, budget_usd=20, normal_limit=18, *, transport=None):
+    def __init__(self, api_key, run_dir, budget_usd=20, normal_limit=18, *, transport=None,
+                 attempt_deadline_seconds=180, retry_uncertain=False):
         if not isinstance(api_key, str) or not api_key.strip():
             raise ValueError("gateway requires the real API key")
+        if not math.isfinite(attempt_deadline_seconds) or attempt_deadline_seconds <= 0:
+            raise ValueError("attempt deadline must be positive and finite")
+        self.attempt_deadline_seconds = attempt_deadline_seconds
+        self.local_request_timeout = MAX_CALL_ATTEMPTS * (attempt_deadline_seconds + BACKOFF_MAX_SECONDS * 1.2) + 60
         self._api_key = api_key
         self.run_dir = Path(run_dir)
         self.budget = _money(budget_usd)
@@ -132,7 +162,10 @@ class Gateway:
         self._ledger_completed = set()
         self._spent = Decimal(0)
         self._reservations = {}
-        self.allow_unconfirmed_costs = False
+        # The runner opts into conservative retries under the authorized hard cap.
+        # Legacy standalone users retain the receipt-based unknown-cost policy.
+        self.allow_unconfirmed_costs = retry_uncertain
+        self.retry_uncertain = retry_uncertain
         self.stopped = None
         self._last_failure = (None, None)
         self._last_resend_safe = False
@@ -292,7 +325,7 @@ class Gateway:
         if row["request_sha256"] != request_sha256:
             event = json.loads(row["completed_json"] or "{}")
             # A failed HTTP response alone does not prove zero billing.
-            safe = self._retryable_state(row, event) and self._safe_to_resend(event)
+            safe = self._retryable_state(row, event) and self._safe_to_resend(event, self.retry_uncertain)
             if safe:
                 self._supersede(row)
                 return identity, None
@@ -322,8 +355,9 @@ class Gateway:
         return status, failure
 
     @staticmethod
-    def _safe_to_resend(event):
-        return (not event.get("request_id")
+    def _safe_to_resend(event, retry_uncertain=False):
+        return (retry_uncertain and is_transient(event.get("http_status"), event.get("failure"))
+                or not event.get("request_id")
                 and (event.get("actual_cost_usd") == 0 or uncharged(event)
                      or (event.get("actual_cost_usd") is None and event.get("http_status") is None
                          and event.get("failure") in UNSENT_FAILURES)))
@@ -332,15 +366,17 @@ class Gateway:
     def _retryable_state(row, event):
         # Older versions stored even proven-unsent connection errors as uncertain.
         return row["state"] == "failed" or (row["state"] == "uncertain"
-            and event.get("http_status") is None and event.get("failure") in UNSENT_FAILURES)
+            and (not event or is_transient(event.get("http_status"), event.get("failure"))))
 
     def _may_resend(self, row):
         """A checkpointed transient failure may be sent again, within the attempt bound."""
         status, failure = self._row_failure(row)
-        # Uncertain (possibly sent) calls are never resent automatically.
+        if row["state"] == "uncertain" and not json.loads(row["completed_json"] or "{}"):
+            failure = "AttemptDeadlineExceeded"
+        # Conservative retries retain each superseded reservation, including killed calls.
         event = json.loads(row["completed_json"] or "{}")
         allowed = (self._retryable_state(row, event) and is_transient(status, failure)
-                   and self._safe_to_resend(event))
+                   and (self._safe_to_resend(event, self.retry_uncertain) or (self.retry_uncertain and not event)))
         return allowed and self._attempts(row["scope"], row["ordinal"]) < attempt_limit(status)
 
     def _supersede(self, row):
@@ -445,7 +481,7 @@ class Gateway:
             self._save_summary()
 
     def _pricing(self):
-        response = self._client.get(MODELS_URL)
+        response = wall_clock_call(lambda: self._client.get(MODELS_URL), self.attempt_deadline_seconds)
         response.raise_for_status()
         catalog = response.json()
         if not isinstance(catalog, dict) or not isinstance(catalog.get("data"), list):
@@ -530,7 +566,10 @@ class Gateway:
             self._server.server_close()
             self._thread.join(timeout=5)
         if self._client:
-            self._client.close()
+            try:
+                wall_clock_call(self._client.close, min(1, self.attempt_deadline_seconds))
+            except AttemptDeadlineExceeded:
+                pass
         if self._checkpoints:
             self._checkpoints.close()
         if self._file_lock:
@@ -627,7 +666,8 @@ class Gateway:
             raise ValueError("checkpointed response did not supply usage.cost")
         request_id = result.get("id") if isinstance(result, dict) else None
         if isinstance(request_id, str) and request_id:
-            response = self._client.get(ORIGIN + "/api/v1/generation", params={"id": request_id})
+            response = wall_clock_call(lambda: self._client.get(ORIGIN + "/api/v1/generation",
+                                       params={"id": request_id}), self.attempt_deadline_seconds)
             response.raise_for_status()
             record = response.json()["data"]
             return _money(record["total_cost"]), "generation.total_cost"
@@ -668,7 +708,7 @@ class Gateway:
                     attempt += 1
 
     def _sleep(self, seconds):
-        time.sleep(seconds)
+        time.sleep(seconds * random.uniform(0.8, 1.2))
 
     def _send(self, path, body, upper, estimated, identity, retry):
         self._last_failure = (None, None)
@@ -697,7 +737,8 @@ class Gateway:
             failure = None
             returnable = False
             try:
-                response = self._client.post(ORIGIN + path, json=body)
+                response = wall_clock_call(lambda: self._client.post(ORIGIN + path, json=body),
+                                           self.attempt_deadline_seconds)
                 status = response.status_code
                 if not 200 <= status < 300:
                     failure = "upstream_http_error"
@@ -741,6 +782,6 @@ class Gateway:
                 # Later calls stop unless the user authorized conservative reservations.
                 return 200, json.loads(self._redact(_encoded(result))) if identity is not None else result
             self._last_failure = (status, failure)
-            self._last_resend_safe = self._safe_to_resend(completed)
+            self._last_resend_safe = self._safe_to_resend(completed, self.retry_uncertain)
             raise GatewayError(self.stopped or "week1_upstream_error", f"upstream request failed ({failure})",
                                status_code=status if status is not None and not 200 <= status < 300 else 400)
